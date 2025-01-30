@@ -1,36 +1,47 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+### Unica System
 
-## Getting Started
+## stack servidor
 
-First, run the development server:
+## stack cliente
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## metodologia agil
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+RUP y Scrum
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Version @alpha0.0.1 : 3 semanas
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Diseño mobile y web. autenticacion y roles, 1 semana.
+build system : 2 semanas. logico y diseño.
 
-## Learn More
+ver las fechas en las que tiene que pagar
+ver su billetera
 
-To learn more about Next.js, take a look at the following resources:
+y poder hacer transferencias entre usuarios de una unica
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+fechs de salida
+va llegando a x cantidad de
+moniterorear la fecha de salida.
+monitorear la cantidad de holders
+x capitalizacion.
+noticias de twitter x.
+volumen, transacciones.
+moviemendo por segundo,
+tiempos.
+verificar la liquidez.
+conteo de actualizaciones
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+analizar la volatilidad.
 
-## Deploy on Vercel
+limpiar recompras del script
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+MODULOS
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+UI/UX
+
+USUARIOS
+
+- [x] crear un nuevo usuario.
+- [x] autenticar un usuario.
+- [x] obtener usuarios.
+- [ ] eliminar usuario
+- [ ] editar usuario.
