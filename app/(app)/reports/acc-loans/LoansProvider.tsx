@@ -39,21 +39,22 @@ export const LoansProvider: React.FC<LoanProviderProps> = ({ children }) => {
   const addLoan = (Loan: ILoanUser) => {
     setLoans([...loans, Loan]);
   };
-  const deleteLoan = (id: string) => {
-    setLoans(loans.filter((Loan) => Loan.id !== id));
-  };
 
-  const updateLoan = (Loan: ILoanUser) => {
-    const index = loans.findIndex((u) => u.id === Loan.id);
-    if (index !== -1) {
-      loans[index] = Loan;
-      setLoans([...loans]);
-    }
-  };
+  // const deleteLoan = (id: string) => {
+  //   setLoans(loans.filter((Loan) => Loan.id !== id));
+  // };
 
-  const removeLoan = (id: string) => {
-    setLoans(loans.filter((Loan) => Loan.id !== id));
-  };
+  // const updateLoan = (Loan: ILoanUser) => {
+  //   const index = loans.findIndex((u) => u.id === Loan.id);
+  //   if (index !== -1) {
+  //     loans[index] = Loan;
+  //     setLoans([...loans]);
+  //   }
+  // };
+
+  // const removeLoan = (id: string) => {
+  //   setLoans(loans.filter((Loan) => Loan.id !== id));
+  // };
 
   const fetchLoans = async () => {
     try {

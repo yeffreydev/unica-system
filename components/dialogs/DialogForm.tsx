@@ -25,7 +25,7 @@ export function DialogForm({
         <div className="hidden">
           <DialogTitle>titulo</DialogTitle>
           <DialogDescription>
-            Make changes to your profile here. Click save when you're done.
+            Make changes to your profile here. Click save when you&apos;re done.
           </DialogDescription>
         </div>
         {children}

@@ -60,7 +60,7 @@ const equityData = [
   },
 ];
 
-export function EquityTable() {
+function EquityTable() {
   return (
     <Table>
       <TableHeader>

@@ -9,7 +9,6 @@ import {
   Command,
   CommandEmpty,
   CommandGroup,
-  CommandInput,
   CommandItem,
   CommandList,
 } from "@/components/ui/command";
@@ -33,7 +32,6 @@ export function ComboboxLoanTypes({
 }) {
   const [open, setOpen] = React.useState(false);
   const [value, setValue] = React.useState("");
-  const [search, setSearch] = React.useState("");
 
   return (
     <Popover open={open} onOpenChange={setOpen}>

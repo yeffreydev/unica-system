@@ -57,7 +57,7 @@ const administrativeExpenses = [
   },
 ];
 
-export function AdministrativeTable() {
+function AdministrativeTable() {
   return (
     <Table>
       <TableHeader>

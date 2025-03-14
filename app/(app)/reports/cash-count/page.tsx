@@ -1,6 +1,6 @@
 import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
 
-export function BalanceTable() {
+function BalanceTable() {
   return (
     <Table className="w-max">
       <TableBody>
@@ -33,7 +33,7 @@ export function BalanceTable() {
     </Table>
   );
 }
-export function CashCountTable() {
+function CashCountTable() {
   return (
     <Table className="w-max">
       <TableBody>
@@ -67,7 +67,7 @@ export function CashCountTable() {
   );
 }
 
-export function AccumulatedTable() {
+function AccumulatedTable() {
   return (
     <Table className="w-max">
       <TableBody>

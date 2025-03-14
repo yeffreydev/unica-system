@@ -57,7 +57,7 @@ const interestData = [
   },
 ];
 
-export function InterestTable() {
+function InterestTable() {
   return (
     <Table>
       <TableHeader>

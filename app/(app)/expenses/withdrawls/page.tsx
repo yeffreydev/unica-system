@@ -57,7 +57,7 @@ const withdrawls = [
   },
 ];
 
-export function WithdrawlsTable() {
+function WithdrawlsTable() {
   return (
     <Table>
       <TableHeader>

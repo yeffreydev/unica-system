@@ -190,8 +190,7 @@ const capitalPayments = [
     others: "1000",
   },
 ];
-
-export function ExpensesReportTable() {
+function ExpensesReportTable() {
   return (
     <Table>
       <TableHeader>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useContext, useEffect, useState } from "react";
+import { useContext, useState } from "react";
 import {
   ColumnDef,
   SortingState,
@@ -28,7 +28,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import apiClient from "@/config/apiClient";
 import { IStock } from "@/types/IStock";
 import { StockContext } from "./StockContext";
 
@@ -74,7 +73,7 @@ export const columns: ColumnDef<IStock>[] = [
   {
     id: "actions",
     header: "Opciones",
-    cell: ({ row }) => (
+    cell: () => (
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" className="h-8 w-8 p-0">

@@ -143,7 +143,7 @@ const capitalPayments = [
   },
 ];
 
-export function IncomesReportTable() {
+function IncomesReportTable() {
   return (
     <Table>
       <TableHeader>

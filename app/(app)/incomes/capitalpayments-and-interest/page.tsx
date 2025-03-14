@@ -57,7 +57,7 @@ const capitalPayments = [
   },
 ];
 
-export function CapitalPaymentsTable() {
+function CapitalPaymentsTable() {
   return (
     <Table>
       <TableHeader>

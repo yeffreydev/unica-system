@@ -39,21 +39,22 @@ export const StockProvider: React.FC<StockProviderProps> = ({ children }) => {
   const addStock = (Stock: IStock) => {
     setStocks([...stocks, Stock]);
   };
-  const deleteStock = (id: string) => {
-    setStocks(stocks.filter((Stock) => Stock.id !== id));
-  };
 
-  const updateStock = (Stock: IStock) => {
-    const index = stocks.findIndex((u) => u.id === Stock.id);
-    if (index !== -1) {
-      stocks[index] = Stock;
-      setStocks([...stocks]);
-    }
-  };
+  // const deleteStock = (id: string) => {
+  //   setStocks(stocks.filter((Stock) => Stock.id !== id));
+  // };
 
-  const removeStock = (id: string) => {
-    setStocks(stocks.filter((Stock) => Stock.id !== id));
-  };
+  // const updateStock = (Stock: IStock) => {
+  //   const index = stocks.findIndex((u) => u.id === Stock.id);
+  //   if (index !== -1) {
+  //     stocks[index] = Stock;
+  //     setStocks([...stocks]);
+  //   }
+  // };
+
+  // const removeStock = (id: string) => {
+  //   setStocks(stocks.filter((Stock) => Stock.id !== id));
+  // };
 
   const fetchStocks = async () => {
     try {

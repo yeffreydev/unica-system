@@ -2,17 +2,9 @@
 import apiClient from "@/config/apiClient";
 import { AuthContext } from "@/context/auth/AuthContex";
 import { useRouter } from "next/navigation";
-import {
-  ChangeEvent,
-  FormEvent,
-  use,
-  useContext,
-  useEffect,
-  useState,
-} from "react";
+import { ChangeEvent, FormEvent, useContext, useEffect, useState } from "react";
 
 export const LoginForm = () => {
-  const [loadingLogin, setLoadingLogin] = useState(false);
   const { auth, loading, loginUser } = useContext(AuthContext);
   const router = useRouter();
 
@@ -28,9 +20,12 @@ export const LoginForm = () => {
     });
   };
 
-  const postLogin = async (form: any) => {
+  const postLogin = async (formData: {
+    username: string;
+    password: string;
+  }) => {
     try {
-      const res = await apiClient.post("/auth/login", form);
+      const res = await apiClient.post("/auth/login", formData);
       if (res.status === 201) {
         loginUser(res.data.access_token);
       }
@@ -44,15 +39,15 @@ export const LoginForm = () => {
     postLogin(form);
   };
 
-  if (loading) {
-    return <p>Loading...</p>;
-  }
-
   useEffect(() => {
     if (auth.authenticated) {
       router.push("/");
     }
   }, [auth.authenticated]);
+
+  if (loading) {
+    return <p>Loading...</p>;
+  }
   return (
     <form
       onSubmit={handleSubmit}

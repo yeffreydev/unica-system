@@ -32,7 +32,7 @@ export function ComboBoxUsers({
 }) {
   const [open, setOpen] = React.useState(false);
   const [value, setValue] = React.useState("");
-  const [search, setSearch] = React.useState("");
+  // const [search, setSearch] = React.useState("");
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -55,7 +55,7 @@ export function ComboBoxUsers({
             value=""
             placeholder="Search user..."
             className="h-9"
-            onValueChange={setSearch}
+            // onValueChange={setSearch}
             accessKey=""
           />
           <CommandList>

@@ -6,7 +6,9 @@ export default function Users() {
   return (
     <>
       <div className="flex justify-between">
-        <h1 className="text-2xl font-bold">Usuarios "Cerro La Plata"</h1>
+        <h1 className="text-2xl font-bold">
+          Usuarios &quot;Cerro La Plata&quot;
+        </h1>
         <DialogForm>
           <UserForm />
         </DialogForm>

@@ -7,7 +7,8 @@ export default function SettingsProfilePage() {
       <div>
         <h3 className="text-lg font-medium">Plataforma</h3>
         <p className="text-sm text-muted-foreground">
-          Configura la plataforma de tu "Asociacion de Ahorro y Prestamo".
+          Configura la plataforma de tu &quot;Asociacion de Ahorro y
+          Prestamo&quot;.
         </p>
       </div>
       <Separator />

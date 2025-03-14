@@ -27,8 +27,6 @@ import {
 } from "@/components/ui/select";
 
 import { Textarea } from "@/components/ui/textarea";
-import { useContext, useEffect } from "react";
-import { AppContext } from "@/context/AppContext";
 
 const profileFormSchema = z.object({
   username: z

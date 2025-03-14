@@ -57,7 +57,7 @@ const interestIncomes = [
   },
 ];
 
-export function InterestIncomeTable() {
+function InterestIncomeTable() {
   return (
     <Table>
       <TableHeader>

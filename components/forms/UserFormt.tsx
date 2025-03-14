@@ -42,8 +42,8 @@ export const UserForm = () => {
     },
   });
 
-  async function createPostUser(data: any) {
-    const res = await fetch("http://18.218.207.198:3000/users", {
+  async function createPostUser(data: z.infer<typeof formSchema>) {
+    const res = await fetch("http://18.218.207.198:4000/users", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -52,7 +52,7 @@ export const UserForm = () => {
     });
 
     if (res.ok) {
-      window && window.location.reload();
+      if (window) window.location.reload();
     } else {
       alert("Error creating user");
     }

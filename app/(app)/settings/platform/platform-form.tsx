@@ -57,7 +57,7 @@ export function PlatformForm() {
     });
     if (res.data) {
       localStorage.removeItem("bank");
-      window && window.location.reload();
+      if (window) window.location.reload();
     }
   };
   function onSubmit(data: PlatformFormValues) {

@@ -155,7 +155,7 @@ export const LoanForm = () => {
             <FormField
               control={form.control}
               name="username"
-              render={({ field }) => (
+              render={() => (
                 <FormItem>
                   <FormLabel>Usuario</FormLabel>
                   <FormControl>
@@ -180,7 +180,7 @@ export const LoanForm = () => {
             <FormField
               control={form.control}
               name="loanType"
-              render={({ field }) => (
+              render={() => (
                 <FormItem className="flex flex-col gap-2">
                   <FormLabel>Tipo de Prestamo</FormLabel>
                   <FormControl>

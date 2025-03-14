@@ -1,11 +1,7 @@
-import { Button } from "@/components/ui/button";
-
 import {
   Table,
   TableBody,
-  TableCaption,
   TableCell,
-  TableFooter,
   TableHead,
   TableHeader,
   TableRow,
@@ -82,7 +78,7 @@ const OtherIncomes = [
   },
 ];
 
-export function OtherIncomesTable() {
+function OtherIncomesTable() {
   return (
     <Table>
       <TableHeader>

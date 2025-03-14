@@ -57,7 +57,7 @@ const dividendsData = [
   },
 ];
 
-export function DividendsTable() {
+function DividendsTable() {
   return (
     <Table>
       <TableHeader>

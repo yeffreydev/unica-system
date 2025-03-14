@@ -78,7 +78,7 @@ const OtherIncomes = [
   },
 ];
 
-export function OtherIncomesTable() {
+function OtherIncomesTable() {
   return (
     <Table>
       <TableHeader>

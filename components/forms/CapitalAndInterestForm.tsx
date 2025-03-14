@@ -33,7 +33,7 @@ export const CapitalAndInterestForm = () => {
       <FormField
         control={form.control}
         name="username"
-        render={({ field }) => (
+        render={() => (
           <FormItem>
             <FormLabel>Usuario</FormLabel>
             <FormControl>

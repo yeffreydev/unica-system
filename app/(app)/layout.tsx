@@ -1,15 +1,12 @@
-import type { Metadata } from "next";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/Nav";
-import { cookies } from "next/headers";
 
 export default async function AppLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const cookieStore = await cookies();
-  const defaultOpen = cookieStore.get("sidebar:state")?.value === "true";
+  // const cookieStore = await cookies();
   return (
     <>
       <div className="w-screen h-screen flex gap-5 pt-5">

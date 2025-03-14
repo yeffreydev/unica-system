@@ -41,21 +41,22 @@ export const DepositProvider: React.FC<DepositProviderProps> = ({
   const addDeposit = (deposit: IDeposit) => {
     setDeposits([...deposits, deposit]);
   };
-  const deleteDeposit = (id: string) => {
-    setDeposits(deposits.filter((deposit) => deposit.id !== id));
-  };
 
-  const updateDeposit = (deposit: IDeposit) => {
-    const index = deposits.findIndex((u) => u.id === deposit.id);
-    if (index !== -1) {
-      deposits[index] = deposit;
-      setDeposits([...deposits]);
-    }
-  };
+  // const deleteDeposit = (id: string) => {
+  //   setDeposits(deposits.filter((deposit) => deposit.id !== id));
+  // };
 
-  const removeDeposit = (id: string) => {
-    setDeposits(deposits.filter((deposit) => deposit.id !== id));
-  };
+  // const updateDeposit = (deposit: IDeposit) => {
+  //   const index = deposits.findIndex((u) => u.id === deposit.id);
+  //   if (index !== -1) {
+  //     deposits[index] = deposit;
+  //     setDeposits([...deposits]);
+  //   }
+  // };
+
+  // const removeDeposit = (id: string) => {
+  //   setDeposits(deposits.filter((deposit) => deposit.id !== id));
+  // };
 
   const fetchDeposit = async () => {
     try {
