@@ -1,6 +1,9 @@
 import { IStock } from "./IStock";
 
 export interface IBank {
-  name: string;
+  bank: {
+    name: string;
+    avatar?: string;
+  };
   mainStock: IStock;
 }

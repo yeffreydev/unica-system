@@ -12,7 +12,7 @@ import {
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { useContext } from "react";
-import { AppContext } from "@/context/auth/AppContext";
+import { AppContext } from "@/context/AppContext";
 
 export const SocialLegalFundsWithdrawForm = () => {
   const form = useForm({

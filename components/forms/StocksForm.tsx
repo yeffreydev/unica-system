@@ -12,12 +12,12 @@ import {
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { useContext, useState } from "react";
-import { AppContext } from "@/context/auth/AppContext";
+import { AppContext } from "@/context/AppContext";
 import { ComboBoxUsers } from "../combobox/ComboboxUsers";
 import { IStock } from "@/types/IStock";
 import apiClient from "@/config/apiClient";
 import { IUser } from "@/types/IUser";
-import { StockContext } from "@/app/incomes/stocks/StockContext";
+import { StockContext } from "@/app/(app)/incomes/stocks/StockContext";
 
 export const StocksForm = () => {
   const {

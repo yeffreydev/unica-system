@@ -34,6 +34,8 @@ analizar la volatilidad.
 
 limpiar recompras del script
 
+analizar las billetas que han creado las cryptos. y estar en seguimiento de las cryptos.
+
 MODULOS
 
 UI/UX
@@ -43,5 +45,25 @@ USUARIOS
 - [x] crear un nuevo usuario.
 - [x] autenticar un usuario.
 - [x] obtener usuarios.
-- [ ] eliminar usuario
-- [ ] editar usuario.
+- [x] eliminar usuario
+- [x] editar usuario.
+
+INGRESOS
+
+- [ ] deposits
+- [ ] stocks
+- [ ] payments and interests
+
+LOANS
+
+- [] logica para actualizar las coutas cuando ocurre un pago.
+
+datos del dashboard
+
+- barras de los meses y sus prestamos
+- ultimos intereses recibidos lista.
+- prestamo total del ultimo mes.
+- compras de accioens del ultimo mes.
+- intereses recibidos del ultimo mes.
+- total ingresos del ultimo mes.
+- total egresos del ultimo mes.

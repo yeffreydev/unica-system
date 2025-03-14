@@ -12,7 +12,7 @@ import {
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { useContext, useState } from "react";
-import { AppContext } from "@/context/auth/AppContext";
+import { AppContext } from "@/context/AppContext";
 import { ComboBoxUsers } from "../combobox/ComboboxUsers";
 import { IUser } from "@/types/IUser";
 

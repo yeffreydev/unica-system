@@ -1,7 +1,7 @@
 "use client";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog";
-import { AppContext } from "@/context/auth/AppContext";
+import { AppContext } from "@/context/AppContext";
 import {
   DialogClose,
   DialogDescription,

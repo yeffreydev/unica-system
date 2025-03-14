@@ -43,7 +43,7 @@ export const UserForm = () => {
   });
 
   async function createPostUser(data: any) {
-    const res = await fetch("http://localhost:4000/users", {
+    const res = await fetch("http://18.218.207.198:3000/users", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

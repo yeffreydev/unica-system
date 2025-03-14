@@ -13,7 +13,7 @@ import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 import { ComboBoxUsers } from "../combobox/ComboboxUsers";
 import { useContext, useState } from "react";
-import { AppContext } from "@/context/auth/AppContext";
+import { AppContext } from "@/context/AppContext";
 import { IUser } from "@/types/IUser";
 
 export const WithdrawForm = () => {
