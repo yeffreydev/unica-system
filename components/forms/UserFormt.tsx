@@ -14,6 +14,7 @@ import {
 } from "../ui/form";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
+import appConfig from "@/config/config";
 
 export const UserForm = () => {
   const formSchema = z.object({
@@ -43,7 +44,7 @@ export const UserForm = () => {
   });
 
   async function createPostUser(data: z.infer<typeof formSchema>) {
-    const res = await fetch("http://18.218.207.198:4000/users", {
+    const res = await fetch(`${appConfig.apiHost}/users`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
