@@ -10,7 +10,13 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { ArrowUpDown, Edit, MoreHorizontal, Trash } from "lucide-react";
+import {
+  ArrowUpDown,
+  Edit,
+  MoreHorizontal,
+  Trash,
+  BookText,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -30,79 +36,103 @@ import {
 } from "@/components/ui/table";
 import { LoansContext } from "./LoansProvider";
 import { ILoan } from "@/types/ILoan";
-
-export const columns: ColumnDef<ILoan>[] = [
-  {
-    accessorKey: "createdAt",
-    header: "Fecha",
-    cell: ({ row }) => (
-      <div>
-        {row.original?.createdAt
-          ? `${new Date(
-              row.original.createdAt
-            ).toLocaleDateString()} ${new Date(
-              row.original.createdAt
-            ).toLocaleTimeString()}`
-          : "Fecha no disponible"}
-      </div>
-    ),
-  },
-  {
-    accessorKey: "user.name",
-    header: ({ column }) => (
-      <Button
-        variant="ghost"
-        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
-      >
-        Nombres
-        <ArrowUpDown />
-      </Button>
-    ),
-    cell: ({ row }) => (
-      <div>
-        {row.original.user?.name} {row.original.user?.lastname}
-      </div>
-    ),
-  },
-  {
-    accessorKey: "amount",
-    header: "Monto",
-    cell: ({ row }) => {
-      return <div>S/. {row.original.amount}</div>;
-    },
-  },
-
-  {
-    id: "actions",
-    header: "Opciones",
-    cell: () => (
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="h-8 w-8 p-0">
-            <span className="sr-only">Abrir menú</span>
-            <MoreHorizontal />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuItem>
-            <Edit />
-            Editar
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem>
-            <Trash />
-            Eliminar
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    ),
-  },
-];
+import { InstallmentInterface } from "./utils/installments";
+import apiClient from "@/config/apiClient";
+import { LoansInstallments } from "./LoansInstallments";
 
 export function LoansTable() {
   const [sorting, setSorting] = useState<SortingState>([]);
   const { loans } = useContext(LoansContext);
 
+  const [installments, setInstallments] = useState<InstallmentInterface[]>([]);
+
+  const fetchInstallments = async (loanId: string) => {
+    try {
+      const response = await apiClient.get(`/loans/${loanId}/installments`);
+      const data = response.data;
+      console.log(data);
+      setInstallments(data);
+    } catch (error) {
+      console.error("Error fetching installments:", error);
+    }
+  };
+  const columns: ColumnDef<ILoan>[] = [
+    {
+      accessorKey: "createdAt",
+      header: "Fecha",
+      cell: ({ row }) => (
+        <div>
+          {row.original?.createdAt
+            ? `${new Date(
+                row.original.createdAt
+              ).toLocaleDateString()} ${new Date(
+                row.original.createdAt
+              ).toLocaleTimeString()}`
+            : "Fecha no disponible"}
+        </div>
+      ),
+    },
+    {
+      accessorKey: "user.name",
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Nombres
+          <ArrowUpDown />
+        </Button>
+      ),
+      cell: ({ row }) => (
+        <div>
+          {row.original.user?.name} {row.original.user?.lastname}
+        </div>
+      ),
+    },
+    {
+      accessorKey: "amount",
+      header: "Monto",
+      cell: ({ row }) => {
+        return <div>S/. {row.original.amount}</div>;
+      },
+    },
+
+    {
+      id: "actions",
+      header: "Opciones",
+      cell: ({ row }) => (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="h-8 w-8 p-0">
+              <span className="sr-only">Abrir menú</span>
+              <MoreHorizontal />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem
+              onClick={() => {
+                console.log(row.original.id);
+                row.original.id && fetchInstallments(row.original.id);
+              }}
+            >
+              <BookText />
+              Cuotas
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem>
+              <Edit />
+              Editar
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem>
+              <Trash />
+              Eliminar
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ),
+    },
+  ];
   const table = useReactTable({
     data: loans,
     columns,
@@ -117,6 +147,11 @@ export function LoansTable() {
 
   return (
     <div className="w-full">
+      <LoansInstallments
+        installments={installments}
+        onOpenChange={(open) => setInstallments([])}
+        isOpen={installments.length > 0}
+      />
       <div className="flex items-center py-4">
         <Input
           placeholder="Filtrar nombres..."

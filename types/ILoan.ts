@@ -7,9 +7,12 @@ export interface ILoan {
   loanTypeId: string;
   userId?: string;
   createdAt?: Date;
-  months?: number;
+  date?: Date;
+  status?: string;
+  initalInstallments?: number;
   _totalLoans?: number;
   _totalPaid?: number;
+  interestRate?: number;
 }
 
 export interface ILoanType {

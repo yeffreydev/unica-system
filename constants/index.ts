@@ -1,13 +1,12 @@
-export const loanTypesData = {
-  SIMPLE: "Prestamo Simple",
-  COMPOUND: "Prestamo Compuesto",
-  FIXED: "Prestamo Fijo",
-  VARIABLE: "Pretamo Variable",
-  ORDINARY: "Pretamo Ordinario",
-  LATE_PAYMENT: "Prestamo con Pago Tardio",
-  NOMINAL: "Prestamo Nominal",
-  EFFECTIVE: "Prestamo Efectivo",
-  BANK: "Prestamo Bancario",
-  LEGAL: "Prestamo Legal",
-  USURIOUS: "Prestamo Usurario",
+export enum LoanTypesEnum {
+  FIXED = "FIXED",
+  VARIABLE = "VARIABLE",
+  REBATE = "REBATE",
+  MATURITY = "MATURITY",
+}
+export const loanTypesData: Record<LoanTypesEnum, string> = {
+  FIXED: "Cuota fija",
+  VARIABLE: "Cuota variable",
+  REBATE: "Cuota al rebatir",
+  MATURITY: "Cuota al vencimiento",
 };

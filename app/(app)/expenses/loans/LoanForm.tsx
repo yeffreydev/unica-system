@@ -1,5 +1,5 @@
 "use client";
-import { useForm } from "react-hook-form";
+import { set, useForm } from "react-hook-form";
 import {
   Form,
   FormControl,
@@ -29,10 +29,17 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  calculateInstallments,
+  InstallmentInterface,
+} from "./utils/installments";
+import { loanTypesData } from "@/constants";
+import { formatCurrency } from "@/lib/utils";
 
 export const LoanForm = () => {
   const { users, formCloseModalRef } = useContext(AppContext);
   const { addLoan } = useContext(LoansContext);
+  const [installments, setInstallments] = useState<InstallmentInterface[]>([]);
   const [userSelected, setUserSelected] = useState<IUser | null>(null);
   const [loanTypeSelected, setLoanTypeSelected] = useState<ILoanType | null>(
     null
@@ -95,6 +102,14 @@ export const LoanForm = () => {
         alert("La cantidad de meses debe ser mayor a 0");
         return;
       }
+      let installments = calculateInstallments(
+        loanTypeSelected.name as keyof typeof loanTypesData,
+        form.getValues("amount"),
+        0.05,
+        form.getValues("months"),
+        new Date()
+      );
+      setInstallments(installments);
     }
     if (currentPage < 3) {
       setCurrentPage(currentPage + 1);
@@ -126,7 +141,9 @@ export const LoanForm = () => {
             amount: formData.amount,
             userId: userSelected?.id,
             loanTypeId: loanTypeSelected?.id as string,
-            months: formData.months,
+            initalInstallments: formData.months,
+            date: new Date(),
+            interestRate: 0.05,
           };
           createLoan(data);
         })}
@@ -243,7 +260,7 @@ export const LoanForm = () => {
             <Table>
               <TableHeader>
                 <TableRow>
-                  {["Fecha", "Capital", "Interés", "Total", "Saldo"].map(
+                  {["Fecha", "Capital", "Interés", "Cuota", "Saldo"].map(
                     (header) => (
                       <TableHead key={header}>{header}</TableHead>
                     )
@@ -251,13 +268,17 @@ export const LoanForm = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {[900, 800].map((saldo, index) => (
+                {installments.map((item, index) => (
                   <TableRow key={index}>
-                    <TableCell>{`01/0${index + 1}/2022`}</TableCell>
-                    <TableCell>1000</TableCell>
-                    <TableCell>100</TableCell>
-                    <TableCell>1100</TableCell>
-                    <TableCell>{saldo}</TableCell>
+                    <TableCell>{item.date.toLocaleDateString()}</TableCell>
+                    <TableCell>{formatCurrency(item.payment)}</TableCell>
+                    <TableCell>{formatCurrency(item.interest)}</TableCell>
+                    <TableCell>
+                      {formatCurrency(
+                        Number(item.payment) + Number(item.interest)
+                      )}
+                    </TableCell>
+                    <TableCell>{formatCurrency(item.balance)}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -271,7 +292,7 @@ export const LoanForm = () => {
             </Button>
           )}
           {currentPage < 3 && (
-            <Button variant="outline" onClick={handleNextPage}>
+            <Button type="button" variant="outline" onClick={handleNextPage}>
               Siguiente
             </Button>
           )}
