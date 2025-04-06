@@ -1,13 +1,6 @@
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { DialogForm } from "@/components/dialogs/DialogForm";
 import { CapitalAndInterestForm } from "@/components/forms/CapitalAndInterestForm";
+import { PaymentsTable } from "./PaymentsTable";
 
 const capitalPayments = [
   {
@@ -57,40 +50,16 @@ const capitalPayments = [
   },
 ];
 
-function CapitalPaymentsTable() {
-  return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>Fecha</TableHead>
-          <TableHead>Nombres y Appellidos</TableHead>
-          <TableHead>Monto</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {capitalPayments.map((deposit, i) => (
-          <TableRow key={i}>
-            <TableCell>{deposit.date}</TableCell>
-            <TableCell>{deposit.fullname}</TableCell>
-            <TableCell className="font-medium">{deposit.amount}</TableCell>
-          </TableRow>
-        ))}
-      </TableBody>
-    </Table>
-  );
-}
 export default function CapitalPaymentsPage() {
   return (
     <>
       <div className="flex justify-between">
-        <h1 className="text-2xl font-bold">
-          Pagos de Capital e Intereses Recibidos
-        </h1>
+        <h1 className="text-2xl font-bold">Pagos de Capital e Intereses</h1>
         <DialogForm>
           <CapitalAndInterestForm />
         </DialogForm>
       </div>
-      <CapitalPaymentsTable />
+      <PaymentsTable />
     </>
   );
 }

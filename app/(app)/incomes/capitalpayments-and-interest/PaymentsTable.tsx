@@ -1,6 +1,6 @@
 "use client";
 
-import { useContext, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import {
   ColumnDef,
   SortingState,
@@ -34,55 +34,23 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { LoansContext } from "./LoansProvider";
-import { ILoan } from "@/types/ILoan";
-import { InstallmentInterface } from "./utils/installments";
+import { ILoan, ILoanInstallment } from "@/types/ILoan";
 import apiClient from "@/config/apiClient";
-import { LoansInstallments } from "./LoansInstallments";
 
-export function LoansTable() {
+export function PaymentsTable() {
   const [sorting, setSorting] = useState<SortingState>([]);
-  const { loans } = useContext(LoansContext);
 
-  const [installments, setInstallments] = useState<InstallmentInterface[]>([]);
+  const [payments, setPayments] = useState<[]>([]);
 
-  const deleteLoan = async (loanId: string) => {
-    try {
-      await apiClient.delete(`/loans/${loanId}`);
-      // Optionally, you can refresh the loans list after deletion
-      // fetchLoans();
-    } catch (error) {
-      console.error("Error deleting loan:", error);
-    }
-  };
-
-  const handleDelete = (loanId: string) => {
-    if (confirm("¿Estás seguro de que deseas eliminar este préstamo?")) {
-      deleteLoan(loanId);
-    }
-  };
-
-  const fetchInstallments = async (loanId: string) => {
-    try {
-      const response = await apiClient.get(`/loans/installments/${loanId}`);
-      const data = response.data;
-      console.log(data);
-      setInstallments(data);
-    } catch (error) {
-      console.error("Error fetching installments:", error);
-    }
-  };
-  const columns: ColumnDef<ILoan>[] = [
+  const columns: ColumnDef<ILoanInstallment>[] = [
     {
-      accessorKey: "createdAt",
-      header: "Fecha",
+      accessorKey: "date",
+      header: "Fecha de Pago",
       cell: ({ row }) => (
         <div>
-          {row.original?.createdAt
-            ? `${new Date(
-                row.original.createdAt
-              ).toLocaleDateString()} ${new Date(
-                row.original.createdAt
+          {row.original?.date
+            ? `${new Date(row.original.date).toLocaleDateString()} ${new Date(
+                row.original.date
               ).toLocaleTimeString()}`
             : "Fecha no disponible"}
         </div>
@@ -106,10 +74,24 @@ export function LoansTable() {
       ),
     },
     {
-      accessorKey: "amount",
-      header: "Monto",
+      accessorKey: "payment",
+      header: "Abono capital",
       cell: ({ row }) => {
-        return <div>S/. {row.original.amount}</div>;
+        return <div>S/. {row.original.payment}</div>;
+      },
+    },
+    {
+      id: "interest",
+      header: "Interés",
+      cell: ({ row }) => {
+        return <div>S/. {row.original.interest}</div>;
+      },
+    },
+    {
+      id: "total",
+      header: "Total",
+      cell: ({ row }) => {
+        return <div>S/. {row.original.payment + row.original.interest}</div>;
       },
     },
 
@@ -125,12 +107,7 @@ export function LoansTable() {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem
-              onClick={() => {
-                console.log(row.original.id);
-                row.original.id && fetchInstallments(row.original.id);
-              }}
-            >
+            <DropdownMenuItem onClick={() => {}}>
               <BookText />
               Cuotas
             </DropdownMenuItem>
@@ -140,11 +117,7 @@ export function LoansTable() {
               Editar
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem
-              onClick={() => {
-                row.original.id && handleDelete(row.original.id);
-              }}
-            >
+            <DropdownMenuItem>
               <Trash />
               Eliminar
             </DropdownMenuItem>
@@ -154,7 +127,7 @@ export function LoansTable() {
     },
   ];
   const table = useReactTable({
-    data: loans,
+    data: payments,
     columns,
     onSortingChange: setSorting,
     getCoreRowModel: getCoreRowModel(),
@@ -165,13 +138,21 @@ export function LoansTable() {
     },
   });
 
+  useEffect(() => {
+    async function fetchPayments() {
+      try {
+        const response = await apiClient.get("/loans/month/installments");
+        console.log(response);
+        setPayments(response.data);
+      } catch (error) {
+        console.error("Error fetching payments:", error);
+      }
+    }
+    fetchPayments();
+  }, []);
+
   return (
     <div className="w-full">
-      <LoansInstallments
-        installments={installments}
-        onOpenChange={(open) => setInstallments([])}
-        isOpen={installments.length > 0}
-      />
       <div className="flex items-center py-4">
         <Input
           placeholder="Filtrar nombres..."

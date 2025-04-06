@@ -1,3 +1,4 @@
+import exp from "constants";
 import { IUser } from "./IUser";
 
 export interface ILoan {
@@ -13,6 +14,16 @@ export interface ILoan {
   _totalLoans?: number;
   _totalPaid?: number;
   interestRate?: number;
+}
+
+export interface ILoanInstallment {
+  id?: string;
+  loanId: string;
+  payment: number;
+  interest: number;
+  date: Date;
+  status?: string;
+  user?: IUser;
 }
 
 export interface ILoanType {

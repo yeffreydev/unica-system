@@ -10,3 +10,8 @@ export const loanTypesData: Record<LoanTypesEnum, string> = {
   REBATE: "Cuota al rebatir",
   MATURITY: "Cuota al vencimiento",
 };
+
+export const socialFundsData = {
+  LEGAL: "Fondo legal",
+  SOCIAL: "Fondo social",
+};
