@@ -8,63 +8,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { DialogForm } from "@/components/dialogs/DialogForm";
-import { SocialLegalFundsForm } from "@/components/forms/SocialLegalFundsForm";
-import { use, useContext, useEffect, useState } from "react";
+import { SocialLegalFundsForm } from "@/app/(app)/incomes/legal-and-social/SocialLegalFundsForm";
+import { useContext, useEffect, useState } from "react";
 import apiClient from "@/config/apiClient";
 import { ISocialFunds, ISocialFundsTransaction } from "@/types/ISocialFunds";
 import { socialFundsData } from "@/constants";
 import { AppContext } from "@/context/AppContext";
-
-const equityData = [
-  {
-    fullname: "nombres y apelliods",
-    socialFund: "1000",
-    reserveFund: "1000",
-    date: "2021-10-10",
-  },
-  {
-    fullname: "nombres y apelliods",
-    socialFund: "1000",
-    reserveFund: "1000",
-    date: "2021-10-10",
-  },
-  {
-    fullname: "nombres y apelliods",
-    socialFund: "1000",
-    reserveFund: "1000",
-    date: "2021-10-10",
-  },
-  {
-    fullname: "nombres y apelliods",
-    socialFund: "1000",
-    reserveFund: "1000",
-    date: "2021-10-10",
-  },
-  {
-    fullname: "nombres y apelliods",
-    socialFund: "1000",
-    reserveFund: "1000",
-    date: "2021-10-10",
-  },
-  {
-    fullname: "nombres y apelliods",
-    socialFund: "1000",
-    reserveFund: "1000",
-    date: "2021-10-10",
-  },
-  {
-    fullname: "nombres y apelliods",
-    socialFund: "1000",
-    reserveFund: "1000",
-    date: "2021-10-10",
-  },
-  {
-    fullname: "nombres y apelliods",
-    socialFund: "1000",
-    reserveFund: "1000",
-    date: "2021-10-10",
-  },
-];
 
 function EquityTable() {
   const [socialFundsTransactions, setSocialFundsTransactions] = useState<
