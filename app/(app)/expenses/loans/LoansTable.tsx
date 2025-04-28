@@ -127,8 +127,10 @@ export function LoansTable() {
           <DropdownMenuContent align="end">
             <DropdownMenuItem
               onClick={() => {
-                console.log(row.original.id);
-                row.original.id && fetchInstallments(row.original.id);
+                if (row.original.id) {
+                  console.log(row.original.id);
+                  fetchInstallments(row.original.id);
+                }
               }}
             >
               <BookText />
@@ -142,7 +144,7 @@ export function LoansTable() {
             <DropdownMenuSeparator />
             <DropdownMenuItem
               onClick={() => {
-                row.original.id && handleDelete(row.original.id);
+                if (row.original.id) handleDelete(row.original.id);
               }}
             >
               <Trash />
@@ -169,7 +171,7 @@ export function LoansTable() {
     <div className="w-full">
       <LoansInstallments
         installments={installments}
-        onOpenChange={(open) => setInstallments([])}
+        onOpenChange={() => setInstallments([])}
         isOpen={installments.length > 0}
       />
       <div className="flex items-center py-4">

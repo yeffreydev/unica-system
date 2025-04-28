@@ -16,7 +16,7 @@ import apiClient from "@/config/apiClient";
 import { toast } from "@/hooks/use-toast";
 import { socialFundsData } from "@/constants";
 
-export const SocialLegalFundsForm = ({
+export const SocialLegalFundsExpenseForm = ({
   socialFunds,
 }: {
   socialFunds: ISocialFunds[];
@@ -44,17 +44,20 @@ export const SocialLegalFundsForm = ({
       });
       return;
     }
-    const res = await apiClient.post("/social-funds/create-transaction", {
-      socialFundsId: form.getValues("socialFund"),
-      amount: form.getValues("amount"),
-      description: "Ingreso a fondo",
-      date: new Date(),
-    });
+    const res = await apiClient.post(
+      "/expenses/social-funds/create-transaction",
+      {
+        socialFundsId: form.getValues("socialFund"),
+        amount: form.getValues("amount"),
+        description: "Egreso de fondos",
+        date: new Date(),
+      }
+    );
     if (res.data) {
       form.reset();
       toast({
-        title: "Ingreso a fondo creado.",
-        description: "El ingreso a fondo fue creado correctamente.",
+        title: "Egreso de fondo creado.",
+        description: "El egreso de fondo fue creado correctamente.",
       });
       if (window) window.location.reload();
     }
@@ -63,7 +66,7 @@ export const SocialLegalFundsForm = ({
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)}>
-        <h2 className="text-xl font-semibold">Nuevo ingreso a Fondos</h2>
+        <h2 className="text-xl font-semibold">Nuevo Egreso de Fondos</h2>
         <FormField
           control={form.control}
           name="socialFund"

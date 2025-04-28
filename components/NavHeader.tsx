@@ -3,6 +3,7 @@ import { AppContext } from "@/context/AppContext";
 import { useContext, useEffect } from "react";
 
 export default function NavHeader() {
+  const filesHost = process.env.NEXT_PUBLIC_API_HOST + "/files";
   const {
     bank: { bank },
   } = useContext(AppContext);
@@ -12,7 +13,9 @@ export default function NavHeader() {
   }, [bank]);
   return (
     <div className="flex flex-col items-center justify-center">
-      {bank.avatar && <img className="w-[50px]" src={bank.avatar} alt="" />}
+      {bank.avatar && (
+        <img className="w-[50px]" src={filesHost + "/logo"} alt="" />
+      )}
       <span className="font-bold">{bank.name}</span>
     </div>
   );

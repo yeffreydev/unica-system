@@ -18,7 +18,7 @@ import { IUser } from "@/types/IUser";
 import { toast } from "@/hooks/use-toast";
 import apiClient from "@/config/apiClient";
 
-export const OtherIncomeForm = () => {
+export const OtherExpenseForm = () => {
   const { users } = useContext(AppContext);
   const [userSelected, setUserSelected] = useState<IUser | null>(null);
 
@@ -39,14 +39,15 @@ export const OtherIncomeForm = () => {
       return;
     }
 
-    if (!form.getValues("description")) {
+    if (!userSelected) {
       toast({
         title: "Error",
-        description: "Debes ingresar una descripcion.",
+        description: "Debes seleccionar un usuario.",
       });
       return;
     }
-    const res = await apiClient.post("/incomes/create-other-income", {
+
+    const res = await apiClient.post("/expenses/others", {
       amount: form.getValues("amount"),
       description: form.getValues("description"),
       userId: userSelected ? userSelected.id : null,
@@ -55,16 +56,17 @@ export const OtherIncomeForm = () => {
     if (res.data) {
       form.reset();
       toast({
-        title: "Otro ingreso creado.",
-        description: "el ingreso fue creado correctamente.",
+        title: "Gasto administrativo creado.",
+        description: "el gasto administrativo fue creado correctamente.",
       });
       if (window) window.location.reload();
     }
   };
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)}>
-        <h2>Registrar Otros Ingresos.</h2>
+        <h2>Registrar Otros Egresos.</h2>
         <FormField
           control={form.control}
           name="amount"
@@ -75,7 +77,7 @@ export const OtherIncomeForm = () => {
                 <Input type="number" {...field} />
               </FormControl>
               <FormDescription>
-                El monto que deseas ingresar a otros ingresos.
+                El monto para agregar a otros egresos.
               </FormDescription>
               <FormMessage />
             </FormItem>

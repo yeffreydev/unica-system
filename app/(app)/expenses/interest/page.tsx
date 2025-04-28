@@ -1,3 +1,4 @@
+"use client";
 import {
   Table,
   TableBody,
@@ -7,57 +8,23 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { DialogForm } from "@/components/dialogs/DialogForm";
-import { InterestPaymentForm } from "@/components/forms/InterestPaymentForm";
-
-const interestData = [
-  {
-    fullname: "nombres y apelliods",
-    amount: "1000",
-    date: "2021-10-10",
-  },
-  {
-    fullname: "nombres y apelliods",
-    amount: "1000",
-    date: "2021-10-10",
-  },
-  {
-    fullname: "nombres y apelliods",
-    amount: "1000",
-    date: "2021-10-10",
-  },
-  {
-    fullname: "nombres y apelliods",
-    amount: "1000",
-    date: "2021-10-10",
-  },
-  {
-    fullname: "nombres y apelliods",
-    amount: "1000",
-    date: "2021-10-10",
-  },
-  {
-    fullname: "nombres y apelliods",
-    amount: "1000",
-    date: "2021-10-10",
-  },
-  {
-    fullname: "nombres y apelliods",
-    amount: "1000",
-    date: "2021-10-10",
-  },
-  {
-    fullname: "nombres y apelliods",
-    amount: "1000",
-    date: "2021-10-10",
-  },
-  {
-    fullname: "nombres y apelliods",
-    amount: "1000",
-    date: "2021-10-10",
-  },
-];
+import { InterestPaymentForm } from "@/app/(app)/expenses/interest/InterestPaymentForm";
+import apiClient from "@/config/apiClient";
+import { useEffect, useState } from "react";
+import { IPayout } from "./types";
 
 function InterestTable() {
+  const [payouts, setPayouts] = useState<IPayout[]>([]);
+
+  const fetchPayouts = async () => {
+    const response = await apiClient.get("/payouts");
+    const { data } = response;
+    setPayouts(data);
+  };
+
+  useEffect(() => {
+    fetchPayouts();
+  }, []);
   return (
     <Table>
       <TableHeader>
@@ -68,10 +35,10 @@ function InterestTable() {
         </TableRow>
       </TableHeader>
       <TableBody>
-        {interestData.map((item, i) => (
+        {payouts.map((item, i) => (
           <TableRow key={i}>
-            <TableCell>{item.date}</TableCell>
-            <TableCell>{item.fullname}</TableCell>
+            <TableCell>{item.date.toLocaleString()}</TableCell>
+            <TableCell>{item.user.name}</TableCell>
             <TableCell className="font-medium">{item.amount}</TableCell>
           </TableRow>
         ))}

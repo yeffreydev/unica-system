@@ -1,6 +1,6 @@
 "use client";
 
-import { useContext, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   ColumnDef,
   SortingState,
@@ -34,7 +34,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { ILoan, ILoanInstallment } from "@/types/ILoan";
+import { ILoanInstallment } from "@/types/ILoan";
 import apiClient from "@/config/apiClient";
 
 export function PaymentsTable() {
@@ -98,7 +98,7 @@ export function PaymentsTable() {
     {
       id: "actions",
       header: "Opciones",
-      cell: ({ row }) => (
+      cell: ({}) => (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" className="h-8 w-8 p-0">

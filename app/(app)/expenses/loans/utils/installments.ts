@@ -1,5 +1,4 @@
 import { loanTypesData, LoanTypesEnum } from "@/constants";
-import { init } from "next/dist/compiled/webpack/webpack";
 export interface InstallmentInterface {
   id: number;
   payment: number;

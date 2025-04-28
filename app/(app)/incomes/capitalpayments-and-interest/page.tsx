@@ -2,54 +2,6 @@ import { DialogForm } from "@/components/dialogs/DialogForm";
 import { CapitalAndInterestForm } from "@/components/forms/CapitalAndInterestForm";
 import { PaymentsTable } from "./PaymentsTable";
 
-const capitalPayments = [
-  {
-    fullname: "nombres y apelliods",
-    amount: "1000",
-    date: "2021-10-10",
-  },
-  {
-    fullname: "nombres y apelliods",
-    amount: "1000",
-    date: "2021-10-10",
-  },
-  {
-    fullname: "nombres y apelliods",
-    amount: "1000",
-    date: "2021-10-10",
-  },
-  {
-    fullname: "nombres y apelliods",
-    amount: "1000",
-    date: "2021-10-10",
-  },
-  {
-    fullname: "nombres y apelliods",
-    amount: "1000",
-    date: "2021-10-10",
-  },
-  {
-    fullname: "nombres y apelliods",
-    amount: "1000",
-    date: "2021-10-10",
-  },
-  {
-    fullname: "nombres y apelliods",
-    amount: "1000",
-    date: "2021-10-10",
-  },
-  {
-    fullname: "nombres y apelliods",
-    amount: "1000",
-    date: "2021-10-10",
-  },
-  {
-    fullname: "nombres y apelliods",
-    amount: "1000",
-    date: "2021-10-10",
-  },
-];
-
 export default function CapitalPaymentsPage() {
   return (
     <>

@@ -11,14 +11,14 @@ import {
 } from "../../../../components/ui/form";
 import { Input } from "../../../../components/ui/input";
 import { Button } from "../../../../components/ui/button";
+import { ComboBoxUsers } from "../../../../components/combobox/ComboboxUsers";
 import { useContext, useState } from "react";
 import { AppContext } from "@/context/AppContext";
-import { ComboBoxUsers } from "../../../../components/combobox/ComboboxUsers";
 import { IUser } from "@/types/IUser";
-import { toast } from "@/hooks/use-toast";
 import apiClient from "@/config/apiClient";
+import { toast } from "@/hooks/use-toast";
 
-export const OtherIncomeForm = () => {
+export const WithdrawForm = () => {
   const { users } = useContext(AppContext);
   const [userSelected, setUserSelected] = useState<IUser | null>(null);
 
@@ -26,7 +26,6 @@ export const OtherIncomeForm = () => {
     defaultValues: {
       username: "", // Asegúrate de definir un valor inicial
       amount: 0,
-      description: "",
     },
   });
 
@@ -39,24 +38,25 @@ export const OtherIncomeForm = () => {
       return;
     }
 
-    if (!form.getValues("description")) {
+    if (!userSelected) {
       toast({
         title: "Error",
-        description: "Debes ingresar una descripcion.",
+        description: "Debes seleccionar un usuario.",
       });
       return;
     }
-    const res = await apiClient.post("/incomes/create-other-income", {
+
+    const res = await apiClient.post("/withdrawals", {
       amount: form.getValues("amount"),
-      description: form.getValues("description"),
+      description: "Retiro de ahorros",
       userId: userSelected ? userSelected.id : null,
       date: new Date(),
     });
     if (res.data) {
       form.reset();
       toast({
-        title: "Otro ingreso creado.",
-        description: "el ingreso fue creado correctamente.",
+        title: "withdrawal creado.",
+        description: "el retiro de ahorros fue creado correctamente.",
       });
       if (window) window.location.reload();
     }
@@ -64,37 +64,7 @@ export const OtherIncomeForm = () => {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)}>
-        <h2>Registrar Otros Ingresos.</h2>
-        <FormField
-          control={form.control}
-          name="amount"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Monto</FormLabel>
-              <FormControl>
-                <Input type="number" {...field} />
-              </FormControl>
-              <FormDescription>
-                El monto que deseas ingresar a otros ingresos.
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="description"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Descripcion</FormLabel>
-              <FormControl>
-                <Input type="text" {...field} />
-              </FormControl>
-              <FormDescription>La descripción del ingreso.</FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        <h2>Retiro de ahorros</h2>
         <FormField
           control={form.control}
           name="username"
@@ -110,12 +80,38 @@ export const OtherIncomeForm = () => {
                 </div>
               </FormControl>
               <FormDescription>
-                El usuario al que se le asignará el ingreso. (Opcional)
+                El usuario que desea retirar de ahorros.
               </FormDescription>
               <FormMessage />
             </FormItem>
           )}
         />
+        <div className="flex flex-col">
+          <span>Ahorros: S/. 5000</span>
+          <span>Acciones: S/. 5000</span>
+          <span>Prestamo: S/. 500</span>
+          <span>Disponibles para Retirar Ahorros: S/.4000</span>
+        </div>
+        <FormField
+          control={form.control}
+          name="amount"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Monto</FormLabel>
+              <FormControl>
+                <div className="flex flex-col gap-2">
+                  <Input type="number" {...field} />
+                  <p>S/ {field.value * 10}</p>
+                </div>
+              </FormControl>
+              <FormDescription>
+                El monto que deseas retirar de ahorros.
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
         <div>
           <Button type="submit">Guardar</Button>
         </div>

@@ -18,15 +18,15 @@ import { IUser } from "@/types/IUser";
 import { toast } from "@/hooks/use-toast";
 import apiClient from "@/config/apiClient";
 
-export const OtherIncomeForm = () => {
+export const AdminExpenseForm = () => {
   const { users } = useContext(AppContext);
   const [userSelected, setUserSelected] = useState<IUser | null>(null);
 
   const form = useForm({
     defaultValues: {
+      description: "",
       username: "", // Asegúrate de definir un valor inicial
       amount: 0,
-      description: "",
     },
   });
 
@@ -39,14 +39,15 @@ export const OtherIncomeForm = () => {
       return;
     }
 
-    if (!form.getValues("description")) {
+    if (!userSelected) {
       toast({
         title: "Error",
-        description: "Debes ingresar una descripcion.",
+        description: "Debes seleccionar un usuario.",
       });
       return;
     }
-    const res = await apiClient.post("/incomes/create-other-income", {
+
+    const res = await apiClient.post("/expenses/administrative", {
       amount: form.getValues("amount"),
       description: form.getValues("description"),
       userId: userSelected ? userSelected.id : null,
@@ -55,8 +56,8 @@ export const OtherIncomeForm = () => {
     if (res.data) {
       form.reset();
       toast({
-        title: "Otro ingreso creado.",
-        description: "el ingreso fue creado correctamente.",
+        title: "Gasto administrativo creado.",
+        description: "el gasto administrativo fue creado correctamente.",
       });
       if (window) window.location.reload();
     }
@@ -64,7 +65,7 @@ export const OtherIncomeForm = () => {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)}>
-        <h2>Registrar Otros Ingresos.</h2>
+        <h2>Nuevo Gasto Administrativo</h2>
         <FormField
           control={form.control}
           name="amount"
@@ -72,11 +73,12 @@ export const OtherIncomeForm = () => {
             <FormItem>
               <FormLabel>Monto</FormLabel>
               <FormControl>
-                <Input type="number" {...field} />
+                <div className="flex flex-col gap-2">
+                  <Input type="number" {...field} />
+                  <p>S/ {field.value * 10}</p>
+                </div>
               </FormControl>
-              <FormDescription>
-                El monto que deseas ingresar a otros ingresos.
-              </FormDescription>
+              <FormDescription>Monto del gasto</FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -90,7 +92,7 @@ export const OtherIncomeForm = () => {
               <FormControl>
                 <Input type="text" {...field} />
               </FormControl>
-              <FormDescription>La descripción del ingreso.</FormDescription>
+              <FormDescription>Descripcion del gasto</FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -110,12 +112,13 @@ export const OtherIncomeForm = () => {
                 </div>
               </FormControl>
               <FormDescription>
-                El usuario al que se le asignará el ingreso. (Opcional)
+                El usuario que deseas asignar al gasto. (Opcional)
               </FormDescription>
               <FormMessage />
             </FormItem>
           )}
         />
+
         <div>
           <Button type="submit">Guardar</Button>
         </div>

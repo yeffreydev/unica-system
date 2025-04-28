@@ -1,9 +1,7 @@
-import { Button } from "@/components/ui/button";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -24,6 +22,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
+import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 
 export function LoansInstallments({
   isOpen,
@@ -41,9 +40,10 @@ export function LoansInstallments({
       cell: ({ row }) => (
         <div>
           {row.original?.date
-            ? `${new Date(row.original.date).toLocaleDateString()} ${new Date(
-                row.original.date
-              ).toLocaleTimeString()}`
+            ? new Intl.DateTimeFormat("es-ES", {
+                dateStyle: "medium",
+                timeStyle: "short",
+              }).format(new Date(row.original.date))
             : "Fecha no disponible"}
         </div>
       ),
@@ -51,18 +51,17 @@ export function LoansInstallments({
     {
       accessorKey: "payment",
       header: "Abono",
-
-      cell: ({ row }) => <div>{row.original.payment}</div>,
+      cell: ({ row }) => <div>{row.original.payment.toFixed(2)}</div>,
     },
     {
       accessorKey: "interest",
       header: "Interés",
-      cell: ({ row }) => <div>{row.original.interest}</div>,
+      cell: ({ row }) => <div>{row.original.interest.toFixed(2)}</div>,
     },
     {
       header: "Cuota",
       cell: ({ row }) => (
-        <div>{row.original.interest + row.original.payment}</div>
+        <div>{(row.original.interest + row.original.payment).toFixed(2)}</div>
       ),
     },
   ];
@@ -76,53 +75,56 @@ export function LoansInstallments({
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>Cuotas del prestamo</DialogTitle>
-          <DialogDescription>
-            Cuotas del prestamo seleccionado.
-          </DialogDescription>
-        </DialogHeader>
-        <Table>
-          <TableHeader>
-            {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id}>
-                    {flexRender(
-                      header.column.columnDef.header,
-                      header.getContext()
-                    )}
-                  </TableHead>
-                ))}
-              </TableRow>
-            ))}
-          </TableHeader>
-          <TableBody>
-            {table.getRowModel().rows.length ? (
-              table.getRowModel().rows.map((row) => (
-                <TableRow key={row.id}>
-                  {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
+        <ScrollArea className="h-[400px] w-full">
+          <DialogHeader>
+            <DialogTitle>Cuotas del prestamo</DialogTitle>
+            <DialogDescription>
+              Cuotas del prestamo seleccionado.
+            </DialogDescription>
+          </DialogHeader>
+          <Table>
+            <TableHeader>
+              {table.getHeaderGroups().map((headerGroup) => (
+                <TableRow key={headerGroup.id}>
+                  {headerGroup.headers.map((header) => (
+                    <TableHead key={header.id}>
                       {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
+                        header.column.columnDef.header,
+                        header.getContext()
                       )}
-                    </TableCell>
+                    </TableHead>
                   ))}
                 </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className="h-24 text-center"
-                >
-                  No se encontraron resultados.
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
+              ))}
+            </TableHeader>
+            <TableBody>
+              {table.getRowModel().rows.length ? (
+                table.getRowModel().rows.map((row) => (
+                  <TableRow key={row.id}>
+                    {row.getVisibleCells().map((cell) => (
+                      <TableCell key={cell.id}>
+                        {flexRender(
+                          cell.column.columnDef.cell,
+                          cell.getContext()
+                        )}
+                      </TableCell>
+                    ))}
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell
+                    colSpan={columns.length}
+                    className="h-24 text-center"
+                  >
+                    No se encontraron resultados.
+                  </TableCell>
+                </TableRow>
+              )}
+            </TableBody>
+          </Table>
+          <ScrollBar orientation="vertical" className="w-2" />
+        </ScrollArea>
       </DialogContent>
     </Dialog>
   );

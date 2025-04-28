@@ -67,3 +67,38 @@ datos del dashboard
 - intereses recibidos del ultimo mes.
 - total ingresos del ultimo mes.
 - total egresos del ultimo mes.
+
+## todos
+
+- implementar loans
+
+  - [x] fijo
+  - [x] variable
+  - [x] Rebatir
+  - [x] a vencimiento
+  - [x] mostar las cuotas al momento de crear un prestamo. en el frontend.
+  - [x] guardar las cuotas al momento de crear un prestamo. en el backend.
+  - [] correguir proceso de prestamos
+    - [x] que se pueda crear un prestamo y sus cuotas correctamente.
+    - [x] que las cuotas gurden y obtener sus campos correctamente.
+    - [] que se pueda seleccionar bien el tipo de prestamo
+  - [] poder pagar una cuota
+    - en pagos e intereses mostrar las cuotas mas proxima a vencer y pendientes de pagarlo.
+
+- [ ] login
+- [ ] todas los registros deben tener un estado para activar o desactivar el registro. status stirng (deleted, active, inactive,etc,pending)
+      //bot
+
+- cambiar api.
+- mostrar la estrategia de trading en su grafica y ejecute las ordenes.
+
+artesano
+
+- carpintero.
+- facilidad.
+
+-- withdrawls next
+
+-- aprobacion y/o rechazo de solicitud
+-- ver todo el historial de prestamos,
+-- documentacion, criterios de aceptacioin, casos de prueba.

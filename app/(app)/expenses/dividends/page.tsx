@@ -1,3 +1,4 @@
+"use client";
 import {
   Table,
   TableBody,
@@ -7,57 +8,22 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { DialogForm } from "@/components/dialogs/DialogForm";
-import { DividendsWithdrawForm } from "@/components/forms/DividendsWithdrawForm";
-
-const dividendsData = [
-  {
-    fullname: "nombres y apelliods",
-    amount: "1000",
-    date: "2021-10-10",
-  },
-  {
-    fullname: "nombres y apelliods",
-    amount: "1000",
-    date: "2021-10-10",
-  },
-  {
-    fullname: "nombres y apelliods",
-    amount: "1000",
-    date: "2021-10-10",
-  },
-  {
-    fullname: "nombres y apelliods",
-    amount: "1000",
-    date: "2021-10-10",
-  },
-  {
-    fullname: "nombres y apelliods",
-    amount: "1000",
-    date: "2021-10-10",
-  },
-  {
-    fullname: "nombres y apelliods",
-    amount: "1000",
-    date: "2021-10-10",
-  },
-  {
-    fullname: "nombres y apelliods",
-    amount: "1000",
-    date: "2021-10-10",
-  },
-  {
-    fullname: "nombres y apelliods",
-    amount: "1000",
-    date: "2021-10-10",
-  },
-  {
-    fullname: "nombres y apelliods",
-    amount: "1000",
-    date: "2021-10-10",
-  },
-];
+import { DividendsWithdrawForm } from "@/app/(app)/expenses/dividends/DividendsWithdrawForm";
+import apiClient from "@/config/apiClient";
+import { useEffect, useState } from "react";
+import { IDividendsWithdraw } from "./types";
 
 function DividendsTable() {
+  const [dividends, setDividends] = useState<IDividendsWithdraw[]>([]);
+  const fetchDividendsExpenses = async () => {
+    const response = await apiClient.get("/expenses/dividends");
+    const { data } = response;
+    setDividends(data);
+  };
+
+  useEffect(() => {
+    fetchDividendsExpenses();
+  }, []);
   return (
     <Table>
       <TableHeader>
@@ -68,10 +34,10 @@ function DividendsTable() {
         </TableRow>
       </TableHeader>
       <TableBody>
-        {dividendsData.map((item, i) => (
+        {dividends.map((item, i) => (
           <TableRow key={i}>
-            <TableCell>{item.date}</TableCell>
-            <TableCell>{item.fullname}</TableCell>
+            <TableCell>{item.date.toLocaleString()}</TableCell>
+            <TableCell>{item.user.name + " " + item.user.lastname}</TableCell>
             <TableCell className="font-medium">{item.amount}</TableCell>
           </TableRow>
         ))}

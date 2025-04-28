@@ -1,3 +1,4 @@
+"use client";
 import {
   Table,
   TableBody,
@@ -7,77 +8,49 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { DialogForm } from "@/components/dialogs/DialogForm";
-import { SocialLegalFundsWithdrawForm } from "@/components/forms/SocialLegalFundsExpenseForm";
-
-const equityData = [
-  {
-    fullname: "nombres y apelliods",
-    socialFund: "1000",
-    reserveFund: "1000",
-    date: "2021-10-10",
-  },
-  {
-    fullname: "nombres y apelliods",
-    socialFund: "1000",
-    reserveFund: "1000",
-    date: "2021-10-10",
-  },
-  {
-    fullname: "nombres y apelliods",
-    socialFund: "1000",
-    reserveFund: "1000",
-    date: "2021-10-10",
-  },
-  {
-    fullname: "nombres y apelliods",
-    socialFund: "1000",
-    reserveFund: "1000",
-    date: "2021-10-10",
-  },
-  {
-    fullname: "nombres y apelliods",
-    socialFund: "1000",
-    reserveFund: "1000",
-    date: "2021-10-10",
-  },
-  {
-    fullname: "nombres y apelliods",
-    socialFund: "1000",
-    reserveFund: "1000",
-    date: "2021-10-10",
-  },
-  {
-    fullname: "nombres y apelliods",
-    socialFund: "1000",
-    reserveFund: "1000",
-    date: "2021-10-10",
-  },
-  {
-    fullname: "nombres y apelliods",
-    socialFund: "1000",
-    reserveFund: "1000",
-    date: "2021-10-10",
-  },
-];
+import { ISocialFundsExpenseTransaction } from "./types";
+import { useContext, useEffect, useState } from "react";
+import apiClient from "@/config/apiClient";
+import { SocialLegalFundsExpenseForm } from "./SocialLegalFundsExpenseForm";
+import { ISocialFunds } from "@/types/ISocialFunds";
+import { AppContext } from "@/context/AppContext";
 
 function EquityTable() {
+  const {
+    bank: { bank },
+  } = useContext(AppContext);
+  const [socialFundsTransactions, setSocialFundsTransactions] = useState<
+    ISocialFundsExpenseTransaction[]
+  >([]);
+
+  const fetchPayouts = async () => {
+    const response = await apiClient.get("/expenses/social-funds/transactions");
+    const { data } = response;
+    setSocialFundsTransactions(data);
+  };
+
+  useEffect(() => {
+    fetchPayouts();
+  }, []);
   return (
     <Table>
       <TableHeader>
         <TableRow>
           <TableHead>Fecha</TableHead>
           <TableHead>Nombres y Appellidos</TableHead>
-          <TableHead>Fondo Social</TableHead>
-          <TableHead>Reserva Legal</TableHead>
+          <TableHead>Tipo de Fondo</TableHead>
+          <TableHead>Monto</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
-        {equityData.map((item, i) => (
+        {socialFundsTransactions.map((item, i) => (
           <TableRow key={i}>
-            <TableCell>{item.date}</TableCell>
-            <TableCell>{item.fullname}</TableCell>
-            <TableCell className="font-medium">{item.socialFund}</TableCell>
-            <TableCell className="font-medium">{item.reserveFund}</TableCell>
+            <TableCell>{item.date.toLocaleString()}</TableCell>
+            <TableCell>{item.user ? item.user.name : bank.name}</TableCell>
+            <TableCell className="font-medium">
+              {item.socialFunds.name}
+            </TableCell>
+            <TableCell className="font-medium">{item.amount}</TableCell>
           </TableRow>
         ))}
       </TableBody>
@@ -85,12 +58,23 @@ function EquityTable() {
   );
 }
 export default function LegalAndSocialPage() {
+  const [socialFunds, setSocialFunds] = useState<ISocialFunds[]>([]);
+
+  useEffect(() => {
+    const fetchSocialFunds = async () => {
+      const response = await apiClient.get("/social-funds");
+      const data = response.data;
+
+      setSocialFunds(data);
+    };
+    fetchSocialFunds();
+  }, []);
   return (
     <>
       <div className="flex justify-between">
         <h1 className="text-2xl font-bold">Fondo Social y Reserva Legal</h1>
         <DialogForm>
-          <SocialLegalFundsWithdrawForm />
+          <SocialLegalFundsExpenseForm socialFunds={socialFunds} />
         </DialogForm>
       </div>
       <EquityTable />

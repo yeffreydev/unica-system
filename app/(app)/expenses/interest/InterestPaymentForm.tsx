@@ -18,7 +18,7 @@ import { IUser } from "@/types/IUser";
 import { toast } from "@/hooks/use-toast";
 import apiClient from "@/config/apiClient";
 
-export const OtherIncomeForm = () => {
+export const InterestPaymentForm = () => {
   const { users } = useContext(AppContext);
   const [userSelected, setUserSelected] = useState<IUser | null>(null);
 
@@ -26,7 +26,6 @@ export const OtherIncomeForm = () => {
     defaultValues: {
       username: "", // Asegúrate de definir un valor inicial
       amount: 0,
-      description: "",
     },
   });
 
@@ -39,62 +38,34 @@ export const OtherIncomeForm = () => {
       return;
     }
 
-    if (!form.getValues("description")) {
+    if (!userSelected) {
       toast({
         title: "Error",
-        description: "Debes ingresar una descripcion.",
+        description: "Debes seleccionar un usuario.",
       });
       return;
     }
-    const res = await apiClient.post("/incomes/create-other-income", {
+
+    const res = await apiClient.post("/payouts", {
       amount: form.getValues("amount"),
-      description: form.getValues("description"),
+      description: "Pago de intereses",
       userId: userSelected ? userSelected.id : null,
       date: new Date(),
     });
     if (res.data) {
       form.reset();
       toast({
-        title: "Otro ingreso creado.",
-        description: "el ingreso fue creado correctamente.",
+        title: "Payout creado.",
+        description: "Pagos de interes creado correctamente.",
       });
       if (window) window.location.reload();
     }
   };
+
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)}>
-        <h2>Registrar Otros Ingresos.</h2>
-        <FormField
-          control={form.control}
-          name="amount"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Monto</FormLabel>
-              <FormControl>
-                <Input type="number" {...field} />
-              </FormControl>
-              <FormDescription>
-                El monto que deseas ingresar a otros ingresos.
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="description"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Descripcion</FormLabel>
-              <FormControl>
-                <Input type="text" {...field} />
-              </FormControl>
-              <FormDescription>La descripción del ingreso.</FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+        <h2>Pagos de Intereses</h2>
         <FormField
           control={form.control}
           name="username"
@@ -110,12 +81,37 @@ export const OtherIncomeForm = () => {
                 </div>
               </FormControl>
               <FormDescription>
-                El usuario al que se le asignará el ingreso. (Opcional)
+                El usuario para pagarle los intereses.
               </FormDescription>
               <FormMessage />
             </FormItem>
           )}
         />
+        <div className="flex flex-col">
+          <span>Ahorros: S/. 5000</span>
+          <span>Acciones: S/. 5000</span>
+          <span>Interes Ganado de ahorros: S/. 500</span>
+        </div>
+        <FormField
+          control={form.control}
+          name="amount"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Monto</FormLabel>
+              <FormControl>
+                <div className="flex flex-col gap-2">
+                  <Input type="number" {...field} />
+                  <p>S/ {field.value * 10}</p>
+                </div>
+              </FormControl>
+              <FormDescription>
+                El monto a pagar por intereses de ahorros.
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
         <div>
           <Button type="submit">Guardar</Button>
         </div>

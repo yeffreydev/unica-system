@@ -29,7 +29,7 @@ const PlatformFormSchema = z.object({
     .max(50, {
       message: "nombre no debe tener más de 50 caracteres.",
     }),
-  avatar: z.string().optional(), // make avatar optional
+  avatar: z.instanceof(File).nullable().optional(),
 });
 
 type PlatformFormValues = z.infer<typeof PlatformFormSchema>;
@@ -37,7 +37,7 @@ type PlatformFormValues = z.infer<typeof PlatformFormSchema>;
 // This can come from your database or API.
 const defaultValues: Partial<PlatformFormValues> = {
   name: "",
-  avatar: "",
+  avatar: null,
 };
 
 export function PlatformForm() {
@@ -52,15 +52,61 @@ export function PlatformForm() {
   });
 
   const updatePlatform = async () => {
-    const res = await apiClient.put("/banks", {
-      name: form.getValues("name"),
-    });
-    if (res.data) {
-      localStorage.removeItem("bank");
-      window && window.location.reload();
+    const formData = new FormData();
+    const avatar = form.getValues("avatar");
+
+    let avatarFilename = bank.avatar; // Default to the current avatar
+
+    if (avatar) {
+      formData.append("file", avatar);
+
+      try {
+        const resFile = await apiClient.post("/upload/image", formData, {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        });
+
+        if (resFile.data && resFile.data.filename) {
+          avatarFilename = resFile.data.filename; // Update avatar filename if upload succeeds
+        }
+      } catch (error) {
+        console.error("Error uploading avatar:", error);
+        toast({
+          title: "Error",
+          description: "No se pudo subir la imagen. Inténtalo de nuevo.",
+          variant: "destructive",
+        });
+        return;
+      }
+    }
+
+    try {
+      const res = await apiClient.put("/banks", {
+        name: form.getValues("name"),
+        avatar: avatarFilename,
+      });
+
+      if (res.data) {
+        localStorage.removeItem("bank");
+        if (window) window.location.reload();
+      }
+    } catch (error) {
+      console.error("Error updating platform:", error);
+      toast({
+        title: "Error",
+        description: "No se pudo actualizar la plataforma. Inténtalo de nuevo.",
+        variant: "destructive",
+      });
     }
   };
   function onSubmit(data: PlatformFormValues) {
+    //vaidate if avatar is empty
+
+    //validate if name is empty
+    if (!data.name.trim()) {
+      data.name = bank.name;
+    }
     updatePlatform();
     console.log(data);
     toast({
@@ -101,10 +147,15 @@ export function PlatformForm() {
             <FormItem>
               <FormLabel htmlFor="picture">Logo</FormLabel>
               <Input
-                id="picture"
+                name="avatar"
+                accept="image/*"
+                id="file"
                 type="file"
                 ref={field.ref}
-                onChange={(e) => form.setValue("avatar", e.target.value)}
+                onChange={(e) => {
+                  const file = e.target.files ? e.target.files[0] : null;
+                  form.setValue("avatar", file);
+                }}
               />
               <FormDescription>
                 Esta imagen sera la que represente a tu asociacion.

@@ -1,8 +1,6 @@
 "use client";
-
 import * as React from "react";
 import { Check, ChevronsUpDown } from "lucide-react";
-
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -31,7 +29,16 @@ export function ComboboxLoanTypes({
   };
 }) {
   const [open, setOpen] = React.useState(false);
-  const [value, setValue] = React.useState("");
+
+  // Inicializar value con el ID del tipo de préstamo seleccionado si existe
+  const [value, setValue] = React.useState(
+    loanTypeSelected ? String(loanTypeSelected.id) : ""
+  );
+
+  // Efecto para sincronizar value cuando cambia loanTypeSelected
+  React.useEffect(() => {
+    setValue(loanTypeSelected ? String(loanTypeSelected.id) : "");
+  }, [loanTypeSelected]);
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -43,7 +50,8 @@ export function ComboboxLoanTypes({
           className="w-full justify-between z-50"
         >
           {value
-            ? loanTypesData[
+            ? // Buscar el tipo de préstamo seleccionado y mostrar su nombre formateado
+              loanTypesData[
                 (loanTypes.find((loanType) => String(loanType.id) === value)
                   ?.name as keyof typeof loanTypesData) ?? ""
               ]
@@ -51,7 +59,7 @@ export function ComboboxLoanTypes({
           <ChevronsUpDown className="opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className=" w-max p-0">
+      <PopoverContent className="w-max p-0">
         <Command>
           <CommandList>
             <CommandEmpty>No loan type found.</CommandEmpty>
@@ -61,11 +69,22 @@ export function ComboboxLoanTypes({
                   key={loanType.id}
                   value={String(loanType.id)}
                   onSelect={(currentValue) => {
-                    console.log(currentValue, value);
-                    setLoanTypeSelected(
-                      loanTypeSelected?.id == value ? null : loanType
-                    );
-                    setValue(currentValue);
+                    // Lógica mejorada para selección/deselección
+                    if (
+                      loanTypeSelected &&
+                      String(loanTypeSelected.id) === currentValue
+                    ) {
+                      setLoanTypeSelected(null);
+                      setValue("");
+                    } else {
+                      const selectedLoanType = loanTypes.find(
+                        (lt) => String(lt.id) === currentValue
+                      );
+                      if (selectedLoanType) {
+                        setLoanTypeSelected(selectedLoanType);
+                        setValue(currentValue);
+                      }
+                    }
                     setOpen(false);
                   }}
                 >
@@ -81,7 +100,9 @@ export function ComboboxLoanTypes({
                   <Check
                     className={cn(
                       "ml-auto",
-                      value === loanType.id ? "opacity-100" : "opacity-0"
+                      value === String(loanType.id)
+                        ? "opacity-100"
+                        : "opacity-0"
                     )}
                   />
                 </CommandItem>

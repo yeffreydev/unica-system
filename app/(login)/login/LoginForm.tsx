@@ -1,11 +1,11 @@
 "use client";
-import apiClient from "@/config/apiClient";
 import { AuthContext } from "@/context/auth/AuthContex";
+import axios from "axios";
 import { useRouter } from "next/navigation";
-import { ChangeEvent, FormEvent, useContext, useEffect, useState } from "react";
+import { ChangeEvent, FormEvent, useContext, useState } from "react";
 
 export const LoginForm = () => {
-  const { auth, loading, loginUser } = useContext(AuthContext);
+  const { loginUser } = useContext(AuthContext);
   const router = useRouter();
 
   const [form, setForm] = useState({
@@ -25,9 +25,12 @@ export const LoginForm = () => {
     password: string;
   }) => {
     try {
-      const res = await apiClient.post("/auth/login", formData);
-      if (res.status === 201) {
-        loginUser(res.data.access_token);
+      const res = await axios.post("/api/login", formData);
+      console.log(res);
+      if (res.data) {
+        loginUser(res.data.accessToken);
+        // Redirigir a la página de inicio
+        router.push("/");
       }
     } catch (error) {
       console.error(error);
@@ -39,15 +42,6 @@ export const LoginForm = () => {
     postLogin(form);
   };
 
-  useEffect(() => {
-    if (auth.authenticated) {
-      router.push("/");
-    }
-  }, [auth.authenticated]);
-
-  if (loading) {
-    return <p>Loading...</p>;
-  }
   return (
     <form
       onSubmit={handleSubmit}
@@ -58,7 +52,7 @@ export const LoginForm = () => {
           className="m-auto"
           width={100}
           height={100}
-          src="https://img.freepik.com/free-vector/bird-colorful-logo-gradient-vector_343694-1365.jpg"
+          src={process.env.NEXT_PUBLIC_API_HOST + "/files/logo"}
           alt="logo"
         />
       </div>

@@ -1,5 +1,5 @@
 "use client";
-import { set, useForm } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import {
   Form,
   FormControl,
@@ -102,7 +102,7 @@ export const LoanForm = () => {
         alert("La cantidad de meses debe ser mayor a 0");
         return;
       }
-      let installments = calculateInstallments(
+      const installments = calculateInstallments(
         loanTypeSelected.name as keyof typeof loanTypesData,
         form.getValues("amount"),
         0.05,
@@ -125,6 +125,7 @@ export const LoanForm = () => {
   return (
     <Form {...form}>
       <form
+        className="max-h-[calc(100vh-200px)] w-full flex flex-col gap-2"
         onSubmit={form.handleSubmit((formData) => {
           if (formData.amount <= 0) {
             alert("La cantidad debe ser mayor a 0");
@@ -148,146 +149,149 @@ export const LoanForm = () => {
           createLoan(data);
         })}
       >
-        <h2 className="text-xl font-semibold">Prestamo de Socio.</h2>
-        <hr />
-        <br />
-        {currentPage === 1 && (
-          <>
-            <FormField
-              control={form.control}
-              name="amount"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Monto</FormLabel>
-                  <FormControl>
-                    <Input type="number" {...field} />
-                  </FormControl>
-                  <FormDescription>
-                    El monto que deseas prestar.
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="username"
-              render={() => (
-                <FormItem>
-                  <FormLabel>Usuario</FormLabel>
-                  <FormControl>
-                    <div>
-                      <ComboBoxUsers
-                        controller={{ userSelected, setUserSelected }}
-                        users={users}
+        <div className="flex flex-col gap-2 overflow-y-scroll h-full">
+          <h2 className="text-xl font-semibold">Prestamo de Socio.</h2>
+          <hr />
+          {currentPage === 1 && (
+            <>
+              <FormField
+                control={form.control}
+                name="amount"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Monto</FormLabel>
+                    <FormControl>
+                      <Input type="number" {...field} />
+                    </FormControl>
+                    <FormDescription>
+                      El monto que deseas prestar.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="username"
+                render={() => (
+                  <FormItem>
+                    <FormLabel>Usuario</FormLabel>
+                    <FormControl>
+                      <div>
+                        <ComboBoxUsers
+                          controller={{ userSelected, setUserSelected }}
+                          users={users}
+                        />
+                      </div>
+                    </FormControl>
+                    <FormDescription>
+                      El usuario quien recibira el prestamo.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </>
+          )}
+          {currentPage === 2 && (
+            <>
+              <FormField
+                control={form.control}
+                name="loanType"
+                render={() => (
+                  <FormItem className="flex flex-col gap-2">
+                    <FormLabel>Tipo de Prestamo</FormLabel>
+                    <FormControl>
+                      <ComboboxLoanTypes
+                        controller={{ loanTypeSelected, setLoanTypeSelected }}
+                        loanTypes={loanTypes}
                       />
-                    </div>
-                  </FormControl>
-                  <FormDescription>
-                    El usuario al que deseas depositar el monto.
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </>
-        )}
-        {currentPage === 2 && (
-          <>
-            <FormField
-              control={form.control}
-              name="loanType"
-              render={() => (
-                <FormItem className="flex flex-col gap-2">
-                  <FormLabel>Tipo de Prestamo</FormLabel>
-                  <FormControl>
-                    <ComboboxLoanTypes
-                      controller={{ loanTypeSelected, setLoanTypeSelected }}
-                      loanTypes={loanTypes}
-                    />
-                  </FormControl>
-                  <FormDescription>
-                    El tipo de prestamo que deseas realizar.
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="months"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Meses</FormLabel>
-                  <FormControl>
-                    <Input type="number" {...field} />
-                  </FormControl>
-                  <FormDescription>
-                    La cantidad de meses que deseas pagar.
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-          </>
-        )}
-        {currentPage === 3 && (
-          <div className="space-y-2">
-            <Button
-              variant={"outline"}
-              className="flex data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground py-1"
-            >
-              <Avatar className="h-8 w-8 rounded-lg">
-                <AvatarImage src={""} alt={userSelected?.name} />
-                <AvatarFallback className="rounded-lg">CN</AvatarFallback>
-              </Avatar>
-              <div className="grid flex-1 text-left text-sm leading-tight">
-                <span className="truncate font-semibold">
-                  {userSelected?.name + " " + userSelected?.lastname}
-                </span>
-                <span className="truncate text-xs">{userSelected?.email}</span>
+                    </FormControl>
+                    <FormDescription>
+                      El tipo de prestamo que deseas realizar.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="months"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Meses</FormLabel>
+                    <FormControl>
+                      <Input type="number" {...field} />
+                    </FormControl>
+                    <FormDescription>
+                      La cantidad de meses que deseas pagar.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </>
+          )}
+          {currentPage === 3 && (
+            <div className="space-y-2">
+              <Button
+                variant={"outline"}
+                className="flex data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground py-1"
+              >
+                <Avatar className="h-8 w-8 rounded-lg">
+                  <AvatarImage src={""} alt={userSelected?.name} />
+                  <AvatarFallback className="rounded-lg">CN</AvatarFallback>
+                </Avatar>
+                <div className="grid flex-1 text-left text-sm leading-tight">
+                  <span className="truncate font-semibold">
+                    {userSelected?.name + " " + userSelected?.lastname}
+                  </span>
+                  <span className="truncate text-xs">
+                    {userSelected?.email}
+                  </span>
+                </div>
+                {/* <ChevronsUpDown className="ml-auto size-4" /> */}
+              </Button>
+              <div className="flex flex-col gap-2">
+                <h2>Monto: S/ {form.getValues("amount")}</h2>
+                <h2>Tipo de Préstamo: {loanTypeSelected?.name}</h2>
+                <h2 className="text-lg font-semibold">
+                  Cuotas: {form.getValues("months")}
+                </h2>
               </div>
-              {/* <ChevronsUpDown className="ml-auto size-4" /> */}
-            </Button>
-            <hr />
-            <h2>Monto: S/ {form.getValues("amount")}</h2>
-            <h2>Tipo de Préstamo: {loanTypeSelected?.name}</h2>
-            <hr />
-            <h2 className="text-lg font-semibold">
-              Cuotas: {form.getValues("months")}
-            </h2>
 
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  {["Fecha", "Capital", "Interés", "Cuota", "Saldo"].map(
-                    (header) => (
-                      <TableHead key={header}>{header}</TableHead>
-                    )
-                  )}
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {installments.map((item, index) => (
-                  <TableRow key={index}>
-                    <TableCell>{item.date.toLocaleDateString()}</TableCell>
-                    <TableCell>{formatCurrency(item.payment)}</TableCell>
-                    <TableCell>{formatCurrency(item.interest)}</TableCell>
-                    <TableCell>
-                      {formatCurrency(
-                        Number(item.payment) + Number(item.interest)
-                      )}
-                    </TableCell>
-                    <TableCell>{formatCurrency(item.balance)}</TableCell>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    {["Fecha", "Capital", "Interés", "Cuota", "Saldo"].map(
+                      (header) => (
+                        <TableHead key={header}>{header}</TableHead>
+                      )
+                    )}
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        )}
+                </TableHeader>
+                <TableBody>
+                  {installments.map((item, index) => (
+                    <TableRow key={index}>
+                      <TableCell>{item.date.toLocaleDateString()}</TableCell>
+                      <TableCell>{formatCurrency(item.payment)}</TableCell>
+                      <TableCell>{formatCurrency(item.interest)}</TableCell>
+                      <TableCell>
+                        {formatCurrency(
+                          Number(item.payment) + Number(item.interest)
+                        )}
+                      </TableCell>
+                      <TableCell>{formatCurrency(item.balance)}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </div>
         <div className="flex items-center justify-end gap-2 py-2">
           {currentPage > 1 && (
-            <Button variant={"outline"} onClick={handleBackPage}>
+            <Button type="button" variant={"outline"} onClick={handleBackPage}>
               Atras
             </Button>
           )}

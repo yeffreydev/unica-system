@@ -1,3 +1,4 @@
+"use client";
 import {
   Table,
   TableBody,
@@ -7,71 +8,38 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { DialogForm } from "@/components/dialogs/DialogForm";
-import { WithdrawForm } from "@/components/forms/WithdrawForm";
-
-const withdrawls = [
-  {
-    fullname: "nombres y apelliods",
-    amount: "1000",
-    date: "2021-10-10",
-  },
-  {
-    fullname: "nombres y apelliods",
-    amount: "1000",
-    date: "2021-10-10",
-  },
-  {
-    fullname: "nombres y apelliods",
-    amount: "1000",
-    date: "2021-10-10",
-  },
-  {
-    fullname: "nombres y apelliods",
-    amount: "1000",
-    date: "2021-10-10",
-  },
-  {
-    fullname: "nombres y apelliods",
-    amount: "1000",
-    date: "2021-10-10",
-  },
-  {
-    fullname: "nombres y apelliods",
-    amount: "1000",
-    date: "2021-10-10",
-  },
-  {
-    fullname: "nombres y apelliods",
-    amount: "1000",
-    date: "2021-10-10",
-  },
-  {
-    fullname: "nombres y apelliods",
-    amount: "1000",
-    date: "2021-10-10",
-  },
-  {
-    fullname: "nombres y apelliods",
-    amount: "1000",
-    date: "2021-10-10",
-  },
-];
+import { WithdrawForm } from "@/app/(app)/expenses/withdrawls/WithdrawForm";
+import { useEffect, useState } from "react";
+import apiClient from "@/config/apiClient";
+import { IWithdrawal } from "./types";
 
 function WithdrawlsTable() {
+  const [withdrawls, setWithdrawls] = useState<IWithdrawal[]>([]);
+
+  const fetchWithdrawls = async () => {
+    const response = await apiClient.get("/withdrawals");
+    const { data } = response;
+    setWithdrawls(data);
+  };
+
+  useEffect(() => {
+    fetchWithdrawls();
+  }, []);
+
   return (
     <Table>
       <TableHeader>
         <TableRow>
           <TableHead>Fecha</TableHead>
-          <TableHead>Nombres y Appellidos</TableHead>
+          <TableHead>Nombres</TableHead>
           <TableHead>Monto</TableHead>
         </TableRow>
       </TableHeader>
       <TableBody>
         {withdrawls.map((item, i) => (
           <TableRow key={i}>
-            <TableCell>{item.date}</TableCell>
-            <TableCell>{item.fullname}</TableCell>
+            <TableCell>{item.date.toLocaleString()}</TableCell>
+            <TableCell>{item.user.name + " " + item.user.lastname}</TableCell>
             <TableCell className="font-medium">{item.amount}</TableCell>
           </TableRow>
         ))}
