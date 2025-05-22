@@ -13,7 +13,7 @@ import {
 import { Edit } from "lucide-react";
 import { ReactNode } from "react";
 
-export function DialogForm({
+export function PaymentDialog({
   children,
   isEdit = false,
   disabledTrigger = false,
@@ -43,12 +43,12 @@ export function DialogForm({
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>
-            {isEdit ? "Editar Préstamo" : "Agregar Préstamo"}
+            {isEdit ? "Editar Pago" : "Pago de capital e intereses"}
           </DialogTitle>
           <DialogDescription>
             {isEdit
-              ? "Modifica los detalles del préstamo aquí."
-              : "Ingresa los detalles del nuevo préstamo."}
+              ? "Modifica los detalles del pago aquí."
+              : "Ingresa los detalles del nuevo pago aquí."}
           </DialogDescription>
         </DialogHeader>
         {children}

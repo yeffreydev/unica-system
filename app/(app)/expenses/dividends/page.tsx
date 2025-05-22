@@ -49,10 +49,9 @@ export default function DividendsPage() {
   return (
     <>
       <div className="flex justify-between">
-        <h1 className="text-2xl font-bold">Utilidades Distribuidas</h1>
-        <DialogForm>
-          <DividendsWithdrawForm />
-        </DialogForm>
+        <h1 className="text-2xl font-bold">
+          Distribuición de Utilidades "Aki Nace"
+        </h1>
       </div>
       <DividendsTable />
     </>

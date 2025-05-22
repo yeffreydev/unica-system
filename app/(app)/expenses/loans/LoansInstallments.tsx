@@ -23,6 +23,10 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
+import {
+  getLoanInstallmentStatusColor,
+  LoanInstallmentStatusColor,
+} from "./utils";
 
 export function LoansInstallments({
   isOpen,
@@ -87,7 +91,10 @@ export function LoansInstallments({
               {table.getHeaderGroups().map((headerGroup) => (
                 <TableRow key={headerGroup.id}>
                   {headerGroup.headers.map((header) => (
-                    <TableHead key={header.id}>
+                    <TableHead
+                      className="text-black font-semibold"
+                      key={header.id}
+                    >
                       {flexRender(
                         header.column.columnDef.header,
                         header.getContext()
@@ -100,7 +107,12 @@ export function LoansInstallments({
             <TableBody>
               {table.getRowModel().rows.length ? (
                 table.getRowModel().rows.map((row) => (
-                  <TableRow key={row.id}>
+                  <TableRow
+                    className={`${
+                      row.original.paid ? "bg-green-200" : "bg-red-200"
+                    }`}
+                    key={row.id}
+                  >
                     {row.getVisibleCells().map((cell) => (
                       <TableCell key={cell.id}>
                         {flexRender(

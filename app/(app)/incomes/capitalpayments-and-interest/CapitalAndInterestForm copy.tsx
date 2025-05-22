@@ -8,17 +8,18 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "../ui/form";
-import { Input } from "../ui/input";
-import { Button } from "../ui/button";
+} from "../../../../components/ui/form";
+import { Input } from "../../../../components/ui/input";
+import { Button } from "../../../../components/ui/button";
 import { useContext, useState } from "react";
 import { AppContext } from "@/context/AppContext";
-import { ComboBoxUsers } from "../combobox/ComboboxUsers";
+import { ComboBoxUsers } from "../../../../components/combobox/ComboboxUsers";
 import { IUser } from "@/types/IUser";
 
 export const CapitalAndInterestForm = () => {
   const { users } = useContext(AppContext);
   const [userSelected, setUserSelected] = useState<IUser | null>(null);
+  const [currentPage, setCurrentPage] = useState(0);
 
   const form = useForm({
     defaultValues: {

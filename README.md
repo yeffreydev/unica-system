@@ -102,3 +102,8 @@ artesano
 -- aprobacion y/o rechazo de solicitud
 -- ver todo el historial de prestamos,
 -- documentacion, criterios de aceptacioin, casos de prueba.
+
+prioridad
+
+- [ ] arqueo de caja
+- [ ] eventos.

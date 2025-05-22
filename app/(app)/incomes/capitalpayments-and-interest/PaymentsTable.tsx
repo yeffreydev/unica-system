@@ -57,6 +57,19 @@ export function PaymentsTable() {
       ),
     },
     {
+      header: "Cuota",
+      cell: ({ row }) => (
+        <div>
+          {(row.original.user?.name
+            ? row.original.user.name[0]?.toUpperCase() ?? ""
+            : "") +
+            (row.original?.installment_number ?? "") +
+            "-" +
+            row.original?.loan?.amount}
+        </div>
+      ),
+    },
+    {
       accessorKey: "user.name",
       header: ({ column }) => (
         <Button
@@ -141,7 +154,7 @@ export function PaymentsTable() {
   useEffect(() => {
     async function fetchPayments() {
       try {
-        const response = await apiClient.get("/loans/month/installments");
+        const response = await apiClient.get("/loans/paid-installments");
         console.log(response);
         setPayments(response.data);
       } catch (error) {

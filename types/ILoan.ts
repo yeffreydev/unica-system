@@ -3,6 +3,7 @@ import { IUser } from "./IUser";
 
 export interface ILoan {
   user?: IUser;
+  loanType?: ILoanType;
   id?: string;
   amount?: number;
   loanTypeId: string;
@@ -14,6 +15,7 @@ export interface ILoan {
   _totalLoans?: number;
   _totalPaid?: number;
   interestRate?: number;
+  loanInstallments?: ILoanInstallment[];
 }
 
 export interface ILoanInstallment {
@@ -22,8 +24,10 @@ export interface ILoanInstallment {
   payment: number;
   interest: number;
   date: Date;
+  loan?: ILoan;
   status?: string;
   user?: IUser;
+  installment_number?: number;
 }
 
 export interface ILoanType {

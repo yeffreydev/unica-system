@@ -14,7 +14,7 @@ interface LoansContextType {
   loans: ILoan[];
   setLoans?: (Loans: ILoan[]) => void;
   addLoan?: (Loan: ILoan) => void;
-  deleteLoan?: (id: string) => void;
+  deleteLoan: (id: string) => void;
   updateLoan?: (Loan: ILoan) => void;
 }
 
@@ -39,9 +39,9 @@ export const LoansProvider: React.FC<LoanProviderProps> = ({ children }) => {
   const addLoan = (Loan: ILoan) => {
     setLoans([...loans, Loan]);
   };
-  // const deleteLoan = (id: string) => {
-  //   setLoans(loans.filter((Loan) => Loan.id !== id));
-  // };
+  const deleteLoan = (id: string) => {
+    setLoans(loans.filter((Loan) => Loan.id !== id));
+  };
 
   // const updateLoan = (Loan: ILoan) => {
   //   const index = loans.findIndex((u) => u.id === Loan.id);
@@ -75,6 +75,7 @@ export const LoansProvider: React.FC<LoanProviderProps> = ({ children }) => {
     <LoansContext.Provider
       value={{
         loans,
+        deleteLoan,
         addLoan,
         setLoans,
       }}

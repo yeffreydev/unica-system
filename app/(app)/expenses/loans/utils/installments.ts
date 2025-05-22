@@ -5,6 +5,8 @@ export interface InstallmentInterface {
   interest: number;
   date: Date;
   balance: number;
+  paid?: boolean;
+  status?: string;
 }
 function calculateFixedInstallments(
   loanAmount: number,

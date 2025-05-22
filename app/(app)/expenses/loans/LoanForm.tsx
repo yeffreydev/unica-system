@@ -13,7 +13,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 import { Input } from "../../../../components/ui/input";
 import { Button } from "../../../../components/ui/button";
-import { useContext, useEffect, useState } from "react";
+import { use, useContext, useEffect, useState } from "react";
 import { AppContext } from "@/context/AppContext";
 import { ComboBoxUsers } from "../../../../components/combobox/ComboboxUsers";
 import { ILoan, ILoanType } from "@/types/ILoan";
@@ -36,7 +36,7 @@ import {
 import { loanTypesData } from "@/constants";
 import { formatCurrency } from "@/lib/utils";
 
-export const LoanForm = () => {
+export const LoanForm = ({ loan }: { loan?: ILoan | null }) => {
   const { users, formCloseModalRef } = useContext(AppContext);
   const { addLoan } = useContext(LoansContext);
   const [installments, setInstallments] = useState<InstallmentInterface[]>([]);
@@ -50,11 +50,24 @@ export const LoanForm = () => {
   const form = useForm({
     defaultValues: {
       username: "", // Asegúrate de definir un valor inicial
-      amount: 0,
+      amount: loan?.amount || 0,
       loanType: "",
-      months: 0,
+      months: loan?.initalInstallments || 0,
+      date: loan?.date || new Date().toISOString().split("T")[0],
     },
   });
+
+  useEffect(() => {
+    if (loan) {
+      setUserSelected(loan?.user as IUser);
+      setLoanTypeSelected({
+        id: loan?.loanTypeId,
+        name: loan?.loanTypeId
+          ? (loan?.loanType?.name as keyof typeof loanTypesData)
+          : "",
+      });
+    }
+  }, [loan]);
 
   const createLoan = async (data: ILoan) => {
     try {
@@ -102,6 +115,13 @@ export const LoanForm = () => {
         alert("La cantidad de meses debe ser mayor a 0");
         return;
       }
+      console.log(
+        loanTypeSelected.name as keyof typeof loanTypesData,
+        form.getValues("amount"),
+        0.05,
+        form.getValues("months"),
+        new Date()
+      );
       const installments = calculateInstallments(
         loanTypeSelected.name as keyof typeof loanTypesData,
         form.getValues("amount"),
@@ -109,6 +129,7 @@ export const LoanForm = () => {
         form.getValues("months"),
         new Date()
       );
+      console.log(installments);
       setInstallments(installments);
     }
     if (currentPage < 3) {
@@ -121,6 +142,10 @@ export const LoanForm = () => {
       setCurrentPage(currentPage - 1);
     }
   };
+
+  useEffect(() => {
+    console.log(installments);
+  }, [installments]);
 
   return (
     <Form {...form}>
@@ -214,22 +239,50 @@ export const LoanForm = () => {
                   </FormItem>
                 )}
               />
-              <FormField
-                control={form.control}
-                name="months"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Meses</FormLabel>
-                    <FormControl>
-                      <Input type="number" {...field} />
-                    </FormControl>
-                    <FormDescription>
-                      La cantidad de meses que deseas pagar.
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <div className="flex gap-2">
+                <FormField
+                  control={form.control}
+                  name="months"
+                  render={({ field }) => (
+                    <FormItem className="flex-1">
+                      <FormLabel>Meses</FormLabel>
+                      <FormControl>
+                        <Input type="number" {...field} />
+                      </FormControl>
+                      <FormDescription>
+                        La cantidad de meses que deseas pagar.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="date"
+                  render={({ field }) => (
+                    <FormItem className="flex-1">
+                      <FormLabel>Fecha</FormLabel>
+                      <FormControl>
+                        <Input
+                          defaultValue={new Date().toISOString().split("T")[0]}
+                          {...field}
+                          // value={field.value}
+                          // onChange={(e) => {
+                          //   field.onChange(e.target.value);
+                          // }}
+
+                          type="date"
+                          {...field}
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        La fecha de inicio del prestamo.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
             </>
           )}
           {currentPage === 3 && (
