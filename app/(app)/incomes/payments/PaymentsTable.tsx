@@ -137,7 +137,7 @@ export function PaymentsTable() {
               </TableRow>
             ))}
           </TableHeader>
-          <TableBody>
+          <TableBody cy-data="payments-table-body">
             {table.getRowModel().rows.length ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow key={row.id}>

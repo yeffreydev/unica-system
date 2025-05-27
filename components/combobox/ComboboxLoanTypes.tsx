@@ -45,6 +45,7 @@ export function ComboboxLoanTypes({
       <PopoverTrigger asChild>
         <Button
           variant="outline"
+          cy-data="open-combobox-loan-types"
           role="combobox"
           aria-expanded={open}
           className="w-full justify-between z-50"
@@ -63,7 +64,7 @@ export function ComboboxLoanTypes({
         <Command>
           <CommandList>
             <CommandEmpty>No loan type found.</CommandEmpty>
-            <CommandGroup>
+            <CommandGroup cy-data="combobox-loan-types-group">
               {loanTypes.map((loanType) => (
                 <CommandItem
                   key={loanType.id}

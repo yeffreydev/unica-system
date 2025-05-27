@@ -46,6 +46,7 @@ export function ComboBoxUsers({
         <Button
           variant="outline"
           role="combobox"
+          cy-data="open-combobox-users"
           aria-expanded={open}
           className="w-full justify-between z-50"
         >
@@ -60,7 +61,7 @@ export function ComboBoxUsers({
           <CommandInput placeholder="Search user..." className="h-9" />
           <CommandList>
             <CommandEmpty>No user found.</CommandEmpty>
-            <CommandGroup>
+            <CommandGroup cy-data="combobox-users-group">
               {users.map((user) => (
                 <CommandItem
                   key={user.id}

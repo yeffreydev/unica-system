@@ -104,7 +104,7 @@ export function LoansInstallments({
                 </TableRow>
               ))}
             </TableHeader>
-            <TableBody>
+            <TableBody cy-data="installments-table-body">
               {table.getRowModel().rows.length ? (
                 table.getRowModel().rows.map((row) => (
                   <TableRow
