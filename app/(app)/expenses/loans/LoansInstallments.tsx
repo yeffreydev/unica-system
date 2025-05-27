@@ -78,7 +78,7 @@ export function LoansInstallments({
   });
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent cy-data="installments-dialog" className="sm:max-w-[425px]">
         <ScrollArea className="h-[400px] w-full">
           <DialogHeader>
             <DialogTitle>Cuotas del prestamo</DialogTitle>
@@ -141,3 +141,5 @@ export function LoansInstallments({
     </Dialog>
   );
 }
+
+//7:30 LCOM7.
