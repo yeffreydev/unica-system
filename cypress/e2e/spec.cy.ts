@@ -37,11 +37,13 @@ describe("template spec", () => {
         .click();
     });
 
-    cy.get('[cy-data="loan-months"]').type("4");
+    cy.get('[cy-data="loan-months"]').clear().type("4");
 
     //next
+    cy.wait(200);
     cy.get('[cy-data="next-btn"]').click();
     // Confirm the final step
+    cy.wait(200);
     cy.get('[cy-data="save-btn"]').click();
 
     //verificar que se guardó el préstamo
@@ -92,5 +94,20 @@ describe("template spec", () => {
     cy.get('[cy-data="installments-table-body"]').within(() => {
       cy.get("tr.bg-green-200").should("have.length", 1);
     });
+
+    //click outside of installments-dialog
+    cy.wait(200);
+    cy.get("body").click(0, 0, { force: true });
+
+    //seleccionar el prestamo con 510
+    cy.get('[cy-data="loans-table-body"]').within(() => {
+      cy.get("tr > td:nth-child(3)")
+        .contains("510")
+        .closest("tr")
+        .find("td:nth-child(5) > button")
+        .click();
+    });
+
+    cy.get('[cy-data="options-menu"] div:last-child').click();
   });
 });
