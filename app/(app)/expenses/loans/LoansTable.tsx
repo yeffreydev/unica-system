@@ -149,7 +149,7 @@ export function LoansTable() {
               <MoreHorizontal className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
+          <DropdownMenuContent cy-data="options-menu" align="end">
             <DropdownMenuItem
               onClick={() =>
                 row.original.id && fetchInstallments(row.original.id)
@@ -224,7 +224,7 @@ export function LoansTable() {
                 </TableRow>
               ))}
             </TableHeader>
-            <TableBody>
+            <TableBody cy-data="loans-table-body">
               {table.getRowModel().rows.length ? (
                 table.getRowModel().rows.map((row) => (
                   <TableRow key={row.id}>

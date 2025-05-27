@@ -193,7 +193,7 @@ export const LoanForm = ({
                   <FormItem>
                     <FormLabel>Monto</FormLabel>
                     <FormControl>
-                      <Input type="number" {...field} />
+                      <Input cy-data="loan-amount" type="number" {...field} />
                     </FormControl>
                     <FormDescription>
                       El monto que deseas prestar.
@@ -211,6 +211,7 @@ export const LoanForm = ({
                     <FormControl>
                       <div>
                         <ComboBoxUsers
+                          cy-data="loan-user"
                           controller={{ userSelected, setUserSelected }}
                           users={users}
                         />
@@ -254,7 +255,7 @@ export const LoanForm = ({
                     <FormItem className="flex-1">
                       <FormLabel>Meses</FormLabel>
                       <FormControl>
-                        <Input type="number" {...field} />
+                        <Input cy-data="loan-months" type="number" {...field} />
                       </FormControl>
                       <FormDescription>
                         La cantidad de meses que deseas pagar.
@@ -358,13 +359,20 @@ export const LoanForm = ({
             </Button>
           )}
           {currentPage < 3 && (
-            <Button type="button" variant="outline" onClick={handleNextPage}>
+            <Button
+              cy-data="next-btn"
+              type="button"
+              variant="outline"
+              onClick={handleNextPage}
+            >
               Siguiente
             </Button>
           )}
           {currentPage === 3 && (
             <div>
-              <Button type="submit">Guardar</Button>
+              <Button cy-data="save-btn" type="submit">
+                Guardar
+              </Button>
             </div>
           )}
         </div>

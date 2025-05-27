@@ -31,12 +31,12 @@ export function PaymentDialog({
       {!disabledTrigger && (
         <DialogTrigger asChild>
           {isEdit ? (
-            <Button>
+            <Button cy-data="open-dialog">
               <Edit className="mr-2 h-4 w-4" />
               Editar
             </Button>
           ) : (
-            <Button>Agregar</Button>
+            <Button cy-data="open-dialog">Agregar</Button>
           )}
         </DialogTrigger>
       )}

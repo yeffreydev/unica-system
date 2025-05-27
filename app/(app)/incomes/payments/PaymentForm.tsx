@@ -65,6 +65,7 @@ const InstallmentTable = ({
           <input
             type="text"
             className="w-[100px] text-right"
+            cy-data="installment-amount"
             value={payment.amount}
             onChange={(e) => {
               setPayment({
@@ -240,6 +241,7 @@ export const CapitalAndInterestForm = ({
             <Button
               type="button"
               variant="outline"
+              cy-data="next-btn"
               onClick={() => setCurrentPage(currentPage + 1)}
             >
               Siguiente
@@ -247,7 +249,9 @@ export const CapitalAndInterestForm = ({
           )}
           {currentPage === 1 && (
             <div>
-              <Button type="submit">Guardar</Button>
+              <Button cy-data="save-btn" type="submit">
+                Guardar
+              </Button>
             </div>
           )}
         </div>
