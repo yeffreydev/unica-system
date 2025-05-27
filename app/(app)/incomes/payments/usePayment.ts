@@ -4,7 +4,7 @@ import { IUser } from "@/types/IUser";
 import { useEffect, useState } from "react";
 
 export const usePayment = () => {
-  const [open, setOpen] = useState(false);
+  const [openDialog, setOpenDialog] = useState(false);
   const [loans, setLoans] = useState<ILoan[]>([]);
   const [selectedUser, setSelectedUser] = useState<IUser | null>(null);
   const [selectedLoan, setSelectedLoan] = useState<ILoan | null>(null);
@@ -12,6 +12,17 @@ export const usePayment = () => {
     amount: 0,
     interest: 0,
   });
+
+  const [payments, setPayments] = useState<ILoanInstallment[]>([]);
+
+  const addPayment = (data: ILoanInstallment) => {
+    console.log("Adding payment data", data);
+    setPayments((prevPayments) => [...prevPayments, data]);
+  };
+
+  useEffect(() => {
+    console.log(payments);
+  }, [payments]);
 
   useEffect(() => {
     //get loans
@@ -59,8 +70,22 @@ export const usePayment = () => {
     });
   }, [selectedLoan]);
 
+  //fetch payments
+  useEffect(() => {
+    async function fetchPayments() {
+      try {
+        const response = await apiClient.get("/loans/paid-installments");
+        console.log(response);
+        setPayments(response.data);
+      } catch (error) {
+        console.error("Error fetching payments:", error);
+      }
+    }
+    fetchPayments();
+  }, []);
+
   return {
-    open,
+    openDialog,
     selectedUser,
     loans,
     setSelectedUser,
@@ -68,5 +93,9 @@ export const usePayment = () => {
     setSelectedLoan,
     payment,
     setPayment,
+    setOpenDialog,
+    payments,
+    setPayments,
+    addPayment,
   };
 };

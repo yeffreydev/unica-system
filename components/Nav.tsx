@@ -86,7 +86,7 @@ export function AppSidebar() {
                         <Link href={"/incomes/stocks"}>Acciones</Link>
                       </SidebarMenuSubItem>
                       <SidebarMenuSubItem>
-                        <Link href={"/incomes/capitalpayments-and-interest"}>
+                        <Link href={"/incomes/payments"}>
                           Pagos e Intereses
                         </Link>
                       </SidebarMenuSubItem>

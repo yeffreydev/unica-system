@@ -65,6 +65,7 @@ export const LoginForm = () => {
         <label className="text-sm">DNI</label>
         <input
           name="username"
+          cy-data="username"
           value={form.username}
           onChange={handleChange}
           className="border py-2 rounded-lg"
@@ -77,6 +78,7 @@ export const LoginForm = () => {
         </label>
         <input
           name="password"
+          cy-data="password"
           value={form.password}
           onChange={handleChange}
           className="border py-2 rounded-lg"

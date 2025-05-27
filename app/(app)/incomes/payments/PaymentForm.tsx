@@ -17,6 +17,7 @@ import { ComboBoxUsers } from "../../../../components/combobox/ComboboxUsers";
 import { ILoanInstallment } from "@/types/ILoan";
 import { usePayment } from "./usePayment";
 import apiClient from "@/config/apiClient";
+import { PaymentsContext } from "./PaymentsProvider";
 
 const formatDate = (date: Date) => {
   return date.toLocaleDateString("es-ES", {
@@ -89,6 +90,7 @@ const InstallmentTable = ({
         <div className="flex-1">
           <input
             type="text"
+            disabled
             className="w-[100px] text-right"
             value={payment.interest}
             onChange={(e) => {
@@ -117,9 +119,14 @@ const InstallmentTable = ({
   );
 };
 
-export const CapitalAndInterestForm = () => {
+export const CapitalAndInterestForm = ({
+  setOpenDialog,
+}: {
+  setOpenDialog?: (value: boolean) => void;
+}) => {
   const { selectedUser, setSelectedUser, selectedLoan, payment, setPayment } =
     usePayment();
+  const { addPayment } = useContext(PaymentsContext);
   const { users } = useContext(AppContext);
   const [currentPage, setCurrentPage] = useState(0);
 
@@ -140,6 +147,11 @@ export const CapitalAndInterestForm = () => {
     });
 
     const data = res.data;
+    if (!data) {
+      console.error("Error al guardar el pago");
+      return;
+    }
+    addPayment?.(res.data);
     console.log("Payment data", data);
   };
 
@@ -149,8 +161,9 @@ export const CapitalAndInterestForm = () => {
         onSubmit={form.handleSubmit((data) => {
           console.log("Form data", data);
           savePayment();
-          setCurrentPage(0);
           setSelectedUser(null);
+          setOpenDialog?.(false);
+
           setPayment({ amount: 0, interest: 0 });
         })}
         className="flex flex-col gap-4"

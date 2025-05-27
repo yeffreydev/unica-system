@@ -13,7 +13,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 import { Input } from "../../../../components/ui/input";
 import { Button } from "../../../../components/ui/button";
-import { use, useContext, useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { AppContext } from "@/context/AppContext";
 import { ComboBoxUsers } from "../../../../components/combobox/ComboboxUsers";
 import { ILoan, ILoanType } from "@/types/ILoan";
@@ -36,7 +36,13 @@ import {
 import { loanTypesData } from "@/constants";
 import { formatCurrency } from "@/lib/utils";
 
-export const LoanForm = ({ loan }: { loan?: ILoan | null }) => {
+export const LoanForm = ({
+  loan,
+  setIsOpenDialog,
+}: {
+  loan?: ILoan | null;
+  setIsOpenDialog?: (value: boolean) => void;
+}) => {
   const { users, formCloseModalRef } = useContext(AppContext);
   const { addLoan } = useContext(LoansContext);
   const [installments, setInstallments] = useState<InstallmentInterface[]>([]);
@@ -76,6 +82,7 @@ export const LoanForm = ({ loan }: { loan?: ILoan | null }) => {
         addLoan!(res.data);
         form.reset();
         formCloseModalRef?.current?.click();
+        setIsOpenDialog && setIsOpenDialog(false);
       }
     } catch (e) {
       console.log(e);
@@ -264,15 +271,17 @@ export const LoanForm = ({ loan }: { loan?: ILoan | null }) => {
                       <FormLabel>Fecha</FormLabel>
                       <FormControl>
                         <Input
-                          defaultValue={new Date().toISOString().split("T")[0]}
-                          {...field}
-                          // value={field.value}
-                          // onChange={(e) => {
-                          //   field.onChange(e.target.value);
-                          // }}
-
                           type="date"
                           {...field}
+                          value={
+                            field.value
+                              ? typeof field.value === "string"
+                                ? field.value
+                                : (field.value as Date)
+                                    .toISOString()
+                                    .split("T")[0]
+                              : ""
+                          }
                         />
                       </FormControl>
                       <FormDescription>

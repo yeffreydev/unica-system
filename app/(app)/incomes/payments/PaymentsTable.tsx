@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useEffect, useContext } from "react";
 import {
   ColumnDef,
   SortingState,
@@ -10,21 +10,8 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import {
-  ArrowUpDown,
-  Edit,
-  MoreHorizontal,
-  Trash,
-  BookText,
-} from "lucide-react";
+import { ArrowUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import {
   Table,
@@ -35,12 +22,13 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { ILoanInstallment } from "@/types/ILoan";
-import apiClient from "@/config/apiClient";
+import { usePayment } from "./usePayment";
+import { formatCurrency } from "@/lib/utils";
+import { PaymentsContext } from "./PaymentsProvider";
 
 export function PaymentsTable() {
   const [sorting, setSorting] = useState<SortingState>([]);
-
-  const [payments, setPayments] = useState<[]>([]);
+  const { payments } = useContext(PaymentsContext);
 
   const columns: ColumnDef<ILoanInstallment>[] = [
     {
@@ -90,79 +78,37 @@ export function PaymentsTable() {
       accessorKey: "payment",
       header: "Abono capital",
       cell: ({ row }) => {
-        return <div>S/. {row.original.payment}</div>;
+        return <div>S/. {formatCurrency(row.original.payment)}</div>;
       },
     },
     {
       id: "interest",
       header: "Interés",
       cell: ({ row }) => {
-        return <div>S/. {row.original.interest}</div>;
+        return <div>S/. {formatCurrency(row.original.interest)}</div>;
       },
     },
     {
       id: "total",
       header: "Total",
       cell: ({ row }) => {
-        return <div>S/. {row.original.payment + row.original.interest}</div>;
+        return (
+          <div>
+            S/. {formatCurrency(row.original.payment + row.original.interest)}
+          </div>
+        );
       },
     },
-
-    {
-      id: "actions",
-      header: "Opciones",
-      cell: ({}) => (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
-              <span className="sr-only">Abrir menú</span>
-              <MoreHorizontal />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => {}}>
-              <BookText />
-              Cuotas
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem>
-              <Edit />
-              Editar
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem>
-              <Trash />
-              Eliminar
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      ),
-    },
   ];
+
   const table = useReactTable({
-    data: payments,
+    data: payments, // Use localPayments instead of payments directly
     columns,
     onSortingChange: setSorting,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
-    state: {
-      sorting,
-    },
   });
-
-  useEffect(() => {
-    async function fetchPayments() {
-      try {
-        const response = await apiClient.get("/loans/paid-installments");
-        console.log(response);
-        setPayments(response.data);
-      } catch (error) {
-        console.error("Error fetching payments:", error);
-      }
-    }
-    fetchPayments();
-  }, []);
 
   return (
     <div className="w-full">
