@@ -7,8 +7,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { DialogForm } from "@/components/dialogs/DialogForm";
-import { DividendsWithdrawForm } from "@/app/(app)/expenses/dividends/DividendsWithdrawForm";
 import apiClient from "@/config/apiClient";
 import { useEffect, useState } from "react";
 import { IDividendsWithdraw } from "./types";
@@ -50,7 +48,7 @@ export default function DividendsPage() {
     <>
       <div className="flex justify-between">
         <h1 className="text-2xl font-bold">
-          Distribuición de Utilidades "Aki Nace"
+          Distribuición de Utilidades &quot;Aki Nace&quot;
         </h1>
       </div>
       <DividendsTable />

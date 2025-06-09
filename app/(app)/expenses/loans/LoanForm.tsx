@@ -82,7 +82,7 @@ export const LoanForm = ({
         addLoan!(res.data);
         form.reset();
         formCloseModalRef?.current?.click();
-        setIsOpenDialog && setIsOpenDialog(false);
+        if (setIsOpenDialog) setIsOpenDialog(false);
       }
     } catch (e) {
       console.log(e);

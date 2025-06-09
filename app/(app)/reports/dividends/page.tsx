@@ -13,54 +13,6 @@ import { AppContext } from "@/context/AppContext";
 import { formatCurrency } from "@/lib/utils";
 import { useContext } from "react";
 
-const dividendsData = [
-  {
-    fullname: "nombres y apelliods",
-    amount: "1000",
-    date: "2021-10-10",
-  },
-  {
-    fullname: "nombres y apelliods",
-    amount: "1000",
-    date: "2021-10-10",
-  },
-  {
-    fullname: "nombres y apelliods",
-    amount: "1000",
-    date: "2021-10-10",
-  },
-  {
-    fullname: "nombres y apelliods",
-    amount: "1000",
-    date: "2021-10-10",
-  },
-  {
-    fullname: "nombres y apelliods",
-    amount: "1000",
-    date: "2021-10-10",
-  },
-  {
-    fullname: "nombres y apelliods",
-    amount: "1000",
-    date: "2021-10-10",
-  },
-  {
-    fullname: "nombres y apelliods",
-    amount: "1000",
-    date: "2021-10-10",
-  },
-  {
-    fullname: "nombres y apelliods",
-    amount: "1000",
-    date: "2021-10-10",
-  },
-  {
-    fullname: "nombres y apelliods",
-    amount: "1000",
-    date: "2021-10-10",
-  },
-];
-
 function DividendsTable() {
   const { users } = useContext(AppContext);
   return (
@@ -117,7 +69,7 @@ export default function DividendsPage() {
     <div className="relative flex  border border-red-500 flex-col p-4 max-w-full">
       <div className="flex justify-between">
         <h1 className="text-2xl font-bold">
-          Distribuición de utilidades "Aki Nace"
+          Distribuición de utilidades &quot;Aki Nace&quot;
         </h1>
       </div>
       <div className="flex gap-2 mt-3">

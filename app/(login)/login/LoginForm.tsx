@@ -1,5 +1,4 @@
 "use client";
-import { AppContext } from "@/context/AppContext";
 import { AuthContext } from "@/context/auth/AuthContex";
 import axios from "axios";
 import { useRouter } from "next/navigation";
