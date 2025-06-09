@@ -66,9 +66,9 @@ export function PlatformForm() {
             "Content-Type": "multipart/form-data",
           },
         });
-
-        if (resFile.data && resFile.data.filename) {
-          avatarFilename = resFile.data.filename; // Update avatar filename if upload succeeds
+        console.log("File uploaded successfully:", resFile.data);
+        if (resFile.data && resFile.data.url) {
+          avatarFilename = resFile.data.url; // Update avatar filename if upload succeeds
         }
       } catch (error) {
         console.error("Error uploading avatar:", error);
