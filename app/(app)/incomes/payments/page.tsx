@@ -3,8 +3,6 @@ import { CapitalAndInterestForm } from "@/app/(app)/incomes/payments/PaymentForm
 import { PaymentsTable } from "./PaymentsTable";
 import { PaymentDialog } from "./PaymentDialog";
 import { usePayment } from "./usePayment";
-import { useContext } from "react";
-import { PaymentsContext } from "./PaymentsProvider";
 
 export default function CapitalPaymentsPage() {
   const { openDialog, setOpenDialog } = usePayment();

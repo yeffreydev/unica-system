@@ -6,6 +6,7 @@ import { ChangeEvent, FormEvent, useContext, useState } from "react";
 
 export const LoginForm = () => {
   const { loginUser } = useContext(AuthContext);
+
   const router = useRouter();
 
   const [form, setForm] = useState({

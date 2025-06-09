@@ -1,5 +1,5 @@
-describe("template spec", () => {
-  it("Create the loan and pay all isstallments and verify the loan is status paid", () => {
+describe("Pagar la cuota con mayor capital y recalcular las cuotas", () => {
+  it("Create the loan and pay over the installent", () => {
     cy.visit("http://localhost:3000");
     cy.get('[cy-data="username"]').type("12345678");
     cy.get('[cy-data="password"]').type("12345678");
@@ -12,13 +12,13 @@ describe("template spec", () => {
     cy.visit("http://localhost:3000/expenses/loans");
     // cy.get('[cy-data="payments-table"]').should("exist");
     cy.get('[cy-data="open-dialog"]').click();
-    cy.get('[cy-data="loan-amount"]').type("100");
+    cy.get('[cy-data="loan-amount"]').type("520");
     cy.get('[cy-data="open-combobox-users"]').click();
 
     //combobox-users-group
     cy.get('[cy-data="combobox-users-group"]').within(() => {
       cy.get('div[role="option"]  div > span')
-        .contains("Ever")
+        .contains("Lenis")
         .parent()
         .parent()
         .click();
@@ -50,56 +50,73 @@ describe("template spec", () => {
 
     // loans-table-body
     cy.get('[cy-data="loans-table-body"]').within(() => {
-      cy.get("tr > td:nth-child(3)").contains("100").should("exist");
+      cy.get("tr > td:nth-child(3)").contains("520").should("exist");
     });
 
     cy.visit("http://localhost:3000/incomes/payments");
+    cy.get('[cy-data="open-dialog"]').click();
 
-    for (let i = 0; i < 4; i++) {
-      cy.get('[cy-data="open-dialog"]').click();
+    cy.get('[cy-data="open-combobox-users"]').click();
+    cy.get('[cy-data="combobox-users-group"]').within(() => {
+      cy.get('div[role="option"]  div > span')
+        .contains("Lenis")
+        .parent()
+        .parent()
+        .click();
+    });
 
-      cy.get('[cy-data="open-combobox-users"]').click();
-      cy.get('[cy-data="combobox-users-group"]').within(() => {
-        cy.get('div[role="option"]  div > span')
-          .contains("Ever")
-          .parent()
-          .parent()
-          .click();
-      });
+    //next
+    cy.get('[cy-data="next-btn"]').click();
 
-      //next
+    // Clear the input before typing
+    cy.get('[cy-data="installment-amount"]').clear().type("250");
 
-      cy.get('[cy-data="next-btn"]').click();
+    //save
+    cy.get('[cy-data="save-btn"]').click();
 
-      //save
-      cy.get('[cy-data="save-btn"]').click();
-
-      //verificar que se guardó el pago
-      cy.get('[cy-data="payments-table-body"]').within(() => {
-        cy.get("tr > td:nth-child(2)").contains(`E${i}-100`).should("exist");
-      });
-      cy.wait(200);
-      //click outside of dialog
-      cy.get("body").click(0, 0, { force: true });
-    }
+    //verificar que se guardó el pago
+    cy.get('[cy-data="payments-table-body"]').within(() => {
+      cy.get("tr > td:nth-child(2)").contains("L0-520").should("exist");
+    });
 
     //visit the loans page again to check if the payment was applied
     cy.visit("http://localhost:3000/expenses/loans");
 
-    //seleccionar el prestamo con 100 y verificar que el estado es pagado
+    //seleccionar el prestamo con 520
     cy.get('[cy-data="loans-table-body"]').within(() => {
       cy.get("tr > td:nth-child(3)")
-        .contains("100")
+        .contains("520")
         .closest("tr")
-        .find("td:nth-child(4) > div")
-        .should("contain", "pagado");
+        .find("td:nth-child(5) > button")
+        .click();
     });
 
+    cy.get('[cy-data="options-menu"] div:first-child').click();
+
+    //get the installments table
+    cy.get('[cy-data="installments-table-body"]').within(() => {
+      // Check that there are 4 rows
+      cy.get("tr").should("have.length", 4);
+
+      // Find the green row and check its second td is 250
+      cy.get("tr.bg-green-200").within(() => {
+        cy.get("td:nth-child(2)").should("have.text", "250.00");
+      });
+
+      // Check the other 3 rows have 83.33 in the second td
+      cy.get("tr:not(.bg-green-200)").each(($row) => {
+        cy.wrap($row).find("td:nth-child(2)").should("have.text", "90.00");
+      });
+    });
+
+    //click outside of installments-dialog
     cy.wait(200);
-    //seleccionar el prestamo con 100 y eliminarlo
+    cy.get("body").click(0, 0, { force: true });
+
+    //seleccionar el prestamo con 520
     cy.get('[cy-data="loans-table-body"]').within(() => {
       cy.get("tr > td:nth-child(3)")
-        .contains("100")
+        .contains("520")
         .closest("tr")
         .find("td:nth-child(5) > button")
         .click();

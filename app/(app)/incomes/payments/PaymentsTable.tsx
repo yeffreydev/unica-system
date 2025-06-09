@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useContext } from "react";
+import { useState, useContext } from "react";
 import {
   ColumnDef,
   SortingState,
@@ -22,7 +22,6 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { ILoanInstallment } from "@/types/ILoan";
-import { usePayment } from "./usePayment";
 import { formatCurrency } from "@/lib/utils";
 import { PaymentsContext } from "./PaymentsProvider";
 
@@ -104,6 +103,9 @@ export function PaymentsTable() {
   const table = useReactTable({
     data: payments, // Use localPayments instead of payments directly
     columns,
+    state: {
+      sorting,
+    },
     onSortingChange: setSorting,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),

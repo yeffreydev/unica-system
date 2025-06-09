@@ -23,10 +23,6 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
-import {
-  getLoanInstallmentStatusColor,
-  LoanInstallmentStatusColor,
-} from "./utils";
 
 export function LoansInstallments({
   isOpen,
