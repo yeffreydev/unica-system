@@ -24,10 +24,14 @@ import {
 import { ILoanInstallment } from "@/types/ILoan";
 import { formatCurrency } from "@/lib/utils";
 import { PaymentsContext } from "./PaymentsProvider";
+import { PaymentDialog } from "./PaymentDialog";
+import { CapitalAndInterestForm } from "./PaymentForm";
+import { usePayment } from "./usePayment";
 
 export function PaymentsTable() {
   const [sorting, setSorting] = useState<SortingState>([]);
   const { payments } = useContext(PaymentsContext);
+  const { openDialog, setOpenDialog } = usePayment();
 
   const columns: ColumnDef<ILoanInstallment>[] = [
     {
@@ -114,17 +118,21 @@ export function PaymentsTable() {
 
   return (
     <div className="w-full">
-      <div className="flex items-center py-4">
+      <div className="flex items-center py-4 gap-3">
         <Input
           placeholder="Filtrar nombres..."
           onChange={(event) =>
             table.getColumn("user.name")?.setFilterValue(event.target.value)
           }
-          className="max-w-sm"
+          className="max-w-sm rounded-none border-none bg-white shadow-none mr-auto"
         />
+
+        <PaymentDialog open={openDialog} onOpenChange={setOpenDialog}>
+          <CapitalAndInterestForm setOpenDialog={setOpenDialog} />
+        </PaymentDialog>
       </div>
-      <div className="rounded-md border">
-        <Table>
+      <div className="">
+        <Table className="bg-white rounded-none border-none">
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>

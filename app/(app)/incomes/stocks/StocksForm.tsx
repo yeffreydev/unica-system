@@ -8,18 +8,22 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "../ui/form";
-import { Input } from "../ui/input";
-import { Button } from "../ui/button";
+} from "../../../../components/ui/form";
+import { Input } from "../../../../components/ui/input";
+import { Button } from "../../../../components/ui/button";
 import { useContext, useState } from "react";
 import { AppContext } from "@/context/AppContext";
-import { ComboBoxUsers } from "../combobox/ComboboxUsers";
+import { ComboBoxUsers } from "../../../../components/combobox/ComboboxUsers";
 import { IStock } from "@/types/IStock";
 import apiClient from "@/config/apiClient";
 import { IUser } from "@/types/IUser";
 import { StockContext } from "@/app/(app)/incomes/stocks/StockContext";
 
-export const StocksForm = () => {
+export const StocksForm = ({
+  setOpenDialog,
+}: {
+  setOpenDialog?: (value: boolean) => void;
+}) => {
   const {
     users,
     formCloseModalRef,
@@ -39,11 +43,13 @@ export const StocksForm = () => {
       const res = await apiClient.post("/stocks/buy", data);
       if (res.status === 201) {
         addStock!(res.data);
+        setOpenDialog?.(false);
         form.reset();
         formCloseModalRef?.current?.click();
       }
     } catch (e) {
       console.log(e);
+      setOpenDialog?.(false);
     }
   };
 
@@ -81,7 +87,7 @@ export const StocksForm = () => {
               <FormLabel>Cantidad</FormLabel>
               <FormControl>
                 <div className="flex flex-col gap-2">
-                  <Input type="number" {...field} />
+                  <Input cy-data="stocks-amount" type="number" {...field} />
                   <p>S/ {field.value * mainStock.price}</p>
                 </div>
               </FormControl>
@@ -114,7 +120,9 @@ export const StocksForm = () => {
           )}
         />
         <div>
-          <Button type="submit">Guardar</Button>
+          <Button cy-data="save-btn" type="submit">
+            Guardar
+          </Button>
         </div>
       </form>
     </Form>

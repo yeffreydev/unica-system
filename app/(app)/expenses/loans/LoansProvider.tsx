@@ -37,7 +37,7 @@ export const LoansProvider: React.FC<LoanProviderProps> = ({ children }) => {
   const { auth } = useContext(AuthContext);
 
   const addLoan = (Loan: ILoan) => {
-    setLoans([...loans, Loan]);
+    setLoans([Loan, ...loans]);
   };
   const deleteLoan = (id: string) => {
     setLoans(loans.filter((Loan) => Loan.id !== id));
@@ -58,7 +58,7 @@ export const LoansProvider: React.FC<LoanProviderProps> = ({ children }) => {
   const fetchLoans = async () => {
     try {
       const res = await apiClient.get("/loans");
-      console.log(res.data);
+      console.log(res.data.reverse());
       setLoans(res.data);
     } catch (error) {
       console.error(error);

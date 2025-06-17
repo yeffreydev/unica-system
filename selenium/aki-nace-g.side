@@ -1,0 +1,563 @@
+{
+  "id": "generated_selenium_test_suite_id",
+  "version": "2.0",
+  "name": "Aki Nace",
+  "url": "http://localhost:3000",
+  "tests": [
+    {
+      "id": "generated_test_case_id_stocks",
+      "name": "Crear una accion y mostrar",
+      "commands": [
+        {
+          "id": "cmd_open_stocks_page",
+          "comment": "Navegar directamente a la página de préstamos (stocks), omitiendo el login",
+          "command": "open",
+          "target": "/incomes/stocks",
+          "targets": [],
+          "value": ""
+        },
+        {
+          "id": "cmd_click_open_dialog",
+          "comment": "Abrir diálogo para crear la acción de stock",
+          "command": "click",
+          "target": "css=[cy-data=\"open-dialog\"]",
+          "targets": [],
+          "value": ""
+        },
+        {
+          "id": "cmd_type_stocks_amount",
+          "comment": "Escribir la cantidad de acciones",
+          "command": "type",
+          "target": "css=[cy-data=\"stocks-amount\"]",
+          "targets": [],
+          "value": "10"
+        },
+        {
+          "id": "cmd_click_open_combobox_users",
+          "comment": "Seleccionar el usuario (abrir combobox)",
+          "command": "click",
+          "target": "css=[cy-data=\"open-combobox-users\"]",
+          "targets": [],
+          "value": ""
+        },
+        {
+          "id": "cmd_select_juan_from_combobox",
+          "comment": "Hacer clic en el primer elemento del combobox de usuarios",
+          "command": "click",
+          "target": "xpath=//*[@cy-data=\"combobox-users-group\"]//div[@role=\"option\"]",
+          "targets": [],
+          "value": ""
+        },
+        {
+          "id": "cmd_pause_1_stocks",
+          "comment": "Pausa corta para estabilidad después de la selección",
+          "command": "pause",
+          "target": "",
+          "targets": [],
+          "value": "200"
+        },
+        {
+          "id": "cmd_pause_2_stocks",
+          "comment": "Pausa corta para estabilidad antes de guardar",
+          "command": "pause",
+          "target": "",
+          "targets": [],
+          "value": "200"
+        },
+        {
+          "id": "cmd_click_save_btn_stocks",
+          "comment": "Confirmar el paso final (guardar)",
+          "command": "click",
+          "target": "css=[cy-data=\"save-btn\"]",
+          "targets": [],
+          "value": ""
+        },
+        {
+          "id": "cmd_verify_amount_in_table_stocks",
+          "comment": "Verificar que la cantidad (10) se guardó en la tabla de acciones",
+          "command": "waitForText",
+          "target": "css=[cy-data=\"loans-table-body\"] tr:first-child > td:nth-child(3)",
+          "targets": [],
+          "value": "10"
+        }
+      ]
+    },
+    {
+      "id": "generated_test_case_id_deposits",
+      "name": "Crear un deposito y mostrar",
+      "commands": [
+        {
+          "id": "cmd_open_deposits_page",
+          "comment": "Navegar directamente a la página de depósitos, omitiendo el login",
+          "command": "open",
+          "target": "/incomes/deposits",
+          "targets": [],
+          "value": ""
+        },
+        {
+          "id": "cmd_click_open_dialog_deposits",
+          "comment": "Abrir diálogo para crear el depósito",
+          "command": "click",
+          "target": "css=[cy-data=\"open-dialog\"]",
+          "targets": [],
+          "value": ""
+        },
+        {
+          "id": "cmd_type_deposit_amount",
+          "comment": "Escribir la cantidad del depósito",
+          "command": "type",
+          "target": "css=[cy-data=\"deposit-amount\"]",
+          "targets": [],
+          "value": "100"
+        },
+        {
+          "id": "cmd_click_open_combobox_users_deposits",
+          "comment": "Seleccionar el usuario (abrir combobox)",
+          "command": "click",
+          "target": "css=[cy-data=\"open-combobox-users\"]",
+          "targets": [],
+          "value": ""
+        },
+        {
+          "id": "cmd_select_first_user_from_combobox_deposits",
+          "comment": "Hacer clic en el primer elemento del combobox de usuarios",
+          "command": "click",
+          "target": "xpath=//*[@cy-data=\"combobox-users-group\"]//div[@role=\"option\"]",
+          "targets": [],
+          "value": ""
+        },
+        {
+          "id": "cmd_pause_1_deposits",
+          "comment": "Pausa corta para estabilidad después de la selección",
+          "command": "pause",
+          "target": "",
+          "targets": [],
+          "value": "200"
+        },
+        {
+          "id": "cmd_pause_2_deposits",
+          "comment": "Pausa corta para estabilidad antes de guardar",
+          "command": "pause",
+          "target": "",
+          "targets": [],
+          "value": "200"
+        },
+        {
+          "id": "cmd_click_save_btn_deposits",
+          "comment": "Confirmar el paso final (guardar)",
+          "command": "click",
+          "target": "css=[cy-data=\"save-btn\"]",
+          "targets": [],
+          "value": ""
+        },
+        {
+          "id": "cmd_verify_amount_in_table_deposits",
+          "comment": "Verificar que la cantidad (100) se guardó en la tabla de depósitos",
+          "command": "waitForText",
+          "target": "css=[cy-data=\"loans-table-body\"] tr:first-child > td:nth-child(3)",
+          "targets": [],
+          "value": "S/. 100"
+        }
+      ]
+    },
+    
+{
+  "id": "generated_test_case_id_funds",
+  "name": "Crear fondos y mostrar",
+  "commands": [
+    {
+      "id": "cmd_open_funds_page",
+      "comment": "Navegar directamente a la página de fondos (legal-and-social), omitiendo el login",
+      "command": "open",
+      "target": "/incomes/legal-and-social",
+      "targets": [],
+      "value": ""
+    },
+    {
+      "id": "cmd_click_open_dialog_funds",
+      "comment": "Abrir diálogo para crear el fondo",
+      "command": "click",
+      "target": "css=[cy-data=\"open-dialog\"]",
+      "targets": [],
+      "value": ""
+    },
+    {
+      "id": "cmd_select_funds_type",
+      "comment": "Seleccionar el tipo de fondo (segundo elemento de la lista)",
+      "command": "select",
+      "target": "css=[cy-data=\"funds-type\"]",
+      "targets": [],
+      "value": "index=1"
+    },
+    {
+      "id": "cmd_type_funds_amount",
+      "comment": "Escribir el monto del fondo",
+      "command": "type",
+      "target": "css=[cy-data=\"funds-amount\"]",
+      "targets": [],
+      "value": "100"
+    },
+    {
+      "id": "cmd_pause_1_funds",
+      "comment": "Pausa corta para estabilidad",
+      "command": "pause",
+      "target": "",
+      "targets": [],
+      "value": "200"
+    },
+    {
+      "id": "cmd_pause_2_funds",
+      "comment": "Pausa corta para estabilidad antes de guardar",
+      "command": "pause",
+      "target": "",
+      "targets": [],
+      "value": "200"
+    },
+    {
+      "id": "cmd_click_save_btn_funds",
+      "comment": "Confirmar el paso final (guardar)",
+      "command": "click",
+      "target": "css=[cy-data=\"save-btn\"]",
+      "targets": [],
+      "value": ""
+    },
+    {
+      "id": "cmd_verify_amount_in_table_funds",
+      "comment": "Verificar que la cantidad (100) se guardó en la tabla de fondos (cuarta columna)",
+      "command": "waitForText",
+      "target": "css=[cy-data=\"loans-table-body\"] tr:first-child > td:nth-child(4)",
+      "targets": [],
+      "value": "100"
+    }
+  ]
+},
+{
+  "id": "generated_test_case_id_others",
+  "name": "Crear otros ingresos y mostrar",
+  "commands": [
+    {
+      "id": "cmd_open_others_page",
+      "comment": "Navegar directamente a la página de otros ingresos, omitiendo el login",
+      "command": "open",
+      "target": "/incomes/others",
+      "targets": [],
+      "value": ""
+    },
+    {
+      "id": "cmd_click_open_dialog_others",
+      "comment": "Abrir diálogo para crear otro ingreso",
+      "command": "click",
+      "target": "css=[cy-data=\"open-dialog\"]",
+      "targets": [],
+      "value": ""
+    },
+    {
+      "id": "cmd_type_other_amount",
+      "comment": "Escribir el monto del ingreso",
+      "command": "type",
+      "target": "css=[cy-data=\"other-amount\"]",
+      "targets": [],
+      "value": "100"
+    },
+    {
+      "id": "cmd_type_other_description",
+      "comment": "Escribir la descripción del ingreso",
+      "command": "type",
+      "target": "css=[cy-data=\"other-description\"]",
+      "targets": [],
+      "value": "ingreso de prueba"
+    },
+    {
+      "id": "cmd_click_open_combobox_users_others",
+      "comment": "Seleccionar el usuario (abrir combobox)",
+      "command": "click",
+      "target": "css=[cy-data=\"open-combobox-users\"]",
+      "targets": [],
+      "value": ""
+    },
+    {
+      "id": "cmd_select_first_user_from_combobox_others",
+      "comment": "Hacer clic en el primer elemento del combobox de usuarios",
+      "command": "click",
+      "target": "xpath=//*[@cy-data=\"combobox-users-group\"]//div[@role=\"option\"]",
+      "targets": [],
+      "value": ""
+    },
+    {
+      "id": "cmd_pause_1_others",
+      "comment": "Pausa corta para estabilidad después de la selección",
+      "command": "pause",
+      "target": "",
+      "targets": [],
+      "value": "200"
+    },
+    {
+      "id": "cmd_pause_2_others",
+      "comment": "Pausa corta para estabilidad antes de guardar",
+      "command": "pause",
+      "target": "",
+      "targets": [],
+      "value": "200"
+    },
+    {
+      "id": "cmd_click_save_btn_others",
+      "comment": "Confirmar el paso final (guardar)",
+      "command": "click",
+      "target": "css=[cy-data=\"save-btn\"]",
+      "targets": [],
+      "value": ""
+    },
+    {
+      "id": "cmd_verify_amount_in_table_others",
+      "comment": "Verificar que la cantidad (100) se guardó en la tabla de otros ingresos (cuarta columna)",
+      "command": "waitForText",
+      "target": "css=[cy-data=\"loans-table-body\"] tr:first-child > td:nth-child(4)",
+      "targets": [],
+      "value": "100"
+    }
+  ]
+},
+
+{
+    "id": "generated_test_case_id_loan_payment",
+    "name": "Crear un prestamo y pagar la primera cuota",
+    "commands": [{
+      "id": "cmd_open_loans_page",
+      "comment": "Navegar directamente a la página de préstamos",
+      "command": "open",
+      "target": "/expenses/loans",
+      "targets": [],
+      "value": ""
+    }, {
+      "id": "cmd_click_open_dialog_loan",
+      "comment": "Abrir diálogo para crear un préstamo",
+      "command": "click",
+      "target": "css=[cy-data=\"open-dialog\"]",
+      "targets": [],
+      "value": ""
+    }, {
+      "id": "cmd_type_loan_amount",
+      "comment": "Escribir el monto del préstamo",
+      "command": "type",
+      "target": "css=[cy-data=\"loan-amount\"]",
+      "targets": [],
+      "value": "510"
+    }, {
+      "id": "cmd_click_open_combobox_users_loan",
+      "comment": "Abrir combobox de usuarios",
+      "command": "click",
+      "target": "css=[cy-data=\"open-combobox-users\"]",
+      "targets": [],
+      "value": ""
+    }, {
+      "id": "cmd_select_juan_from_combobox_loan",
+      "comment": "Seleccionar a 'Juan' del combobox de usuarios",
+      "command": "click",
+      "target": "xpath=//*[@cy-data=\"combobox-users-group\"]//div[@role=\"option\"]",
+      "targets": [],
+      "value": ""
+    }, {
+      "id": "cmd_click_next_btn_loan_step1",
+      "comment": "Hacer clic en 'Siguiente' para avanzar en el formulario de préstamo",
+      "command": "click",
+      "target": "css=[cy-data=\"next-btn\"]",
+      "targets": [],
+      "value": ""
+    }, {
+      "id": "cmd_click_open_combobox_loan_types",
+      "comment": "Abrir combobox de tipos de préstamo",
+      "command": "click",
+      "target": "css=[cy-data=\"open-combobox-loan-types\"]",
+      "targets": [],
+      "value": ""
+    }, {
+      "id": "cmd_select_variable_loan_type",
+      "comment": "Seleccionar 'Cuota variable' del combobox de tipos de préstamo",
+      "command": "click",
+      "target": "xpath=//*[@cy-data=\"combobox-loan-types-group\"]//div[@role=\"option\"]",
+      "targets": [],
+      "value": ""
+    }, {
+      "id": "cmd_type_loan_months",
+      "comment": "Escribir el número de meses del préstamo",
+      "command": "type",
+      "target": "css=[cy-data=\"loan-months\"]",
+      "targets": [],
+      "value": "4"
+    }, {
+      "id": "cmd_pause_loan_step2_1",
+      "comment": "Pausa corta para estabilidad",
+      "command": "pause",
+      "target": "",
+      "targets": [],
+      "value": "200"
+    }, {
+      "id": "cmd_click_next_btn_loan_step2",
+      "comment": "Hacer clic en 'Siguiente' para el paso final del préstamo",
+      "command": "click",
+      "target": "css=[cy-data=\"next-btn\"]",
+      "targets": [],
+      "value": ""
+    }, {
+      "id": "cmd_pause_loan_save",
+      "comment": "Pausa corta antes de guardar el préstamo",
+      "command": "pause",
+      "target": "",
+      "targets": [],
+      "value": "200"
+    }, {
+      "id": "cmd_click_save_btn_loan",
+      "comment": "Guardar el préstamo",
+      "command": "click",
+      "target": "css=[cy-data=\"save-btn\"]",
+      "targets": [],
+      "value": ""
+    }, {
+      "id": "cmd_verify_loan_amount_in_table",
+      "comment": "Verificar que el monto del préstamo se guardó en la tabla",
+      "command": "waitForText",
+      "target": "css=[cy-data=\"loans-table-body\"] tr:first-child > td:nth-child(3)",
+      "targets": [],
+      "value": "S/. 510"
+    }, {
+      "id": "cmd_open_payments_page",
+      "comment": "Navegar a la página de pagos",
+      "command": "open",
+      "target": "/incomes/payments",
+      "targets": [],
+      "value": ""
+    }, {
+      "id": "cmd_click_open_dialog_payment",
+      "comment": "Abrir diálogo para crear un pago",
+      "command": "click",
+      "target": "css=[cy-data=\"open-dialog\"]",
+      "targets": [],
+      "value": ""
+    }, {
+      "id": "cmd_click_open_combobox_users_payment",
+      "comment": "Abrir combobox de usuarios para el pago",
+      "command": "click",
+      "target": "css=[cy-data=\"open-combobox-users\"]",
+      "targets": [],
+      "value": ""
+    }, {
+      "id": "cmd_select_juan_from_combobox_payment",
+      "comment": "Seleccionar al primero del combobox de usuarios para el pago",
+      "command": "click",
+      "target": "xpath=//*[@cy-data=\"combobox-users-group\"]//div[@role=\"option\"]",
+      "targets": [],
+      "value": ""
+    }, {
+      "id": "cmd_click_next_btn_payment",
+      "comment": "Hacer clic en 'Siguiente' para avanzar en el formulario de pago",
+      "command": "click",
+      "target": "css=[cy-data=\"next-btn\"]",
+      "targets": [],
+      "value": ""
+    }, {
+      "id": "cmd_click_save_btn_payment",
+      "comment": "Guardar el pago",
+      "command": "click",
+      "target": "css=[cy-data=\"save-btn\"]",
+      "targets": [],
+      "value": ""
+    }, {
+      "id": "cmd_verify_payment_code_in_table",
+      "comment": "Verificar que el código del pago se guardó en la tabla",
+      "command": "waitForText",
+      "target": "css=[cy-data=\"payments-table-body\"] tr:first-child > td:nth-child(2)",
+      "targets": [],
+      "value": "Y0-510"
+    }, {
+      "id": "cmd_revisit_loans_page",
+      "comment": "Volver a la página de préstamos para verificar la aplicación del pago",
+      "command": "open",
+      "target": "/expenses/loans",
+      "targets": [],
+      "value": ""
+    }, {
+      "id": "80b0a34c-f481-4298-8dcd-600a89f75f03",
+      "comment": "click en opciones",
+      "command": "executeScript",
+      "target": "const btn = document.querySelector('button[aria-haspopup=\"menu\"]'); btn.focus(); btn.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })); btn.dispatchEvent(new MouseEvent('click', { bubbles: true }));",
+      "targets": [],
+      "value": ""
+    }, {
+      "id": "cmd_click_first_option_menu",
+      "comment": "Hacer clic en la primera opción del menú de acciones (ver cuotas)",
+      "command": "click",
+      "target": "css=[cy-data=\"options-menu\"] div:first-child",
+      "targets": [],
+      "value": ""
+    }, {
+      "id": "cmd_verify_paid_installment_count",
+      "comment": "Verificar que hay una cuota pagada (fila verde)",
+      "command": "assertElementPresent",
+      "target": "css=tbody[cy-data=\"installments-table-body\"] > tr.bg-green-200",
+      "targets": [],
+      "value": ""
+    }, {
+      "id": "cmd_pause_before_click_outside",
+      "comment": "Pausa antes de hacer clic fuera del diálogo",
+      "command": "pause",
+      "target": "",
+      "targets": [],
+      "value": "200"
+    }, {
+      "id": "cmd_click_loan_action_button_2",
+      "comment": "salir",
+      "command": "click",
+      "target": "xpath=//div[@role=\"dialog\"]//button",
+      "targets": [],
+      "value": ""
+    }, {
+      "id": "cmd_click_outside_installments_dialog",
+      "comment": "Hacer clic en el cuerpo de la página para cerrar el diálogo (ajustar si es necesario)",
+      "command": "click",
+      "target": "css=body",
+      "targets": [],
+      "value": ""
+    }, {
+      "id": "2ec6e257-b285-483a-af94-d09bfce39b7b",
+      "comment": "click en opciones",
+      "command": "executeScript",
+      "target": "const btn = document.querySelector('button[aria-haspopup=\"menu\"]'); btn.focus(); btn.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true })); btn.dispatchEvent(new MouseEvent('click', { bubbles: true }));",
+      "targets": [],
+      "value": ""
+    }, {
+      "id": "cmd_click_last_option_menu",
+      "comment": "Hacer clic en la última opción del menú de acciones",
+      "command": "click",
+      "target": "css=[cy-data=\"options-menu\"] div:last-child",
+      "targets": [],
+      "value": ""
+    }, {
+      "id": "2f1c9114-69a5-442f-8c84-b677c06ca5b9",
+      "comment": "",
+      "command": "chooseOkOnNextConfirmation",
+      "target": "",
+      "targets": [],
+      "value": ""
+    }]
+  }
+
+
+  ],
+  "suites": [
+    {
+      "id": "generated_suite_id",
+      "name": "Aki Nace",
+      "persistSession": false,
+      "parallel": false,
+      "timeout": 300,
+      "tests": [
+        "generated_test_case_id_stocks",
+        "generated_test_case_id_deposits"
+      ]
+    }
+  ],
+  "urls": [
+    "http://localhost:3000"
+  ],
+  "plugins": []
+}

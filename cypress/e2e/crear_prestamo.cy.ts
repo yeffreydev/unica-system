@@ -3,7 +3,7 @@ describe("Crear un prestamo y pagar la priemra cuota.", () => {
     cy.visit("http://localhost:3000");
     cy.get('[cy-data="username"]').type("12345678");
     cy.get('[cy-data="password"]').type("12345678");
-    cy.get('input[type="submit"]').click();
+    cy.get('button[type="submit"]').click();
 
     // Wait for authentication to complete, e.g., by checking for a redirect or dashboard element
     cy.url().should("not.include", "/login");

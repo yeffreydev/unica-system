@@ -30,6 +30,8 @@ import {
 } from "@/components/ui/table";
 import { IDeposit } from "@/types/ITransaction";
 import { DepositContext } from "./DepositProvider";
+import { DepositForm } from "./DepositForm";
+import { DepositsDialog } from "./DepositsDialog";
 
 export const columns: ColumnDef<IDeposit>[] = [
   {
@@ -102,6 +104,7 @@ export const columns: ColumnDef<IDeposit>[] = [
 export function DepositsTable() {
   const [sorting, setSorting] = useState<SortingState>([]);
   const { deposits } = useContext(DepositContext);
+  const [openDialog, setOpenDialog] = useState(false);
 
   const table = useReactTable({
     data: deposits,
@@ -123,10 +126,13 @@ export function DepositsTable() {
           onChange={(event) =>
             table.getColumn("user.name")?.setFilterValue(event.target.value)
           }
-          className="max-w-sm"
+          className="max-w-sm mr-auto bg-white border-none rounded-none"
         />
+        <DepositsDialog open={openDialog} onOpenChange={setOpenDialog}>
+          <DepositForm setOpenDialog={setOpenDialog} />
+        </DepositsDialog>
       </div>
-      <div className="rounded-md border">
+      <div className="rounded-none bg-white">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -142,7 +148,7 @@ export function DepositsTable() {
               </TableRow>
             ))}
           </TableHeader>
-          <TableBody>
+          <TableBody cy-data="loans-table-body">
             {table.getRowModel().rows.length ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow key={row.id}>

@@ -9,7 +9,6 @@ import {
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { RecentSales } from "./recent-sales";
 import { Overview } from "./Overview";
-import { Separator } from "@/components/ui/separator";
 
 export const metadata: Metadata = {
   title: "Dashboard",
@@ -19,15 +18,9 @@ export const metadata: Metadata = {
 export default function Dashboard() {
   return (
     <>
-      <div className="hidden flex-col md:flex">
-        <div className="flex-1 space-y-4 p-8 pt-6">
+      <div className="flex-col md:flex ">
+        <div className="flex-1 space-y-4 pt-6">
           <Tabs defaultValue="overview" className="space-y-4">
-            <div>
-              <h1 className="text-xl font-semibold">
-                Resumen de la Asociación
-              </h1>
-              <Separator className="my-1" />
-            </div>
             <TabsContent value="overview" className="space-y-4">
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 <Card>
@@ -106,7 +99,7 @@ export default function Dashboard() {
                     </p>
                   </CardContent>
                 </Card>
-                <Card>
+                <Card className="">
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">
                       Active Now
@@ -132,12 +125,12 @@ export default function Dashboard() {
                   </CardContent>
                 </Card>
               </div>
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+              <div className="flex gap-4 flex-col lg:grid lg:grid-cols-7 ">
                 <Card className="col-span-4">
                   <CardHeader>
                     <CardTitle>Overview</CardTitle>
                   </CardHeader>
-                  <CardContent className="pl-2">
+                  <CardContent>
                     <Overview />
                   </CardContent>
                 </Card>

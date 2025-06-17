@@ -36,8 +36,8 @@ export const StockProvider: React.FC<StockProviderProps> = ({ children }) => {
   const [stocks, setStocks] = useState<IStock[]>(initialState.stocks);
   const { auth } = useContext(AuthContext);
 
-  const addStock = (Stock: IStock) => {
-    setStocks([...stocks, Stock]);
+  const addStock = (stock: IStock) => {
+    setStocks([stock, ...stocks]);
   };
 
   // const deleteStock = (id: string) => {
@@ -59,7 +59,7 @@ export const StockProvider: React.FC<StockProviderProps> = ({ children }) => {
   const fetchStocks = async () => {
     try {
       const res = await apiClient.get("/stocks");
-      setStocks(res.data);
+      setStocks(res.data.reverse());
     } catch (error) {
       console.error(error);
     }

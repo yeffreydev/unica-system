@@ -41,6 +41,8 @@ import {
 } from "@/components/ui/table";
 import apiClient from "@/config/apiClient";
 import { IUser } from "@/types/IUser";
+import { UserDialog } from "./UserDialog";
+import { UserForm } from "./UserForm";
 
 export function UsersTable() {
   const [sorting, setSorting] = useState<SortingState>([]);
@@ -120,7 +122,7 @@ export function UsersTable() {
                 <MoreHorizontal />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
+            <DropdownMenuContent cy-data="options-menu" align="end">
               <DropdownMenuItem>
                 <Edit />
                 Editar
@@ -158,6 +160,7 @@ export function UsersTable() {
 
   const apiGetUsers = async () => {
     const res = await apiClient.get("/users");
+    console.log("res", res);
     if (res.status === 200) {
       setData(res.data);
     }
@@ -183,18 +186,18 @@ export function UsersTable() {
 
   return (
     <div className="w-full">
-      <div className="flex items-center py-4">
+      <div className="flex gap-5 items-center justify-start py-4">
         <Input
           placeholder="Filtrar nombres..."
           value={(table.getColumn("name")?.getFilterValue() as string) ?? ""}
           onChange={(event) =>
             table.getColumn("name")?.setFilterValue(event.target.value)
           }
-          className="max-w-sm"
+          className="max-w-sm bg-white rounded-none"
         />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="ml-auto">
+            <Button variant="outline" className="mr-auto rounded-none">
               Columnas <ChevronDown />
             </Button>
           </DropdownMenuTrigger>
@@ -218,9 +221,12 @@ export function UsersTable() {
               })}
           </DropdownMenuContent>
         </DropdownMenu>
+        <UserDialog>
+          <UserForm />
+        </UserDialog>
       </div>
       <div className="rounded-md border">
-        <Table>
+        <Table className="bg-white">
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
@@ -239,7 +245,7 @@ export function UsersTable() {
               </TableRow>
             ))}
           </TableHeader>
-          <TableBody>
+          <TableBody cy-data="table-body">
             {table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow

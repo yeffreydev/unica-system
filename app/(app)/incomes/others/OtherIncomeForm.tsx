@@ -17,8 +17,17 @@ import { ComboBoxUsers } from "../../../../components/combobox/ComboboxUsers";
 import { IUser } from "@/types/IUser";
 import { toast } from "@/hooks/use-toast";
 import apiClient from "@/config/apiClient";
+import { IIncome } from "./types";
 
-export const OtherIncomeForm = () => {
+export const OtherIncomeForm = ({
+  setOpenDialog,
+  otherIncomes,
+  setOtherIncomes,
+}: {
+  setOpenDialog?: (value: boolean) => void;
+  otherIncomes: IIncome[];
+  setOtherIncomes: (value: IIncome[]) => void;
+}) => {
   const { users } = useContext(AppContext);
   const [userSelected, setUserSelected] = useState<IUser | null>(null);
 
@@ -54,11 +63,13 @@ export const OtherIncomeForm = () => {
     });
     if (res.data) {
       form.reset();
+      console.log(res.data);
+      setOtherIncomes([res.data, ...otherIncomes]);
+      setOpenDialog?.(false);
       toast({
         title: "Otro ingreso creado.",
         description: "el ingreso fue creado correctamente.",
       });
-      if (window) window.location.reload();
     }
   };
   return (
@@ -72,7 +83,7 @@ export const OtherIncomeForm = () => {
             <FormItem>
               <FormLabel>Monto</FormLabel>
               <FormControl>
-                <Input type="number" {...field} />
+                <Input cy-data="other-amount" type="number" {...field} />
               </FormControl>
               <FormDescription>
                 El monto que deseas ingresar a otros ingresos.
@@ -88,7 +99,7 @@ export const OtherIncomeForm = () => {
             <FormItem>
               <FormLabel>Descripcion</FormLabel>
               <FormControl>
-                <Input type="text" {...field} />
+                <Input cy-data="other-description" type="text" {...field} />
               </FormControl>
               <FormDescription>La descripción del ingreso.</FormDescription>
               <FormMessage />
@@ -117,7 +128,9 @@ export const OtherIncomeForm = () => {
           )}
         />
         <div>
-          <Button type="submit">Guardar</Button>
+          <Button cy-data="save-btn" type="submit">
+            Guardar
+          </Button>
         </div>
       </form>
     </Form>
