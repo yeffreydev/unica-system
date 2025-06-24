@@ -30,6 +30,8 @@ import {
 } from "@/components/ui/table";
 import { IStock } from "@/types/IStock";
 import { StockContext } from "./StockContext";
+import { StocksForm } from "@/app/(app)/incomes/stocks/StocksForm";
+import { StocksDialog } from "./StocksDialog";
 
 export const columns: ColumnDef<IStock>[] = [
   {
@@ -100,6 +102,7 @@ export const columns: ColumnDef<IStock>[] = [
 export function StocksTable() {
   const [sorting, setSorting] = useState<SortingState>([]);
   const { stocks } = useContext(StockContext);
+  const [openDialog, setOpenDialog] = useState(false);
 
   const table = useReactTable({
     data: stocks,
@@ -121,10 +124,13 @@ export function StocksTable() {
           onChange={(event) =>
             table.getColumn("user.name")?.setFilterValue(event.target.value)
           }
-          className="max-w-sm"
+          className="max-w-sm mr-auto rounded-none border-none bg-white shadow-none"
         />
+        <StocksDialog open={openDialog} onOpenChange={setOpenDialog}>
+          <StocksForm setOpenDialog={setOpenDialog} />
+        </StocksDialog>
       </div>
-      <div className="rounded-md border">
+      <div className="rounded-none border-none bg-white">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -140,7 +146,7 @@ export function StocksTable() {
               </TableRow>
             ))}
           </TableHeader>
-          <TableBody>
+          <TableBody cy-data="loans-table-body">
             {table.getRowModel().rows.length ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow key={row.id}>

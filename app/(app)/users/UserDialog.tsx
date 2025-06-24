@@ -12,7 +12,7 @@ import {
 import { Edit } from "lucide-react";
 import { ReactNode } from "react";
 
-export function DialogForm({
+export function UserDialog({
   children,
   isEdit = false,
   disabledTrigger = false,
@@ -30,8 +30,8 @@ export function DialogForm({
       {!disabledTrigger && (
         <DialogTrigger asChild>
           {isEdit ? (
-            <Button className="bg-[#1F407D] rounded-none" cy-data="open-dialog">
-              <Edit className="mr-2 h-4 w-4" />
+            <Button cy-data="open-dialog">
+              <Edit className="mr-2 h-4 w-4 bg-[#1F407D]" />
               Editar
             </Button>
           ) : (
@@ -44,12 +44,12 @@ export function DialogForm({
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>
-            {isEdit ? "Editar Préstamo" : "Agregar Préstamo"}
+            {/* {isEdit ? "Editar Usuario" : "Nuevo Usuario"} */}
           </DialogTitle>
           <DialogDescription>
-            {isEdit
+            {/* {isEdit
               ? "Modifica los detalles del préstamo aquí."
-              : "Ingresa los detalles del nuevo préstamo."}
+              : "Ingresa los detalles del nuevo préstamo."} */}
           </DialogDescription>
         </DialogHeader>
         {children}

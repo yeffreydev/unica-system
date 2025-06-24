@@ -1,23 +1,11 @@
 "use client";
-import { DialogForm } from "@/components/dialogs/DialogForm";
-import { UserForm } from "@/components/forms/UserFormt";
 import { UsersTable } from "./UsersTable";
-import { AppContext } from "@/context/AppContext";
-import { useContext } from "react";
-
 export default function Users() {
-  const {
-    bank: { bank },
-  } = useContext(AppContext);
   return (
     <>
-      <div className="flex justify-between">
-        <h1 className="text-2xl font-bold">Usuarios &quot;{bank.name}&quot;</h1>
-        <DialogForm>
-          <UserForm />
-        </DialogForm>
+      <div className=" px-2 md:px-4 lg:px-6 xl:px-8 2xl:px-10">
+        <UsersTable />
       </div>
-      <UsersTable />
     </>
   );
 }

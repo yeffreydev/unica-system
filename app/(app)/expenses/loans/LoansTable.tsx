@@ -55,6 +55,7 @@ export function LoansTable() {
   const [selectedLoanId, setSelectedLoanId] = useState<string | null>(null);
   const [installments, setInstallments] = useState<InstallmentInterface[]>([]);
   const [deletingLoans, setDeletingLoans] = useState<string[]>([]);
+  const [isOpenDialog, setIsOpenDialog] = useState(false);
 
   const handleDelete = async (loanId: string) => {
     if (confirm("¿Estás seguro de que deseas eliminar este préstamo?")) {
@@ -199,17 +200,20 @@ export function LoansTable() {
           onOpenChange={() => setInstallments([])}
           isOpen={installments.length > 0}
         />
-        <div className="flex items-center py-4">
+        <div className="flex items-center py-4 gap-3">
           <Input
             placeholder="Filtrar nombres..."
             onChange={(event) =>
               table.getColumn("user.name")?.setFilterValue(event.target.value)
             }
-            className="max-w-sm"
+            className="max-w-sm rounded-none border-none bg-white shadow-none mr-auto"
           />
+          <DialogForm open={isOpenDialog} onOpenChange={setIsOpenDialog}>
+            <LoanForm setIsOpenDialog={setIsOpenDialog} />
+          </DialogForm>
         </div>
-        <div className="rounded-md border">
-          <Table>
+        <div className="">
+          <Table className="bg-white rounded-none border-none">
             <TableHeader>
               {table.getHeaderGroups().map((headerGroup) => (
                 <TableRow key={headerGroup.id}>

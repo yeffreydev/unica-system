@@ -11,15 +11,21 @@ import {
 } from "../../../../components/ui/form";
 import { Input } from "../../../../components/ui/input";
 import { Button } from "../../../../components/ui/button";
-import { ISocialFunds } from "@/types/ISocialFunds";
+import { ISocialFunds, ISocialFundsTransaction } from "@/types/ISocialFunds";
 import apiClient from "@/config/apiClient";
 import { toast } from "@/hooks/use-toast";
 import { socialFundsData } from "@/constants";
 
 export const SocialLegalFundsForm = ({
+  setOpenDialog,
+  socialFundsTransactions,
+  setSocialFundsTransactions,
   socialFunds,
 }: {
   socialFunds: ISocialFunds[];
+  setOpenDialog?: (value: boolean) => void;
+  socialFundsTransactions: ISocialFundsTransaction[];
+  setSocialFundsTransactions: (value: ISocialFundsTransaction[]) => void;
 }) => {
   const form = useForm({
     defaultValues: {
@@ -52,11 +58,22 @@ export const SocialLegalFundsForm = ({
     });
     if (res.data) {
       form.reset();
+      setOpenDialog?.(false);
+
+      //build the data to add to the transactions list
+      const data = {
+        ...res.data,
+        socialFunds: {
+          id: res.data.socialFundsId,
+          name: socialFunds.find((f) => f.id === res.data.socialFundsId)
+            ?.name as keyof typeof socialFundsData,
+        },
+      };
+      setSocialFundsTransactions([data, ...socialFundsTransactions]);
       toast({
         title: "Ingreso a fondo creado.",
         description: "El ingreso a fondo fue creado correctamente.",
       });
-      if (window) window.location.reload();
     }
   };
 
@@ -72,7 +89,11 @@ export const SocialLegalFundsForm = ({
               <FormLabel>Tipo de fondo.</FormLabel>
               <br />
               <FormControl>
-                <select {...field} className="border rounded px-2 py-1">
+                <select
+                  cy-data="funds-type"
+                  {...field}
+                  className="border rounded px-2 py-1"
+                >
                   <option value="">Selecciona el fondo</option>
                   {socialFunds.map((fund) => (
                     <option key={fund.id} value={fund.id}>
@@ -99,7 +120,7 @@ export const SocialLegalFundsForm = ({
             <FormItem>
               <FormLabel>Monto</FormLabel>
               <FormControl>
-                <Input type="number" {...field} />
+                <Input cy-data="funds-amount" type="number" {...field} />
               </FormControl>
               <FormDescription>
                 El monto que deseas ingresar al fondo.
@@ -110,7 +131,9 @@ export const SocialLegalFundsForm = ({
         />
 
         <div>
-          <Button type="submit">Guardar</Button>
+          <Button cy-data="save-btn" type="submit">
+            Guardar
+          </Button>
         </div>
       </form>
     </Form>

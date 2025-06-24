@@ -29,7 +29,7 @@ export function SidebarNav({ className, items, ...props }: SidebarNavProps) {
           href={item.href}
           className={cn(
             "px-2 py-1 text-sm font-medium text-muted-foreground rounded-md",
-            pathname === item.href ? "bg-muted" : "hover:bg-muted",
+            pathname === item.href ? "bg-[#254b9122]" : "hover:bg-[#254b9122]",
             "justify-start"
           )}
         >

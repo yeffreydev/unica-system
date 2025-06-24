@@ -39,7 +39,7 @@ export const DepositProvider: React.FC<DepositProviderProps> = ({
   const { auth } = useContext(AuthContext);
 
   const addDeposit = (deposit: IDeposit) => {
-    setDeposits([...deposits, deposit]);
+    setDeposits([deposit, ...deposits]);
   };
 
   // const deleteDeposit = (id: string) => {
@@ -62,7 +62,7 @@ export const DepositProvider: React.FC<DepositProviderProps> = ({
     try {
       const res = await apiClient.get("/transactions/deposits");
       console.log(res.data);
-      setDeposits(res.data);
+      setDeposits(res.data.reverse());
     } catch (error) {
       console.error(error);
     }

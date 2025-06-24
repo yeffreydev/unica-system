@@ -19,7 +19,11 @@ import { DepositContext } from "./DepositProvider";
 import apiClient from "@/config/apiClient";
 import { IDeposit } from "@/types/ITransaction";
 
-export const DepositForm = () => {
+export const DepositForm = ({
+  setOpenDialog,
+}: {
+  setOpenDialog?: (value: boolean) => void;
+}) => {
   const { users, formCloseModalRef } = useContext(AppContext);
   const { addDeposit } = useContext(DepositContext);
   const [userSelected, setUserSelected] = useState<IUser | null>(null);
@@ -38,9 +42,11 @@ export const DepositForm = () => {
         addDeposit!(res.data);
         form.reset();
         formCloseModalRef?.current?.click();
+        setOpenDialog?.(false);
       }
     } catch (e) {
       console.log(e);
+      setOpenDialog?.(false);
     }
   };
 
@@ -70,7 +76,7 @@ export const DepositForm = () => {
             <FormItem>
               <FormLabel>Monto</FormLabel>
               <FormControl>
-                <Input type="number" {...field} />
+                <Input cy-data="deposit-amount" type="number" {...field} />
               </FormControl>
               <FormDescription>
                 El monto que deseas depositar en tu cuenta de ahorros.
@@ -101,7 +107,9 @@ export const DepositForm = () => {
           )}
         />
         <div>
-          <Button type="submit">Guardar</Button>
+          <Button cy-data="save-btn" type="submit">
+            Guardar
+          </Button>
         </div>
       </form>
     </Form>

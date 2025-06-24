@@ -38,10 +38,10 @@ import NavHeader from "./NavHeader";
 export function AppSidebar() {
   return (
     <Sidebar>
-      <SidebarHeader>
+      <SidebarHeader className="bg-white">
         <NavHeader />
       </SidebarHeader>
-      <SidebarContent>
+      <SidebarContent className="bg-white">
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
@@ -268,7 +268,7 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter>
+      <SidebarFooter className="bg-white">
         <NavUser
           user={{
             name: "Yeffrey",
