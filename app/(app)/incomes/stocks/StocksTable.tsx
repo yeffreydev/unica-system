@@ -30,7 +30,6 @@ import {
 } from "@/components/ui/table";
 import { IStock } from "@/types/IStock";
 import { StockContext } from "./StockContext";
-import { DialogForm } from "@/components/dialogs/DialogForm";
 import { StocksForm } from "@/app/(app)/incomes/stocks/StocksForm";
 import { StocksDialog } from "./StocksDialog";
 

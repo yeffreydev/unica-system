@@ -20,11 +20,6 @@ export const useUsers = () => {
     fetchUsers();
   }, []);
 
-  function UserActivation(
-    id: string,
-    name: string,
-    email: string,
-    isActive: boolean
-  ) {}
+  function UserActivation() {}
   return { users, UserActivation, setUsers };
 };

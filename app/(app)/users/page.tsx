@@ -1,5 +1,4 @@
 "use client";
-import { Bell } from "lucide-react";
 import { UsersTable } from "./UsersTable";
 export default function Users() {
   return (

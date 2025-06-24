@@ -174,6 +174,7 @@ const LoanApplicationForm = () => {
                       id={`field-${field.id}`}
                       type={field.type}
                       required={field.required}
+                      cy-data={`form-${field.type}`}
                       placeholder={field.placeholder}
                       min={field.minValue}
                       max={field.maxValue}

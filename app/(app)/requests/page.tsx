@@ -53,6 +53,7 @@ export default function RequestsPage() {
               <CardFooter className="flex flex-col space-y-3 p-6 pt-0 sm:flex-row sm:space-y-0 sm:space-x-4 sm:justify-between">
                 <Button
                   asChild
+                  cy-data="open-form"
                   className="w-full sm:w-auto bg-indigo-600 hover:bg-indigo-700 text-white transition-colors"
                 >
                   <Link

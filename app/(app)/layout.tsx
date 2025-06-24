@@ -3,8 +3,6 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/Nav";
 import { Bell } from "lucide-react";
 import { usePathname } from "next/navigation";
-import path from "path";
-import { title } from "process";
 
 const topData = [
   {
