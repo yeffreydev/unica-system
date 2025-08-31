@@ -55,7 +55,7 @@ export const LoginForm = () => {
           className="m-auto"
           width={100}
           height={100}
-          src={process.env.NEXT_PUBLIC_API_HOST + "/files/logo"}
+          src={"/akinace.png"}
           alt="logo"
         />
       </div>

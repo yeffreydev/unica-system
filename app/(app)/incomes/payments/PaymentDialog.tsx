@@ -30,12 +30,12 @@ export function PaymentDialog({
       {!disabledTrigger && (
         <DialogTrigger asChild>
           {isEdit ? (
-            <Button className="bg-[#1F407D] rounded-none" cy-data="open-dialog">
+            <Button variant="default" cy-data="open-dialog">
               <Edit className="mr-2 h-4 w-4" />
               Editar
             </Button>
           ) : (
-            <Button className="bg-[#1F407D] rounded-none" cy-data="open-dialog">
+            <Button variant="default" cy-data="open-dialog">
               Agregar
             </Button>
           )}

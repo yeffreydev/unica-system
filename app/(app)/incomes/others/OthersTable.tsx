@@ -38,7 +38,7 @@ export default function OthersTable() {
       <div className="flex items-center py-4">
         <Input
           placeholder="Filtrar nombres..."
-          className="max-w-sm mr-auto bg-white border-none rounded-none"
+          className="max-w-sm mr-auto bg-background border-border"
         />
         <OthersDialog open={openDialog} onOpenChange={setOpenDialog}>
           <OtherIncomeForm
@@ -49,7 +49,7 @@ export default function OthersTable() {
         </OthersDialog>
       </div>
 
-      <Table className="bg-white rounded-none border-none">
+      <Table className="bg-background border-border">
         <TableHeader>
           <TableRow>
             <TableHead>Fecha</TableHead>

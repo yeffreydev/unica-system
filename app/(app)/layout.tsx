@@ -1,14 +1,26 @@
 "use client";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/Nav";
-import { Bell } from "lucide-react";
+import { Bell,  } from "lucide-react";
 import { usePathname } from "next/navigation";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { Button } from "@/components/ui/button";
 
 const topData = [
   {
     path: "/",
     title: "Dashboard",
     description: "Resumen de la Asociación.",
+  },
+  {
+    path: "/chat",
+    title: "Chat",
+    description: "Chat con el asistente Puki.",
+  },
+   {
+    path: "/assembly",
+    title: "Asamblea",
+    description: "Administra las asambleas de la Asociación.",
   },
   {
     path: "/users",
@@ -135,6 +147,9 @@ export default function AppLayout({
   children: React.ReactNode;
 }>) {
   const pathname = usePathname();
+
+
+
   console.log("pathname", pathname);
   console.log("topData", topData);
   let currentData = topData.find((item) => item.path === pathname);
@@ -147,31 +162,39 @@ export default function AppLayout({
     };
   }
 
+
+
+ 
   return (
     <>
       <SidebarProvider>
         <AppSidebar />
         <main className="w-full flex flex-col h-screen">
-          <div className="flex">
-            <SidebarTrigger className="w-max ml-2" />
-            <div className="bg-white w-full flex items-center justify-between px-5 py-2">
-              <div>
-                <h1 className="text-2xl font-bold text-gray-700">
+
+        {/* top bar   */}
+          <div className="flex items-center gap-2">
+            <SidebarTrigger className="w-max ml-2 text-muted-foreground hover:text-foreground" />
+            <div className="w-full bg-card/95 supports-[backdrop-filter]:bg-card/80 backdrop-blur border-b flex items-center justify-between px-4 md:px-6 py-3">
+              <div className="min-w-0">
+                <h1 className="text-2xl tracking-tight leading-tight bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent truncate">
                   {currentData.title}
                 </h1>
-                <p>
-                  <span className="text-sm text-gray-500">
-                    {currentData.description}
-                  </span>
+                <p className="mt-0.5 text-sm md:text-base text-muted-foreground/90 pl-3 border-l border-primary/20 truncate">
+                  {currentData.description}
                 </p>
               </div>
-              <button className="bg-none cursor-pointer flex justify-center items-center relative  w-[40px] h-[40px] ">
-                <Bell className="m-auto text-3xl" />
-                <span className="bg-red-500 rounded-full w-[7px] h-[7px] absolute top-[5px] right-[7px] translate-x-1/2 translate-y-1/2"></span>
-              </button>
+              <div className="flex items-center gap-1.5">
+                {/* <ThemeToggle /> */}
+                <Button variant="ghost" size="icon" className="relative">
+                  <Bell  className="text-muted-foreground" />
+                  <span className="absolute top-2 right-2 inline-block w-2 h-2 rounded-full bg-primary"></span>
+                </Button>
+              </div>
             </div>
           </div>
-          <div className="bg-[#F5F7FA] w-full flex-1 px-2 md:px-4">
+           
+        
+          <div className="bg-muted/50 w-full flex-1 px-2 md:px-4">
             {children}
           </div>
         </main>

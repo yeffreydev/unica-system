@@ -52,7 +52,7 @@ export default function LegalsTable() {
       <div className="flex items-center py-4">
         <Input
           placeholder="Filtrar nombres..."
-          className="max-w-sm mr-auto bg-white border-none rounded-none"
+          className="max-w-sm mr-auto bg-background border-border"
         />
         <LegalsDialog open={openDialog} onOpenChange={setOpenDialog}>
           <SocialLegalFundsForm
@@ -63,7 +63,7 @@ export default function LegalsTable() {
           />
         </LegalsDialog>
       </div>
-      <Table className="bg-white rounded-none border-none">
+      <Table className="bg-background border-border">
         <TableHeader>
           <TableRow>
             <TableHead>Fecha</TableHead>

@@ -126,13 +126,13 @@ export function DepositsTable() {
           onChange={(event) =>
             table.getColumn("user.name")?.setFilterValue(event.target.value)
           }
-          className="max-w-sm mr-auto bg-white border-none rounded-none"
+          className="max-w-sm mr-auto bg-background border-border"
         />
         <DepositsDialog open={openDialog} onOpenChange={setOpenDialog}>
           <DepositForm setOpenDialog={setOpenDialog} />
         </DepositsDialog>
       </div>
-      <div className="rounded-none bg-white">
+      <div className="bg-background border-border">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (

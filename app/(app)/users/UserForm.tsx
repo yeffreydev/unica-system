@@ -109,7 +109,7 @@ export const UserForm = () => {
         <div
           className={`flex items-center justify-center w-10 h-10 rounded-full ${
             currentStep >= 1
-              ? "bg-blue-600 text-white"
+              ? "bg-[#246854] text-white"
               : "bg-gray-200 text-gray-600"
           }`}
         >
@@ -117,7 +117,7 @@ export const UserForm = () => {
         </div>
         <div
           className={`h-1 w-16 ${
-            currentStep >= 2 ? "bg-blue-600" : "bg-gray-200"
+            currentStep >= 2 ? "bg-[#246854]" : "bg-gray-200"
           }`}
         ></div>
         <div
@@ -139,7 +139,7 @@ export const UserForm = () => {
         <div className="bg-white">
           {/* Header */}
           <div className=" ">
-            <p className="text-blue-800 text-center mt-2">
+            <p className="text-[#145750] text-center mt-2">
               {currentStep === 1
                 ? "Información Personal"
                 : "Información de Contacto"}
@@ -156,6 +156,11 @@ export const UserForm = () => {
             <Form {...form}>
               <form
                 onSubmit={form.handleSubmit(onSubmit)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && currentStep !== 2) {
+                    e.preventDefault();
+                  }
+                }}
                 className="space-y-6"
               >
                 {currentStep === 1 && (
@@ -320,7 +325,10 @@ export const UserForm = () => {
                     <Button
                       type="button"
                       variant="outline"
-                      onClick={prevStep}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        prevStep();
+                      }}
                       className="flex items-center space-x-2 px-6 py-3"
                     >
                       <ChevronLeft size={16} />
@@ -332,8 +340,11 @@ export const UserForm = () => {
                     <Button
                       type="button"
                       cy-data="next-btn"
-                      onClick={nextStep}
-                      className="flex items-center space-x-2 px-6 py-3 bg-blue-600 hover:bg-blue-700"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        nextStep();
+                      }}
+                      className="flex items-center space-x-2 px-6 py-3 bg-primary text-primary-foreground hover:bg-primary/90"
                     >
                       <span>Siguiente</span>
                       <ChevronRight size={16} />

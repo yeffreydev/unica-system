@@ -6,8 +6,8 @@ export default function AttendancePage() {
     <div className="min-h-screen p-6">
       <header className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-800">Llamado de Lista</h1>
-          <p className="text-sm text-gray-600">
+                <h1 className="text-2xl font-bold text-foreground">Llamado de Lista</h1>
+      <p className="text-sm text-muted-foreground">
             Fecha del evento:{" "}
             <span className="font-medium">17 de Enero, 2025</span>
           </p>

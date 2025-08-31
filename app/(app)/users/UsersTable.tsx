@@ -193,11 +193,11 @@ export function UsersTable() {
           onChange={(event) =>
             table.getColumn("name")?.setFilterValue(event.target.value)
           }
-          className="max-w-sm bg-white rounded-none"
+          className="max-w-sm bg-background"
         />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="mr-auto rounded-none">
+            <Button variant="outline" className="mr-auto">
               Columnas <ChevronDown />
             </Button>
           </DropdownMenuTrigger>
