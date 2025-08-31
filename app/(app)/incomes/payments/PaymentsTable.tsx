@@ -124,7 +124,7 @@ export function PaymentsTable() {
           onChange={(event) =>
             table.getColumn("user.name")?.setFilterValue(event.target.value)
           }
-          className="max-w-sm rounded-none border-none bg-white shadow-none mr-auto"
+          className="max-w-sm mr-auto bg-background border-border"
         />
 
         <PaymentDialog open={openDialog} onOpenChange={setOpenDialog}>
@@ -132,7 +132,7 @@ export function PaymentsTable() {
         </PaymentDialog>
       </div>
       <div className="">
-        <Table className="bg-white rounded-none border-none">
+        <Table className="bg-background border-border">
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>

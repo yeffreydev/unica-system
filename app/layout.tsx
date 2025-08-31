@@ -3,6 +3,9 @@ import localFont from "next/font/local";
 import "./globals.css";
 import { AuthProvider } from "@/context/auth/AuthContex";
 import { AppProvider } from "@/context/AppContext";
+import { ThemeProvider } from "@/context/ThemeProvider";
+import { ThemeContextProvider } from "@/context/ThemeContext";
+import { AssemblyProvider } from "@/context/AssemblyContext";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -30,15 +33,26 @@ export default function RootLayout({
       <head>
         <link
           rel="icon"
-          href={process.env.NEXT_PUBLIC_API_HOST + "/files/logo"}
+          href={"/akinace.png"}
         />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <AuthProvider>
-          <AppProvider>{children}</AppProvider>
-        </AuthProvider>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="light"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <ThemeContextProvider>
+            <AssemblyProvider>
+              <AuthProvider>
+                <AppProvider>{children}</AppProvider>
+              </AuthProvider>
+            </AssemblyProvider>
+          </ThemeContextProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

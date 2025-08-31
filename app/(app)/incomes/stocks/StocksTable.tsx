@@ -124,13 +124,13 @@ export function StocksTable() {
           onChange={(event) =>
             table.getColumn("user.name")?.setFilterValue(event.target.value)
           }
-          className="max-w-sm mr-auto rounded-none border-none bg-white shadow-none"
+          className="max-w-sm mr-auto bg-background border-border"
         />
         <StocksDialog open={openDialog} onOpenChange={setOpenDialog}>
           <StocksForm setOpenDialog={setOpenDialog} />
         </StocksDialog>
       </div>
-      <div className="rounded-none border-none bg-white">
+      <div className="bg-background border-border">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (

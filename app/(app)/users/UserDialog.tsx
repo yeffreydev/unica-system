@@ -26,22 +26,22 @@ export function UserDialog({
   onOpenChange?: (open: boolean) => void;
 }) {
   return (
-    <Dialog open={open} onOpenChange={onOpenChange} modal={false}>
+    <Dialog  open={open} onOpenChange={onOpenChange} modal={false}>
       {!disabledTrigger && (
         <DialogTrigger asChild>
           {isEdit ? (
-            <Button cy-data="open-dialog">
-              <Edit className="mr-2 h-4 w-4 bg-[#1F407D]" />
+            <Button variant="default" cy-data="open-dialog">
+              <Edit className="mr-2 h-4 w-4" />
               Editar
             </Button>
           ) : (
-            <Button className="bg-[#1F407D] rounded-none" cy-data="open-dialog">
+            <Button variant="default" cy-data="open-dialog">
               Agregar
             </Button>
           )}
         </DialogTrigger>
       )}
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[425px] bg-white">
         <DialogHeader>
           <DialogTitle>
             {/* {isEdit ? "Editar Usuario" : "Nuevo Usuario"} */}

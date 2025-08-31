@@ -4,7 +4,7 @@ import { check } from "k6";
 
 export const options = {
   vus: 1, // Number of virtual users
-  //   duration: "10s", // Duration of the test
+  duration: "10s", // Duration of the test
 };
 
 //for authentication
@@ -147,7 +147,7 @@ function createStock() {
   const params = {
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjMsInJvbGVzIjpbIkFkbWluIl0sImlhdCI6MTc1MDE2NDA3OCwiZXhwIjoxNzUwMTY1ODc4fQ.QneEdn58KSOC8XvzIKAsGnnjomjaoYlIlGhVkvC1O34`, // Include the access token in the headers
+      Authorization: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjMsInJvbGVzIjpbIkFkbWluIl0sImlhdCI6MTc1MTM2NzgwNSwiZXhwIjoxNzUxMzY5NjA1fQ.5fj6zNdCj5qaDd_OmMh9KB5CPy8m6i1-PNne7zpc8As`, // Include the access token in the headers
     },
   };
   const res = http.post(url, payload, params);

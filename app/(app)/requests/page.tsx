@@ -30,7 +30,7 @@ export default function RequestsPage() {
   return (
     <div className="min-h-screen py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
-        <h1 className="text-3xl font-bold text-gray-900 mb-8 text-left">
+        <h1 className="text-3xl font-bold text-foreground mb-8 text-left">
           Formularios Disponibles
         </h1>
         <div className="flex flex-col gap-5">
@@ -41,12 +41,12 @@ export default function RequestsPage() {
             >
               <CardHeader className="flex flex-row items-center space-x-4 p-6">
                 <CheckCircle className="w-8 h-8 text-green-500 flex-shrink-0" />
-                <CardTitle className="text-lg font-semibold text-gray-900">
+                <CardTitle className="text-lg font-semibold text-foreground">
                   {item.title}
                 </CardTitle>
               </CardHeader>
               <CardContent className="p-6 pt-0">
-                <p className="text-sm text-gray-600 leading-relaxed">
+                <p className="text-sm text-muted-foreground leading-relaxed">
                   {item.description}
                 </p>
               </CardContent>

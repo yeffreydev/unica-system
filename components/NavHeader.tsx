@@ -10,10 +10,12 @@ export default function NavHeader() {
   useEffect(() => {
     console.log(bank.avatar);
   }, [bank]);
+
   return (
     <div className="flex flex-col items-center justify-center">
-      {bank.avatar && <img className="w-[50px]" src={bank.avatar} alt="" />}
-      <span className="font-bold">{bank.name}</span>
+      <img className="w-[50px]" src={'/akinace.png'} alt="" />
+      {/* <span className="font-bold text-[#145750] text-sidebar-[#145750]">{bank.name}</span> */}
+      <span className="font-bold text-[#145750] text-sidebar-[#145750]">Aki Nace</span>
     </div>
   );
 }
