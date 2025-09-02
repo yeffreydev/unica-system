@@ -3,7 +3,6 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/Nav";
 import { Bell,  } from "lucide-react";
 import { usePathname } from "next/navigation";
-import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { Button } from "@/components/ui/button";
 
 const topData = [
