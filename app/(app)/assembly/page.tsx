@@ -7,11 +7,9 @@ import {
   FileText,
   TrendingUp,
   PiggyBank,
-  CreditCard,
   ClipboardCheck,
   FileCheck,
   Flag,
-  Landmark,
   CalendarDays,
   Clock,
   CheckCircle2,
@@ -21,7 +19,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { AttendanceTracker } from "@/components/AttendanceTracker";
-import { AssemblyTimer } from "@/components/AssemblyTimer";
 import { useAssembly } from "@/context/AssemblyContext";
 
 interface AssemblyStep {
