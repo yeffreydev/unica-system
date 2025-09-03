@@ -1,5 +1,6 @@
 "use client";
 
+import { assemblySteps, IAssemblyStep } from "@/app/(app)/assembly/steps";
 import { createContext, useContext, useState, ReactNode } from "react";
 
 interface AssemblyState {
@@ -8,15 +9,9 @@ interface AssemblyState {
   totalTime: number;
   stepStartTime: number | null;
   attendees: any[];
-  assemblySteps: AssemblyStep[];
+  assemblySteps: IAssemblyStep[];
 }
 
-interface AssemblyStep {
-  id: number;
-  title: string;
-  description: string;
-  status: 'pending' | 'active' | 'completed';
-}
 
 interface AssemblyContextType {
   assemblyState: AssemblyState;
@@ -31,50 +26,7 @@ interface AssemblyContextType {
 
 const AssemblyContext = createContext<AssemblyContextType | undefined>(undefined);
 
-const initialAssemblySteps = [
-  {
-    id: 1,
-    title: "Inicio de Reunión y Llamado de Lista",
-    description: "Iniciar la asamblea y verificar la asistencia de los miembros",
-    status: 'pending' as const
-  },
-  {
-    id: 2,
-    title: "Revisar Agenda y Lectura del Acta Anterior",
-    description: "Presentar agenda actual y revisar acta de la reunión anterior",
-    status: 'pending' as const
-  },
-  {
-    id: 3,
-    title: "Aporte de Compra de Acciones",
-    description: "Procesar compras de acciones por parte de los miembros",
-    status: 'pending' as const
-  },
-  {
-    id: 4,
-    title: "Recolectar Ahorros",
-    description: "Recibir depósitos de ahorro de los miembros",
-    status: 'pending' as const
-  },
-  {
-    id: 6,
-    title: "Aplicación a Créditos y Evaluación",
-    description: "Procesar solicitudes de crédito y evaluar candidatos",
-    status: 'pending' as const
-  },
-  {
-    id: 7,
-    title: "Decisiones y Proceso de Documentación",
-    description: "Documentar decisiones tomadas y acuerdos alcanzados",
-    status: 'pending' as const
-  },
-  {
-    id: 8,
-    title: "Llamado de Lista y Terminar Reunión",
-    description: "Finalizar asamblea con acta de todo lo realizado",
-    status: 'pending' as const
-  }
-];
+const initialAssemblySteps: IAssemblyStep[] = Array.from(assemblySteps);
 
 const initialState: AssemblyState = {
   isActive: false,
