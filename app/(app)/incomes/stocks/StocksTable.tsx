@@ -169,7 +169,7 @@ export function StocksTable() {
           }
           className="max-w-sm mr-auto bg-background border-border"
         />
-        <StocksDialog open={openDialog} onOpenChange={setOpenDialog}>
+        <StocksDialog open={openDialog} onOpenChange={setOpenDialog} modal={false}>
           <StocksForm setOpenDialog={setOpenDialog} />
         </StocksDialog>
         {/* Custom edit modal is rendered globally in layout via context */}

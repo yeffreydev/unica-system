@@ -56,7 +56,7 @@ export function ComboBoxUsers({
           <ChevronsUpDown className="opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-max p-0">
+      <PopoverContent className="z-[1000] w-[var(--radix-popover-trigger-width)] p-0">
         <Command>
           <CommandInput placeholder="Search user..." className="h-9" />
           <CommandList>
