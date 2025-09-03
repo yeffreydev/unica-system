@@ -18,15 +18,17 @@ export function StocksDialog({
   disabledTrigger = false,
   open,
   onOpenChange,
+  modal = true,
 }: {
   children: ReactNode;
   isEdit?: boolean;
   disabledTrigger?: boolean;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
+  modal?: boolean;
 }) {
   return (
-    <Dialog open={open} onOpenChange={onOpenChange} modal={false}>
+    <Dialog open={open} onOpenChange={onOpenChange} modal={modal}>
       {!disabledTrigger && (
         <DialogTrigger asChild>
           {isEdit ? (

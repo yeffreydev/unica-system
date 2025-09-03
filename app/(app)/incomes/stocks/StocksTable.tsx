@@ -9,6 +9,7 @@ import {
   getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
+  TableMeta,
 } from "@tanstack/react-table";
 import { ArrowUpDown, Edit, MoreHorizontal, Trash } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -32,8 +33,9 @@ import { IStock } from "@/types/IStock";
 import { StockContext } from "./StockContext";
 import { StocksForm } from "@/app/(app)/incomes/stocks/StocksForm";
 import { StocksDialog } from "./StocksDialog";
+import apiClient from "@/config/apiClient";
 
-export const columns: ColumnDef<IStock>[] = [
+export const columns: ColumnDef<IStock, unknown>[] = [
   {
     accessorKey: "user.dni",
     header: "DNI",
@@ -57,6 +59,28 @@ export const columns: ColumnDef<IStock>[] = [
     ),
   },
   {
+    accessorKey: "date",
+    header: ({ column }) => (
+      <Button
+        variant="ghost"
+        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+      >
+        Fecha
+        <ArrowUpDown />
+      </Button>
+    ),
+    cell: ({ row }) => {
+      const d = row.original.date;
+      if (!d) return <div>-</div>;
+      try {
+        const date = new Date(d);
+        return <div>{date.toLocaleDateString("es-PE", { timeZone: "UTC" })}</div>;
+      } catch {
+        return <div>{d}</div>;
+      }
+    },
+  },
+  {
     accessorKey: "quantity",
     header: "Cantidad",
     cell: ({ row }) => {
@@ -75,7 +99,7 @@ export const columns: ColumnDef<IStock>[] = [
   {
     id: "actions",
     header: "Opciones",
-    cell: () => (
+    cell: ({ table, row }) => (
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" className="h-8 w-8 p-0">
@@ -84,12 +108,14 @@ export const columns: ColumnDef<IStock>[] = [
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          <DropdownMenuItem>
+          <DropdownMenuItem onClick={() => (table.options.meta as TableMeta<IStock> & { onEdit?: (s: IStock) => void })?.onEdit?.(row.original)}>
             <Edit />
             Editar
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() => (table.options.meta as TableMeta<IStock> & { onDelete?: (s: IStock) => void })?.onDelete?.(row.original)}
+          >
             <Trash />
             Eliminar
           </DropdownMenuItem>
@@ -101,7 +127,7 @@ export const columns: ColumnDef<IStock>[] = [
 
 export function StocksTable() {
   const [sorting, setSorting] = useState<SortingState>([]);
-  const { stocks } = useContext(StockContext);
+  const { stocks, setStocks, openEdit } = useContext(StockContext);
   const [openDialog, setOpenDialog] = useState(false);
 
   const table = useReactTable({
@@ -111,6 +137,23 @@ export function StocksTable() {
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
+    meta: {
+      onEdit: (stock: IStock) => {
+        openEdit?.(stock);
+      },
+      onDelete: async (stock: IStock) => {
+        if (!stock.id) return;
+        const confirmDelete = window.confirm("¿Eliminar este registro?");
+        if (!confirmDelete) return;
+        try {
+          await apiClient.delete(`/stocks/${stock.id}`);
+          setStocks?.(stocks.filter((s) => s.id !== stock.id));
+        } catch (e) {
+          console.error(e);
+          alert("No se pudo eliminar. Intenta nuevamente.");
+        }
+      },
+    } as TableMeta<IStock> & { onDelete: (s: IStock) => Promise<void>; onEdit: (s: IStock) => void },
     state: {
       sorting,
     },
@@ -129,6 +172,7 @@ export function StocksTable() {
         <StocksDialog open={openDialog} onOpenChange={setOpenDialog}>
           <StocksForm setOpenDialog={setOpenDialog} />
         </StocksDialog>
+        {/* Custom edit modal is rendered globally in layout via context */}
       </div>
       <div className="bg-background border-border">
         <Table>

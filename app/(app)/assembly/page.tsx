@@ -90,7 +90,7 @@ export default function Assembly() {
   const totalSavings = pastAssemblies.reduce((a, b) => a + b.savings, 0);
   const totalPurchases = pastAssemblies.reduce((a, b) => a + b.purchases, 0);
 
-  const progress = Math.round((assemblyState.currentStep / 8) * 100);
+  // const progress = Math.round((assemblyState.currentStep / 8) * 100);
 
   const handleStartAssembly = () => {
     startAssembly();

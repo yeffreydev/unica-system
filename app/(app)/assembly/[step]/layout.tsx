@@ -8,7 +8,7 @@ import { ChevronLeft, ChevronRight } from "lucide-react";
 export default function StepLayout({ children }: { children: React.ReactNode }) {
     const { 
         assemblyState, 
-        startAssembly, 
+        // startAssembly, 
         endAssembly, 
         setCurrentStep, 
       } = useAssembly();
@@ -26,9 +26,9 @@ export default function StepLayout({ children }: { children: React.ReactNode }) 
     }
   };
 
-  const handleStartAssembly = () => {
-    startAssembly();
-  };
+  // const handleStartAssembly = () => {
+  //   startAssembly();
+  // };
   const progress = Math.round((assemblyState.currentStep / 8) * 100);
 
   const currentStepData = assemblySteps.find(step => step.id === assemblyState.currentStep);

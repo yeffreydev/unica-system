@@ -7,4 +7,5 @@ export interface IStock {
   user?: IUser;
   userId?: string;
   quantity?: number;
+  date?: string;
 }
