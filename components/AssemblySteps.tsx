@@ -1,6 +1,6 @@
 "use client";
 
-import { useAssembly } from "@/context/AssemblyContext";
+import { useAssembly } from "@/app/(app)/assembly/AssemblyContext";
 import { CheckCircle, Circle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 

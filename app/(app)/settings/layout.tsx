@@ -16,6 +16,10 @@ const sidebarNavItems = [
     title: "Plataforma",
     href: "/settings/platform",
   },
+  {
+    title: "Asamblea",
+    href: "/settings/assembly",
+  },
   // {
   //   title: "Apariencia",
   //   href: "/settings/appearance",

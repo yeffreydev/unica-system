@@ -30,16 +30,6 @@ export function ComboBoxUsers({
 }) {
   const [open, setOpen] = React.useState(false);
 
-  // Actualiza el value cuando cambia userSelected desde fuera del componente
-  const [value, setValue] = React.useState(
-    userSelected ? String(userSelected.id) : ""
-  );
-
-  // Efecto para sincronizar value cuando cambia userSelected
-  React.useEffect(() => {
-    setValue(userSelected ? String(userSelected.id) : "");
-  }, [userSelected]);
-
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
@@ -50,37 +40,27 @@ export function ComboBoxUsers({
           aria-expanded={open}
           className="w-full justify-between z-50"
         >
-          {value
-            ? users.find((user) => String(user.id) === value)?.name
-            : "Select user..."}
+          {userSelected ? `${userSelected.name} ${userSelected.lastname}` : "Selecciona usuario..."}
           <ChevronsUpDown className="opacity-50" />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="z-[1000] w-[var(--radix-popover-trigger-width)] p-0">
         <Command>
-          <CommandInput placeholder="Search user..." className="h-9" />
+          <CommandInput placeholder="Buscar usuario..." className="h-9" />
           <CommandList>
             <CommandEmpty>No user found.</CommandEmpty>
             <CommandGroup cy-data="combobox-users-group">
               {users.map((user) => (
                 <CommandItem
                   key={user.id}
-                  value={String(user.id)}
-                  onSelect={(currentValue) => {
-                    // Cambia el usuario seleccionado solo si es diferente
-                    const selectedUser = users.find(
-                      (u) => String(u.id) === currentValue
-                    );
-
-                    // Deseleccionar si ya está seleccionado
-                    if (userSelected && userSelected.id === selectedUser?.id) {
+                  value={`${user.name} ${user.lastname} ${user.dni} ${user.email}`.toLowerCase()}
+                  onSelect={() => {
+                    // Seleccionar o deseleccionar usando el objeto directo
+                    if (userSelected && userSelected.id === user.id) {
                       setUserSelected(null);
-                      setValue("");
-                    } else if (selectedUser) {
-                      setUserSelected(selectedUser);
-                      setValue(currentValue);
+                    } else {
+                      setUserSelected(user);
                     }
-
                     setOpen(false);
                   }}
                 >
@@ -93,7 +73,7 @@ export function ComboBoxUsers({
                   <Check
                     className={cn(
                       "ml-auto",
-                      value === String(user.id) ? "opacity-100" : "opacity-0"
+                      userSelected && userSelected.id === user.id ? "opacity-100" : "opacity-0"
                     )}
                   />
                 </CommandItem>

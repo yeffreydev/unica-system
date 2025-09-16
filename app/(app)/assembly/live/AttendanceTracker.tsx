@@ -1,63 +1,68 @@
 "use client";
 
-import { useState } from "react";
-import { Users, CheckCircle, XCircle, UserPlus } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Users, CheckCircle, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { apiGetAssemblyRun } from "../api";
+import { useAssembly } from "../AssemblyContext";
+import { IAssemblyScheduleRun } from "../types";
 
 interface Attendee {
   id: string;
   name: string;
-  status: 'present' | 'absent' | 'late';
+  status: "PRESENT" | "ABSENT" | "LATE" | "REGISTERED" | "MISSED"
   time?: string;
 }
 
-interface AttendanceTrackerProps {
-  onAttendanceUpdate?: (attendees: Attendee[]) => void;
-}
 
-export function AttendanceTracker({ onAttendanceUpdate }: AttendanceTrackerProps) {
+export function AttendanceTracker() {
+  const { assembly } = useAssembly();
+  const [assemblyRun, setAssemblyRun] = useState<IAssemblyScheduleRun | null>(null);
   const [attendees, setAttendees] = useState<Attendee[]>([
-    { id: '1', name: 'Juan Pérez', status: 'present' },
-    { id: '2', name: 'María García', status: 'present' },
-    { id: '3', name: 'Carlos López', status: 'absent' },
-    { id: '4', name: 'Ana Rodríguez', status: 'late' },
-    { id: '5', name: 'Luis Martínez', status: 'present' },
+    { id: '1', name: 'Juan Pérez', status: 'PRESENT' },
+    { id: '2', name: 'María García', status: 'PRESENT' },
+    { id: '3', name: 'Carlos López', status: 'ABSENT' },
+    { id: '4', name: 'Ana Rodríguez', status: 'LATE' },
+    { id: '5', name: 'Luis Martínez', status: 'REGISTERED' },
   ]);
-  const [newAttendee, setNewAttendee] = useState('');
+  useEffect(() => {
+    //get assembly run
+    (async () => {
+      if (!assembly?.lastRun) return;
+      const data = await apiGetAssemblyRun(assembly.lastRun.id);
+      console.log({ data });
+      setAssemblyRun(data);
+    })();
+  }, [assembly?.lastRun]);
 
-  const handleStatusChange = (id: string, status: 'present' | 'absent' | 'late') => {
+  if (!assembly) {
+    return <div>Cargando datos de la asamblea...</div>;
+  }
+  if (!assembly.lastRun) {
+    return <div>No hay una asamblea en curso.</div>;
+  }
+
+  const handleStatusChange = (id: string, status: 'PRESENT' | 'ABSENT' | 'LATE') => {
     const updatedAttendees = attendees.map(attendee => 
       attendee.id === id 
-        ? { ...attendee, status, time: status === 'present' || status === 'late' ? new Date().toLocaleTimeString() : undefined }
+        ? { ...attendee, status, time: status === 'PRESENT' || status === 'LATE' ? new Date().toLocaleTimeString() : undefined }
         : attendee
     );
     setAttendees(updatedAttendees);
-    onAttendanceUpdate?.(updatedAttendees);
+  
   };
 
-  const handleAddAttendee = () => {
-    if (newAttendee.trim()) {
-      const newAttendeeObj: Attendee = {
-        id: Date.now().toString(),
-        name: newAttendee.trim(),
-        status: 'present',
-        time: new Date().toLocaleTimeString()
-      };
-      const updatedAttendees = [...attendees, newAttendeeObj];
-      setAttendees(updatedAttendees);
-      setNewAttendee('');
-      onAttendanceUpdate?.(updatedAttendees);
-    }
-  };
+ 
 
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'present': return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400';
       case 'absent': return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400';
       case 'late': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400';
+      case 'registered': return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400';
+      case 'MISSED': return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400';
       default: return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400';
     }
   };
@@ -71,9 +76,9 @@ export function AttendanceTracker({ onAttendanceUpdate }: AttendanceTrackerProps
     }
   };
 
-  const presentCount = attendees.filter(a => a.status === 'present').length;
-  const absentCount = attendees.filter(a => a.status === 'absent').length;
-  const lateCount = attendees.filter(a => a.status === 'late').length;
+  const presentCount = attendees.filter(a => a.status === 'PRESENT').length;
+  const absentCount = attendees.filter(a => a.status === 'ABSENT').length;
+  const lateCount = attendees.filter(a => a.status === 'LATE').length;
   const totalCount = attendees.length;
 
   return (
@@ -105,7 +110,7 @@ export function AttendanceTracker({ onAttendanceUpdate }: AttendanceTrackerProps
           </div>
         </div>
 
-        {/* Add new attendee */}
+        {/* Add new attendee
         <div className="flex space-x-2">
           <Input
             placeholder="Agregar asistente..."
@@ -117,17 +122,21 @@ export function AttendanceTracker({ onAttendanceUpdate }: AttendanceTrackerProps
             <UserPlus className="w-4 h-4" />
             <span>Agregar</span>
           </Button>
-        </div>
+        </div> */}
 
         {/* Attendees list */}
-        <div className="space-y-2 max-h-60 overflow-y-auto">
-          {attendees.map((attendee) => (
+        <div className="space-y-2 max-h-128 overflow-y-auto">
+          {assemblyRun?.participants.map((attendee) => (
             <div key={attendee.id} className="flex items-center justify-between p-2 border rounded">
               <div className="flex-1">
-                <div className="font-medium text-foreground">{attendee.name}</div>
-                {attendee.time && (
+                <div className="font-medium text-foreground">{attendee.user.name}</div>
+                {/* {attendee.time && (
                   <div className="text-xs text-muted-foreground">Hora: {attendee.time}</div>
-                )}
+                )} */}
+              
+                  <div className="text-xs text-muted-foreground">{attendee.user.lastname}</div>
+                
+                
               </div>
               <div className="flex items-center space-x-2">
                 <Badge className={getStatusColor(attendee.status)}>
@@ -139,24 +148,24 @@ export function AttendanceTracker({ onAttendanceUpdate }: AttendanceTrackerProps
                 <div className="flex space-x-1">
                   <Button
                     size="sm"
-                    variant={attendee.status === 'present' ? 'default' : 'outline'}
-                    onClick={() => handleStatusChange(attendee.id, 'present')}
+                    variant={attendee.status === "PRESENT" ? 'default' : 'outline'}
+                    onClick={() => handleStatusChange(attendee.id, 'PRESENT')}
                     className="h-8 w-8 p-0"
                   >
                     <CheckCircle className="w-4 h-4" />
                   </Button>
                   <Button
                     size="sm"
-                    variant={attendee.status === 'late' ? 'default' : 'outline'}
-                    onClick={() => handleStatusChange(attendee.id, 'late')}
+                    variant={attendee.status === 'LATE' ? 'default' : 'outline'}
+                    onClick={() => handleStatusChange(attendee.id, 'LATE')}
                     className="h-8 w-8 p-0"
                   >
                     <Users className="w-4 h-4" />
                   </Button>
                   <Button
                     size="sm"
-                    variant={attendee.status === 'absent' ? 'default' : 'outline'}
-                    onClick={() => handleStatusChange(attendee.id, 'absent')}
+                    variant={attendee.status === 'ABSENT' ? 'default' : 'outline'}
+                    onClick={() => handleStatusChange(attendee.id, 'ABSENT')}
                     className="h-8 w-8 p-0"
                   >
                     <XCircle className="w-4 h-4" />

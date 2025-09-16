@@ -5,7 +5,7 @@ import { AuthProvider } from "@/context/auth/AuthContex";
 import { AppProvider } from "@/context/AppContext";
 import { ThemeProvider } from "@/context/ThemeProvider";
 import { ThemeContextProvider } from "@/context/ThemeContext";
-import { AssemblyProvider } from "@/context/AssemblyContext";
+import { AssemblyProvider } from "@/app/(app)/assembly/AssemblyContext";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -29,7 +29,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="es">
       <head>
         <link
           rel="icon"
@@ -41,9 +41,10 @@ export default function RootLayout({
       >
         <ThemeProvider
           attribute="class"
-          defaultTheme="light"
+          defaultTheme="system"
           enableSystem
-          disableTransitionOnChange
+          disableTransitionOnChange={false}
+          storageKey="unica-theme"
         >
           <ThemeContextProvider>
             <AssemblyProvider>

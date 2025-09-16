@@ -1,6 +1,6 @@
 "use client";
 
-import { useAssembly } from "@/context/AssemblyContext";
+import { useAssembly } from "@/app/(app)/assembly/AssemblyContext";
 import { Clock} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";

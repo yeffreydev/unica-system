@@ -2,84 +2,152 @@
 @tailwind components;
 @tailwind utilities;
 
-
 body {
   font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Smooth transitions for theme changes */
+* {
+  transition: 
+    background-color 0.2s ease-in-out,
+    border-color 0.2s ease-in-out,
+    color 0.2s ease-in-out,
+    fill 0.2s ease-in-out,
+    stroke 0.2s ease-in-out;
+}
+
+/* Disable transitions during theme change to prevent flashing */
+.theme-transition-disable * {
+  transition: none !important;
+}
+
+@layer utilities {
+  /* Additional dark mode utilities */
+  .dark-shadow {
+    @apply shadow-lg shadow-black/10 dark:shadow-black/30;
+  }
+  
+  .theme-border {
+    @apply border-border;
+  }
+  
+  .theme-input {
+    @apply bg-background border-input focus:ring-ring;
+  }
 }
 
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222 47% 11%; /* dark gray for text */
+    /* Main surfaces - clean and modern */
+    --background: 0 0% 100%; /* pure white */
+    --foreground: 216 15% 15%; /* #242b33 - sophisticated dark text */
+    
+    /* Cards and elevated surfaces */
     --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
+    --card-foreground: 216 15% 15%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
-    --primary: 174 63% 21%; /* #145750 */
+    --popover-foreground: 216 15% 15%;
+    
+    /* Brand colors - beautiful teal */
+    --primary: 174 63% 21%; /* #145750 - main brand color */
     --primary-foreground: 0 0% 100%;
     --main: 174 63% 21%;
     --main-foreground: 0 0% 100%;
-    --secondary: 240 4.8% 95.9%;
-    --secondary-foreground: 240 5.9% 10%;
-    --muted: 240 4.8% 95.9%;
-    --muted-foreground: 240 3.8% 46.1%;
-    --accent: 240 4.8% 95.9%;
-    --accent-foreground: 240 5.9% 10%;
-    --destructive: 0 84.2% 60.2%;
+    
+    /* Secondary surfaces */
+    --secondary: 210 20% 97%; /* #f5f6f8 - subtle light gray */
+    --secondary-foreground: 216 15% 20%;
+    
+    /* Muted elements */
+    --muted: 210 20% 95%; /* #eef1f4 - muted backgrounds */
+    --muted-foreground: 216 12% 45%; /* #6b7685 - muted text */
+    
+    /* Accent - subtle teal accent */
+    --accent: 174 45% 96%; /* #f0f9f7 - very light teal */
+    --accent-foreground: 174 63% 18%; /* #0f4a42 - darker teal text */
+    
+    /* Destructive */
+    --destructive: 0 72% 51%; /* #e53e3e - red for errors */
     --destructive-foreground: 0 0% 98%;
-    --border: 240 5.9% 90%;
-    --input: 240 5.9% 90%;
-    --ring: 222 47% 11%;
-    --chart-1: 12 76% 61%;
-    --chart-2: 173 58% 39%;
-    --chart-3: 197 37% 24%;
-    --chart-4: 43 74% 66%;
-    --chart-5: 27 87% 67%;
+    
+    /* Borders and inputs */
+    --border: 210 20% 88%; /* #d4dae0 - subtle borders */
+    --input: 210 20% 88%;
+    --ring: 174 63% 21%; /* focus ring matches brand */
+    
+    /* Chart colors - harmonious palette */
+    --chart-1: 12 76% 61%; /* #e67e22 - orange */
+    --chart-2: 174 58% 39%; /* #2c8577 - teal variant */
+    --chart-3: 197 37% 24%; /* #27495c - dark blue */
+    --chart-4: 43 74% 66%; /* #e6c84a - yellow */
+    --chart-5: 27 87% 67%; /* #e67e22 - warm orange */
+    
     --radius: 0.5rem;
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 222 47% 11%;
+    
+    /* Sidebar - cohesive with main theme */
+    --sidebar-background: 210 25% 98%; /* #fafbfc - very light background */
+    --sidebar-foreground: 216 15% 20%;
     --sidebar-primary: 174 63% 21%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --sidebar-accent: 210 20% 95%;
+    --sidebar-accent-foreground: 216 15% 20%;
+    --sidebar-border: 210 20% 90%; /* #dde4ea - sidebar border */
+    --sidebar-ring: 174 63% 21%;
   }
   .dark {
-    --background: 210 10% 10%; /* deep gray with slight cool tint */
-    --foreground: 0 0% 98%;
-    --card: 210 8% 12%; /* elevated surface */
-    --card-foreground: 0 0% 98%;
-    --popover: 210 8% 12%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 174 63% 21%; /* #145750 for brand consistency */
+    /* Main surfaces with sophisticated gray-blue palette */
+    --background: 216 18% 8%; /* #0f1419 - deep navy background */
+    --foreground: 210 12% 95%; /* #f1f3f5 - clean white-gray text */
+    
+    /* Cards and elevated surfaces */
+    --card: 216 16% 11%; /* #1a1f26 - elevated surfaces */
+    --card-foreground: 210 12% 95%;
+    --popover: 216 16% 11%;
+    --popover-foreground: 210 12% 95%;
+    
+    /* Brand colors - keeping the beautiful teal */
+    --primary: 174 55% 32%; /* #2a7a6b - lighter teal for better contrast */
     --primary-foreground: 0 0% 100%;
-    --main: 174 63% 21%;
+    --main: 174 55% 32%;
     --main-foreground: 0 0% 100%;
-    --secondary: 210 10% 16%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 210 10% 18%; /* chips/bubbles */
-    --muted-foreground: 220 13% 70%;
-    --accent: 174 35% 24%; /* subtle green accent */
-    --accent-foreground: 0 0% 100%;
-    --destructive: 0 62.8% 30.6%;
+    
+    /* Secondary surfaces */
+    --secondary: 216 14% 14%; /* #212933 - secondary surfaces */
+    --secondary-foreground: 210 12% 88%;
+    
+    /* Muted elements */
+    --muted: 216 12% 16%; /* #252e39 - muted backgrounds */
+    --muted-foreground: 216 8% 62%; /* #8a939f - muted text */
+    
+    /* Accent - subtle teal accent */
+    --accent: 174 40% 18%; /* #1d5c52 - darker teal accent */
+    --accent-foreground: 174 30% 85%; /* #b8d4d0 - light teal text */
+    
+    /* Destructive */
+    --destructive: 0 65% 45%; /* #cc3333 - red for errors */
     --destructive-foreground: 0 0% 98%;
-    --border: 210 9% 20%;
-    --input: 210 9% 20%;
-    --ring: 174 63% 21%; /* focus ring matches brand */
-    --chart-1: 220 70% 50%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
-    --sidebar-background: 210 10% 10%;
-    --sidebar-foreground: 0 0% 98%;
-    --sidebar-primary: 174 63% 21%;
+    
+    /* Borders and inputs */
+    --border: 216 14% 22%; /* #313c47 - subtle borders */
+    --input: 216 14% 22%;
+    --ring: 174 55% 42%; /* #36967f - focus ring matches brand */
+    
+    /* Chart colors - modern palette */
+    --chart-1: 174 45% 50%; /* #40a68c - teal variant */
+    --chart-2: 200 60% 55%; /* #3398cc - blue */
+    --chart-3: 45 75% 58%; /* #d4a33a - amber */
+    --chart-4: 280 50% 60%; /* #a366cc - purple */
+    --chart-5: 15 70% 58%; /* #cc6640 - orange */
+    
+    /* Sidebar - harmonious with main theme */
+    --sidebar-background: 216 16% 9%; /* #141a21 - slightly different from main bg */
+    --sidebar-foreground: 210 12% 88%;
+    --sidebar-primary: 174 55% 32%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 210 10% 16%;
-    --sidebar-accent-foreground: 0 0% 98%;
-    --sidebar-border: 210 9% 20%;
-    --sidebar-ring: 174 63% 21%;
+    --sidebar-accent: 216 14% 14%;
+    --sidebar-accent-foreground: 210 12% 88%;
+    --sidebar-border: 216 14% 18%; /* #29343f - subtle sidebar border */
+    --sidebar-ring: 174 55% 42%;
   }
 }

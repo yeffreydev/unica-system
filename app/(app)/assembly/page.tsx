@@ -1,6 +1,6 @@
 "use client";
 
-import { useAssembly } from "@/context/AssemblyContext";
+import { useAssembly } from "@/app/(app)/assembly/AssemblyContext";
 import { assemblySteps } from "./steps";
 import { useEffect, useMemo, useState } from "react";
 import { AssemblyStartBanner } from "./components/AssemblyStartBanner";
@@ -10,63 +10,79 @@ import { HistoricalSummary } from "./components/HistoricalSummary";
 
 
 export default function Assembly() {
-  const { 
-    assemblyState, 
-    startAssembly, 
-  } = useAssembly();
+   const {
+     assemblyState,
+     assembly,
+     startAssembly,
+   } = useAssembly();
 
-  const [elapsed, setElapsed] = useState("00:00:00");
-  const [waitingElapsed, setWaitingElapsed] = useState("00:00:00");
-  const totalSteps = assemblySteps.length;
-  const currentStepMeta = useMemo(() => assemblySteps.find(s => s.id === assemblyState.currentStep), [assemblyState.currentStep]);
+   const [elapsed, setElapsed] = useState("00:00:00");
+   const [waitingElapsed, setWaitingElapsed] = useState("00:00:00");
+   const totalSteps = assemblySteps.length;
+   const currentStepMeta = useMemo(() => assemblySteps.find(s => s.id === assemblyState.currentStep), [assemblyState.currentStep]);
 
-  // Próxima asamblea (puedes conectar esto a tu backend luego)
-  const upcomingDate = new Date("2025-09-15T19:00:00");
-  const now = new Date();
-  const msUntil = Math.max(upcomingDate.getTime() - now.getTime(), 0);
-  const daysUntil = Math.floor(msUntil / (1000 * 60 * 60 * 24));
-  const hoursUntil = Math.floor(msUntil / (1000 * 60 * 60)) % 24;
-  const upcomingDateLabel = upcomingDate.toLocaleDateString("es-PE", {
-    weekday: "long",
-    day: "2-digit",
-    month: "long",
-    year: "numeric",
-  });
-  const upcomingTimeLabel = upcomingDate.toLocaleTimeString("es-PE", {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+   // Próxima asamblea (puedes conectar esto a tu backend luego)
+   const upcomingDate = useMemo(() => new Date("2025-09-15T19:00:00"), []);
 
-  useEffect(() => {
-    if (!assemblyState.isActive || !assemblyState.stepStartTime) return;
-    const tick = () => {
-      const ms = Date.now() - (assemblyState.stepStartTime || Date.now());
-      const h = Math.floor(ms / 3600000).toString().padStart(2, "0");
-      const m = Math.floor((ms % 3600000) / 60000).toString().padStart(2, "0");
-      const s = Math.floor((ms % 60000) / 1000).toString().padStart(2, "0");
-      setElapsed(`${h}:${m}:${s}`);
-    };
-    tick();
-    const id = setInterval(tick, 1000);
-    return () => clearInterval(id);
-  }, [assemblyState.isActive, assemblyState.stepStartTime]);
+   const upcomingData = useMemo(() => {
+     if (!assembly) return null;
+     const now = new Date();
+     const msUntil = Math.max(new Date(assembly.nextRun).getTime() - now.getTime(), 0);
+     const daysUntil = Math.floor(msUntil / (1000 * 60 * 60 * 24));
+     const hoursUntil = Math.floor(msUntil / (1000 * 60 * 60)) % 24;
+     const upcomingDateLabel = new Date(assembly.nextRun).toLocaleDateString("es-PE", {
+       weekday: "long",
+       day: "2-digit",
+       month: "long",
+       year: "numeric",
+     });
+     const upcomingTimeLabel = new Date(assembly.nextRun).toLocaleTimeString("es-PE", {
+       hour: "2-digit",
+       minute: "2-digit",
+     });
+     return { msUntil, daysUntil, hoursUntil, upcomingDateLabel, upcomingTimeLabel };
+   }, [assembly]);
 
-  // Tiempo transcurrido SIN iniciar cuando ya es hora
-  useEffect(() => {
-    if (assemblyState.isActive) return;
-    const tick = () => {
-      const diff = Date.now() - upcomingDate.getTime();
-      if (diff >= 0) {
-        const h = Math.floor(diff / 3600000).toString().padStart(2, "0");
-        const m = Math.floor((diff % 3600000) / 60000).toString().padStart(2, "0");
-        const s = Math.floor((diff % 60000) / 1000).toString().padStart(2, "0");
-        setWaitingElapsed(`${h}:${m}:${s}`);
-      }
-    };
-    tick();
-    const id = setInterval(tick, 1000);
-    return () => clearInterval(id);
-  }, [assemblyState.isActive, upcomingDate]);
+   useEffect(() => {
+     if (!assemblyState.isActive || !assemblyState.stepStartTime) return;
+     const tick = () => {
+       const ms = Date.now() - (assemblyState.stepStartTime || Date.now());
+       const h = Math.floor(ms / 3600000).toString().padStart(2, "0");
+       const m = Math.floor((ms % 3600000) / 60000).toString().padStart(2, "0");
+       const s = Math.floor((ms % 60000) / 1000).toString().padStart(2, "0");
+       setElapsed(`${h}:${m}:${s}`);
+     };
+     tick();
+     const id = setInterval(tick, 1000);
+     return () => clearInterval(id);
+   }, [assemblyState.isActive, assemblyState.stepStartTime]);
+
+   // Tiempo transcurrido SIN iniciar cuando ya es hora
+   useEffect(() => {
+     if (assemblyState.isActive) return;
+     const tick = () => {
+       const diff = Date.now() - upcomingDate.getTime();
+       if (diff >= 0) {
+         const h = Math.floor(diff / 3600000).toString().padStart(2, "0");
+         const m = Math.floor((diff % 3600000) / 60000).toString().padStart(2, "0");
+         const s = Math.floor((diff % 60000) / 1000).toString().padStart(2, "0");
+         setWaitingElapsed(`${h}:${m}:${s}`);
+       }
+     };
+     tick();
+     const id = setInterval(tick, 1000);
+     return () => clearInterval(id);
+   }, [assemblyState.isActive, upcomingDate]);
+
+   if (!assembly) {
+     return <div className="px-2 md:px-4 lg:px-6 xl:px-8 2xl:px-10 py-8">Cargando datos de la asamblea...</div>;
+   }
+
+   if (!upcomingData) {
+     return <div className="px-2 md:px-4 lg:px-6 xl:px-8 2xl:px-10 py-8">Cargando datos...</div>;
+   }
+
+   const {  daysUntil, hoursUntil, upcomingDateLabel, upcomingTimeLabel } = upcomingData;
 
   // Simple historical data mock for the summary section
   type PastAssembly = {
@@ -100,7 +116,7 @@ export default function Assembly() {
       <div className="px-2 md:px-4 lg:px-6 xl:px-8 2xl:px-10 py-8 flex flex-col gap-4">
         {
           // if (!assemblyState.isActive && msUntil === 0
-          true && (
+          Date.now() > new Date(assembly.nextRun).getTime() && (
             <AssemblyStartBanner
               waitingElapsed={waitingElapsed}
               upcomingDateLabel={upcomingDateLabel}
@@ -113,7 +129,7 @@ export default function Assembly() {
 
         {
           // if (!assemblyState.isActive) 
-          false && (
+         assembly.lastRun?.status=="IN_PROGRESS"  && (
             <AssemblyProgressBanner
               assemblyState={assemblyState}
               elapsed={elapsed}
@@ -122,8 +138,9 @@ export default function Assembly() {
             />
           )
         }
-       
-      {false &&<NextAssemblyCard
+
+{/* @todo validar bien  */}
+      {!assembly.lastRun && <NextAssemblyCard
         upcomingDateLabel={upcomingDateLabel}
         upcomingTimeLabel={upcomingTimeLabel}
         daysUntil={daysUntil}

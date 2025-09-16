@@ -4,6 +4,7 @@ import { AppSidebar } from "@/components/Nav";
 import { Bell,  } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 
 const topData = [
   {
@@ -183,7 +184,7 @@ export default function AppLayout({
                 </p>
               </div>
               <div className="flex items-center gap-1.5">
-                {/* <ThemeToggle /> */}
+                <ThemeToggle />
                 <Button variant="ghost" size="icon" className="relative">
                   <Bell  className="text-muted-foreground" />
                   <span className="absolute top-2 right-2 inline-block w-2 h-2 rounded-full bg-primary"></span>

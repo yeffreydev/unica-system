@@ -49,7 +49,7 @@ export function AssemblyProgressBanner({
               <div className="text-xs text-muted-foreground truncate">{currentStepMeta?.description}</div>
             </div>
             <div className="flex items-center gap-2">
-              <Link href={`/assembly/${assemblyState.currentStep}`}>
+              <Link href={`/assembly/live`}>
                 <Button className="gap-2">
                   <PlayCircle className="h-4 w-4" /> Ir al paso actual
                 </Button>

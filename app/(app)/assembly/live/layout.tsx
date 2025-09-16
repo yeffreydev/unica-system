@@ -1,5 +1,5 @@
 'use client'
-import { useAssembly } from "@/context/AssemblyContext";
+import { useAssembly } from "@/app/(app)/assembly/AssemblyContext";
 import { assemblySteps } from "../steps";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -26,6 +26,7 @@ export default function StepLayout({ children }: { children: React.ReactNode }) 
     }
   };
 
+
   // const handleStartAssembly = () => {
   //   startAssembly();
   // };
@@ -33,7 +34,7 @@ export default function StepLayout({ children }: { children: React.ReactNode }) 
 
   const currentStepData = assemblySteps.find(step => step.id === assemblyState.currentStep);
 
-    return <div className="flex gap-6">
+    return <div className="flex gap-6 py-4">
     {/* Left Circular Stepper */}
     <aside className="hidden md:flex flex-col items-center pt-2">
       {assemblySteps.map((step) => {

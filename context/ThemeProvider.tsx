@@ -8,6 +8,8 @@ interface ThemeProviderProps {
   defaultTheme?: string;
   enableSystem?: boolean;
   disableTransitionOnChange?: boolean;
+  storageKey?: string;
+  themes?: string[];
 }
 
 export function ThemeProvider({ 
@@ -16,6 +18,8 @@ export function ThemeProvider({
   defaultTheme = "system",
   enableSystem = true,
   disableTransitionOnChange = false,
+  storageKey = "unica-theme",
+  themes = ["light", "dark", "system"],
   ...props 
 }: ThemeProviderProps) {
   return (
@@ -24,6 +28,8 @@ export function ThemeProvider({
       defaultTheme={defaultTheme}
       enableSystem={enableSystem}
       disableTransitionOnChange={disableTransitionOnChange}
+      storageKey={storageKey}
+      themes={themes}
       {...props}
     >
       {children}

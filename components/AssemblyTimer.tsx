@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Play, Pause, RotateCcw, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useAssembly } from "@/context/AssemblyContext";
+import { useAssembly } from "@/app/(app)/assembly/AssemblyContext";
 
 interface AssemblyTimerProps {
   stepName: string;

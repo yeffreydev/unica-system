@@ -44,9 +44,9 @@ export function NextAssemblyCard({
             <div className="rounded-md border bg-card p-4">
               <div className="text-xs text-muted-foreground">Lugar</div>
               <div className="mt-1 text-lg font-semibold text-foreground flex items-center gap-2">
-                <MapPin className="w-4 h-4 text-primary" /> Sala Principal
+                <MapPin className="w-4 h-4 text-primary" /> Sala Principal Montes y Vegas
               </div>
-              <div className="text-sm text-muted-foreground">Sede Central</div>
+              <div className="text-sm text-muted-foreground">Combayo</div>
             </div>
           </div>
 
