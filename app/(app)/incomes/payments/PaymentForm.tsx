@@ -14,10 +14,9 @@ import { Button } from "../../../../components/ui/button";
 import { useContext, useState } from "react";
 import { AppContext } from "@/context/AppContext";
 import { ComboBoxUsers } from "../../../../components/combobox/ComboboxUsers";
-import { ILoanInstallment } from "@/types/ILoan";
 import { usePayment } from "./usePayment";
-import apiClient from "@/config/apiClient";
 import { PaymentsContext } from "./PaymentsProvider";
+import { apiCreateLoanPayment } from "./api";
 
 const formatDate = (date: Date) => {
   return date.toLocaleDateString("es-ES", {
@@ -27,149 +26,67 @@ const formatDate = (date: Date) => {
   });
 };
 
-const InstallmentTable = ({
-  installments,
-  payment,
-  setPayment,
-}: {
-  installments: ILoanInstallment[];
-  payment: {
-    amount: number;
-    interest: number;
-  };
-  setPayment: (payment: { amount: number; interest: number }) => void;
-}) => {
-  const installment = installments[0];
-
-  if (!installment) {
-    return <div>No hay pagos pendientes</div>;
-  }
-  return (
-    <div className="flex flex-col p-2">
-      <div>
-        <span className="italic text-sm">Tu proximo pago a realizar</span>
-      </div>
-      <div
-        className="flex font-semibold
-      "
-      >
-        <div className="flex-1">Fecha</div>
-        <div className="flex-1">Pago</div>
-        <div className="flex-1">Interés</div>
-      </div>
-      <div className="flex hover:bg-slate-300 py-2 cursor-pointer">
-        <div className="flex-1">
-          <span>{formatDate(new Date(installment.date))}</span>
-        </div>
-        <div className="flex-1">
-          <input
-            type="text"
-            className="w-[100px] text-right"
-            cy-data="installment-amount"
-            value={payment.amount}
-            onChange={(e) => {
-              setPayment({
-                ...payment,
-                amount: !isNaN(parseFloat(e.target.value))
-                  ? parseFloat(e.target.value)
-                  : 0,
-              });
-            }}
-          />
-          <span>
-            {installment.payment > payment.amount ? (
-              <span className="text-red-500">
-                {`(Deuda: S/. ${payment.amount - installment.payment})`}
-              </span>
-            ) : (
-              <span className="text-green-500">
-                {`(Deuda: S/. ${installment.payment - payment.amount})`}
-              </span>
-            )}
-          </span>
-        </div>
-        <div className="flex-1">
-          <input
-            type="text"
-            disabled
-            className="w-[100px] text-right"
-            value={payment.interest}
-            onChange={(e) => {
-              setPayment({
-                ...payment,
-                interest: !isNaN(parseFloat(e.target.value))
-                  ? parseFloat(e.target.value)
-                  : 0,
-              });
-            }}
-          />
-          <span>
-            {installment.interest > payment.interest ? (
-              <span className="text-red-500">
-                {`(Deuda: S/. ${payment.interest - installment.interest})`}
-              </span>
-            ) : (
-              <span className="text-green-500">
-                {`(Deuda: S/. ${installment.interest - payment.interest})`}
-              </span>
-            )}
-          </span>
-        </div>
-      </div>
-    </div>
-  );
-};
-
 export const CapitalAndInterestForm = ({
   setOpenDialog,
 }: {
   setOpenDialog?: (value: boolean) => void;
 }) => {
-  const { selectedUser, setSelectedUser, selectedLoan, payment, setPayment } =
+  const { selectedUser, setSelectedUser, selectedLoan, setPayment } =
     usePayment();
   const { addPayment } = useContext(PaymentsContext);
   const { users } = useContext(AppContext);
   const [currentPage, setCurrentPage] = useState(0);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const form = useForm({
     defaultValues: {
-      username: "", // Asegúrate de definir un valor inicial
-      amount: 0,
+      username: "",
+      capital: "",
+      interest: "",
+      date: new Date().toISOString().split("T")[0],
     },
   });
 
-  const savePayment = async () => {
-    if (!selectedLoan) {
-      return;
-    }
-    const res = await apiClient.post("loans/pay-loan/" + selectedLoan.id, {
-      paymentAmount: payment.amount,
-      interestAmount: payment.interest,
-    });
+  const savePayment = async (capital: number, interest: number, date: string) => {
+    setIsSubmitting(true);
+    try {
+      console.log("Saving payment", { capital, interest, date });
+     const data = await apiCreateLoanPayment({
+        userId: selectedUser?.id || "",
+        date,
+        amount: capital,
+        interest, 
+      });
 
-    const data = res.data;
-    if (!data) {
-      console.error("Error al guardar el pago");
-      return;
+      console.log("Payment saved", data);
+      addPayment?.(data);
+      setSelectedUser(null);
+      setOpenDialog?.(false);
+      setPayment({ amount: 0, interest: 0 });
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsSubmitting(false);
     }
-    addPayment?.(res.data);
-    console.log("Payment data", data);
   };
 
   return (
     <Form {...form}>
       <form
-        onSubmit={form.handleSubmit((data) => {
+        onSubmit={form.handleSubmit(async (data) => {
+          if (isSubmitting) return; // Prevent multiple submissions
+          const capital = parseFloat(data.capital) || 0;
+          const interest = parseFloat(data.interest) || 0;
+          if (capital < 0 || interest < 0) {
+            alert("Los valores deben ser números positivos");
+            return;
+          }
           console.log("Form data", data);
-          savePayment();
-          setSelectedUser(null);
-          setOpenDialog?.(false);
-
-          setPayment({ amount: 0, interest: 0 });
+          console.log("Selected user", selectedUser);
+          await savePayment(capital, interest, data.date);
         })}
         className="flex flex-col gap-4"
       >
-        <h2>Pagos E Intereses </h2>
         {currentPage === 0 && (
           <FormField
             control={form.control}
@@ -189,7 +106,7 @@ export const CapitalAndInterestForm = ({
                   </div>
                 </FormControl>
                 <FormDescription>
-                  El usuario al que deseas depositar el monto.
+                  El usuario que paga
                 </FormDescription>
                 <FormMessage />
               </FormItem>
@@ -198,7 +115,7 @@ export const CapitalAndInterestForm = ({
         )}
 
         {currentPage === 1 && (
-          <div className="flex flex-col">
+          <div className="flex flex-col gap-4">
             {selectedLoan && (
               <div className="flex gap-2 items-center justify-between border rounded-lg p-2 cursor-pointer hover:bg-slate-200">
                 <div className="flex flex-col">
@@ -210,21 +127,69 @@ export const CapitalAndInterestForm = ({
                 <span>S/. {selectedLoan.amount}</span>
               </div>
             )}
-            <InstallmentTable
-              payment={payment}
-              setPayment={setPayment}
-              installments={selectedLoan?.loanInstallments ?? []}
+            <FormField
+              control={form.control}
+              name="capital"
+              rules={{
+                validate: (value) =>
+                  value === "" ||
+                  (!isNaN(parseFloat(value)) && parseFloat(value) >= 0) ||
+                  "Debe ser un número positivo",
+              }}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Pago Capital</FormLabel>
+                  <FormControl>
+                    <input
+                      type="text"
+                      className="w-full p-2 border rounded"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-            <div className="flex items-center justify-between border-t mt-2 pt-2">
-              <span>Total</span>
-              <span>
-                S/.{" "}
-                {selectedLoan?.loanInstallments?.reduce(
-                  (acc, installment) => acc + installment.payment,
-                  0
-                ) ?? 0}
-              </span>
-            </div>
+            <FormField
+              control={form.control}
+              name="interest"
+              rules={{
+                validate: (value) =>
+                  value === "" ||
+                  (!isNaN(parseFloat(value)) && parseFloat(value) >= 0) ||
+                  "Debe ser un número positivo",
+              }}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Pago Interés</FormLabel>
+                  <FormControl>
+                    <input
+                      type="text"
+                      className="w-full p-2 border rounded"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="date"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Fecha de Pago</FormLabel>
+                  <FormControl>
+                    <input
+                      type="date"
+                      className="w-full p-2 border rounded"
+                      {...field}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
           </div>
         )}
         <div className="flex items-center justify-end gap-2 py-2">
@@ -249,8 +214,8 @@ export const CapitalAndInterestForm = ({
           )}
           {currentPage === 1 && (
             <div>
-              <Button cy-data="save-btn" type="submit">
-                Guardar
+              <Button cy-data="save-btn" type="submit" disabled={isSubmitting}>
+                {isSubmitting ? "Guardando..." : "Guardar"}
               </Button>
             </div>
           )}

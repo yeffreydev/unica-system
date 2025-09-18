@@ -35,6 +35,7 @@ export const StocksForm = ({
   const { addStock, setStocks, stocks, closeEdit } = useContext(StockContext);
   const [userSelected, setUserSelected] = useState<IUser | null>(null);
   const [step, setStep] = useState<number>(1);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const isEdit = !!editStock?.id;
   const form = useForm({
     defaultValues: {
@@ -58,6 +59,7 @@ export const StocksForm = ({
   }, [isEdit, !!editStock]);
 
   const buyStock = async (data: IStock & { date?: string }) => {
+    setIsSubmitting(true);
     try {
       const res = await apiClient.post("/stocks/buy", data);
       if (res.status === 201) {
@@ -69,10 +71,13 @@ export const StocksForm = ({
     } catch (e) {
       console.log(e);
       setOpenDialog?.(false);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const updateStock = async (id: string, data: Partial<IStock> & { date?: string }) => {
+    setIsSubmitting(true);
     try {
       const res = await apiClient.put(`/stocks/${id}`, data);
       if (res.status === 200) {
@@ -87,6 +92,8 @@ export const StocksForm = ({
     } catch (e) {
       console.log(e);
       alert("No se pudo actualizar. Intenta nuevamente.");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -98,7 +105,8 @@ export const StocksForm = ({
   return (
     <Form {...form}>
       <form
-        onSubmit={form.handleSubmit((formData) => {
+        onSubmit={form.handleSubmit(async (formData) => {
+          if (isSubmitting) return; // Prevent multiple submissions
           if (formData.amount <= 0) {
             alert("La cantidad debe ser mayor a 0");
             return;
@@ -120,7 +128,7 @@ export const StocksForm = ({
             date: formData.date,
           };
           if (isEdit && editStock?.id) {
-            updateStock(editStock.id, payload);
+            await updateStock(editStock.id, payload);
           } else {
             const data: IStock & { date?: string } = {
               name: "",
@@ -130,7 +138,7 @@ export const StocksForm = ({
               id: mainStock.id,
               date: formData.date,
             };
-            buyStock(data);
+            await buyStock(data);
           }
         })}
       >
@@ -255,8 +263,8 @@ export const StocksForm = ({
                   Volver
                 </Button>
               )}
-              <Button cy-data="save-btn" type="submit">
-                {isEdit ? "Actualizar" : "Guardar"}
+              <Button cy-data="save-btn" type="submit" disabled={isSubmitting}>
+                {isSubmitting ? "Guardando..." : (isEdit ? "Actualizar" : "Guardar")}
               </Button>
             </div>
           </div>

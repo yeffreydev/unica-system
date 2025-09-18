@@ -6,19 +6,21 @@ import {
   ReactNode,
   useContext,
 } from "react";
-import apiClient from "@/config/apiClient";
-import { ILoanInstallment } from "@/types/ILoan";
 import { AuthContext } from "@/context/auth/AuthContex";
+import { apiGetLoanPayments } from "./api";
+import { ILoanPayment } from "./types";
 interface PaymentsContextType {
-  payments: ILoanInstallment[];
-  setPayments?: (payments: ILoanInstallment[]) => void;
-  addPayment?: (payment: ILoanInstallment) => void;
+  payments: ILoanPayment[];
+  setPayments?: (payments: ILoanPayment[]) => void;
+  removePayment?: (id: string) => void;
+  addPayment?: (payment: ILoanPayment) => void;
 }
 
 const initialState: PaymentsContextType = {
   payments: [],
   setPayments: () => {},
   addPayment: () => {},
+  removePayment: () => {},
 };
 
 export const PaymentsContext = createContext<PaymentsContextType>(initialState);
@@ -30,19 +32,22 @@ interface PaymentsProviderProps {
 export const PaymentsProvider: React.FC<PaymentsProviderProps> = ({
   children,
 }) => {
-  const [payments, setPayments] = useState<ILoanInstallment[]>(
+  const [payments, setPayments] = useState<ILoanPayment[]>(
     initialState.payments
   );
   const { auth } = useContext(AuthContext);
 
-  const addPayment = (payment: ILoanInstallment) => {
+  const addPayment = (payment: ILoanPayment) => {
     setPayments([...payments, payment]);
   };
-
+  const removePayment = (id: string) => {
+    setPayments(payments.filter((payment) => payment.id !== id));
+  }
   const fetchPayments = async () => {
     try {
-      const res = await apiClient.get("/loans/paid-installments");
-      setPayments(res.data);
+      const data = await apiGetLoanPayments()
+      console.log("Fetched payments:", data);
+      setPayments(data);
     } catch (error) {
       console.error(error);
     }
@@ -59,6 +64,7 @@ export const PaymentsProvider: React.FC<PaymentsProviderProps> = ({
       value={{
         payments,
         addPayment,
+        removePayment,
       }}
     >
       {children}

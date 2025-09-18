@@ -12,9 +12,9 @@ const mainItems = [
 ];
 
 const otrosItems = [
-  { title: "Depositos", href: "/incomes/deposits" },
+  // { title: "Depositos", href: "/incomes/deposits" },
   // { title: "Acciones", href: "/incomes/stocks" },
-  // { title: "Pagos e Intereses", href: "/incomes/payments" },
+  { title: "Pagos e Intereses", href: "/incomes/payments" },
   // { title: "Fondo Social Reserva Legal", href: "/incomes/legal-and-social" },
   // { title: "Otros Ingresos", href: "/incomes/others" },
   // { title: "Retiros", href: "/expenses/withdrawls" },

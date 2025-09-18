@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useContext } from "react";
+import { useContext, useEffect, useState } from "react";
 import {
   ColumnDef,
   SortingState,
@@ -9,9 +9,16 @@ import {
   getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
+  TableMeta,
 } from "@tanstack/react-table";
-import { ArrowUpDown } from "lucide-react";
+import { ArrowUpDown, MoreHorizontal, Trash } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import {
   Table,
@@ -21,19 +28,27 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { ILoanInstallment } from "@/types/ILoan";
+import { Skeleton } from "@/components/ui/skeleton";
 import { formatCurrency } from "@/lib/utils";
 import { PaymentsContext } from "./PaymentsProvider";
 import { PaymentDialog } from "./PaymentDialog";
 import { CapitalAndInterestForm } from "./PaymentForm";
 import { usePayment } from "./usePayment";
+import { ILoanPayment } from "./types";
+import { apiDeleteLoanPayment } from "./api";
 
 export function PaymentsTable() {
   const [sorting, setSorting] = useState<SortingState>([]);
-  const { payments } = useContext(PaymentsContext);
+  const { payments ,removePayment} = useContext(PaymentsContext);
   const { openDialog, setOpenDialog } = usePayment();
+  const [loading, setLoading] = useState(true);
 
-  const columns: ColumnDef<ILoanInstallment>[] = [
+  useEffect(() => {
+    const timer = setTimeout(() => setLoading(false), 1000); // Show skeleton for 1 second to handle loading delay
+    return () => clearTimeout(timer);
+  }, []);
+
+  const columns: ColumnDef<ILoanPayment>[] = [
     {
       accessorKey: "date",
       header: "Fecha de Pago",
@@ -47,19 +62,19 @@ export function PaymentsTable() {
         </div>
       ),
     },
-    {
-      header: "Cuota",
-      cell: ({ row }) => (
-        <div>
-          {(row.original.user?.name
-            ? row.original.user.name[0]?.toUpperCase() ?? ""
-            : "") +
-            (row.original?.installment_number ?? "") +
-            "-" +
-            row.original?.loan?.amount}
-        </div>
-      ),
-    },
+    // {
+    //   header: "Cuota",
+    //   cell: ({ row }) => (
+    //     <div>
+    //       {/* {(row.original.user?.name
+    //         ? row.original.user.name[0]?.toUpperCase() ?? ""
+    //         : "") +
+    //         (row.original?.installment_number ?? "") +
+    //         "-" +
+    //         row.original?.loan?.amount} */}
+    //     </div>
+    //   ),
+    // },
     {
       accessorKey: "user.name",
       header: ({ column }) => (
@@ -81,7 +96,7 @@ export function PaymentsTable() {
       accessorKey: "payment",
       header: "Abono capital",
       cell: ({ row }) => {
-        return <div>S/. {formatCurrency(row.original.payment)}</div>;
+        return <div>S/. {formatCurrency(row.original.amount)}</div>;
       },
     },
     {
@@ -97,15 +112,37 @@ export function PaymentsTable() {
       cell: ({ row }) => {
         return (
           <div>
-            S/. {formatCurrency(row.original.payment + row.original.interest)}
+            S/. {formatCurrency(row.original.amount + row.original.interest)}
           </div>
         );
       },
     },
+    {
+      id: "actions",
+      header: "Opciones",
+      cell: ({ table, row }) => (
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="h-8 w-8 p-0">
+              <span className="sr-only">Abrir menú</span>
+              <MoreHorizontal />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem
+              onClick={() => (table.options.meta as TableMeta<ILoanPayment> & { onDelete?: (p: ILoanPayment) => void })?.onDelete?.(row.original)}
+            >
+              <Trash />
+              Eliminar
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      ),
+    },
   ];
 
   const table = useReactTable({
-    data: payments, // Use localPayments instead of payments directly
+    data: payments,
     columns,
     state: {
       sorting,
@@ -114,6 +151,21 @@ export function PaymentsTable() {
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
+    meta: {
+      onDelete: async (payment: ILoanPayment) => {
+        if (!payment.id) return;
+        const confirmDelete = window.confirm("¿Eliminar este pago?");
+        if (!confirmDelete) return;
+        try {
+         const res = await apiDeleteLoanPayment(payment.id);
+         console.log("Delete response:", res);
+         removePayment?.(payment.id);
+        } catch (e) {
+          console.error(e);
+          alert("No se pudo eliminar. Intenta nuevamente.");
+        }
+      },
+    } as TableMeta<ILoanPayment> & { onDelete: (p: ILoanPayment) => Promise<void> },
   });
 
   return (
@@ -148,7 +200,19 @@ export function PaymentsTable() {
             ))}
           </TableHeader>
           <TableBody cy-data="payments-table-body">
-            {table.getRowModel().rows.length ? (
+            {loading ? (
+              // Skeleton rows
+              Array.from({ length: 5 }).map((_, index) => (
+                <TableRow key={index}>
+                  <TableCell><Skeleton className="h-4 w-20" /></TableCell>
+                  <TableCell><Skeleton className="h-4 w-32" /></TableCell>
+                  <TableCell><Skeleton className="h-4 w-16" /></TableCell>
+                  <TableCell><Skeleton className="h-4 w-16" /></TableCell>
+                  <TableCell><Skeleton className="h-4 w-16" /></TableCell>
+                  <TableCell><Skeleton className="h-8 w-8" /></TableCell>
+                </TableRow>
+              ))
+            ) : table.getRowModel().rows.length ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow key={row.id}>
                   {row.getVisibleCells().map((cell) => (
