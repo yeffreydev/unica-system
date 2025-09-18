@@ -18,20 +18,14 @@ import { usePayment } from "./usePayment";
 import { PaymentsContext } from "./PaymentsProvider";
 import { apiCreateLoanPayment } from "./api";
 
-const formatDate = (date: Date) => {
-  return date.toLocaleDateString("es-ES", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
-};
+
 
 export const CapitalAndInterestForm = ({
   setOpenDialog,
 }: {
   setOpenDialog?: (value: boolean) => void;
 }) => {
-  const { selectedUser, setSelectedUser, selectedLoan, setPayment } =
+  const { selectedUser, setSelectedUser, setPayment } =
     usePayment();
   const { addPayment } = useContext(PaymentsContext);
   const { users } = useContext(AppContext);
@@ -116,7 +110,7 @@ export const CapitalAndInterestForm = ({
 
         {currentPage === 1 && (
           <div className="flex flex-col gap-4">
-            {selectedLoan && (
+            {/* {selectedLoan && (
               <div className="flex gap-2 items-center justify-between border rounded-lg p-2 cursor-pointer hover:bg-slate-200">
                 <div className="flex flex-col">
                   <span>
@@ -126,7 +120,7 @@ export const CapitalAndInterestForm = ({
                 </div>
                 <span>S/. {selectedLoan.amount}</span>
               </div>
-            )}
+            )} */}
             <FormField
               control={form.control}
               name="capital"
