@@ -15,3 +15,6 @@ export const socialFundsData = {
   LEGAL: "Fondo legal",
   SOCIAL: "Fondo social",
 };
+
+
+export const ParticipantStatus =  {'registered': 'Registrado', 'confirmed': 'Confirmado', 'declined': 'Rechazado', 'attended': 'Asistió', 'late': 'Tarde', 'absent': 'Ausente'};

@@ -11,8 +11,8 @@ export interface IAssemblyStep {
 export const assemblySteps: IAssemblyStep[] = [
   {
     id: 1,
-    title: "Inicio de Reunión y Llamado de Lista",
-    description: "Iniciar la asamblea y verificar la asistencia de los miembros",
+    title: "Llamado de Lista",
+    description: "Verificar la asistencia de los miembros",
     icon: Users,
     details: [
       "Verificar quórum mínimo",

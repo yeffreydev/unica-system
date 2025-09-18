@@ -1,6 +1,6 @@
 "use client";
 
-import { useContext, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import {
   ColumnDef,
   SortingState,
@@ -9,6 +9,7 @@ import {
   getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
+  TableMeta,
 } from "@tanstack/react-table";
 import { ArrowUpDown, Edit, MoreHorizontal, Trash } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -28,26 +29,28 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { IDeposit } from "@/types/ITransaction";
+import { Skeleton } from "@/components/ui/skeleton";
+import apiClient from "@/config/apiClient";
+
 import { DepositContext } from "./DepositProvider";
 import { DepositForm } from "./DepositForm";
 import { DepositsDialog } from "./DepositsDialog";
+import { IDeposit } from "./types";
 
 export const columns: ColumnDef<IDeposit>[] = [
   {
     accessorKey: "createdAt",
     header: "Fecha",
-    cell: ({ row }) => (
-      <div>
-        {row.original?.createdAt
-          ? `${new Date(
-              row.original.createdAt
-            ).toLocaleDateString()} ${new Date(
-              row.original.createdAt
-            ).toLocaleTimeString()}`
-          : "Fecha no disponible"}
-      </div>
-    ),
+    cell: ({ row }) => {
+      const d = row.original?.date;
+      if (!d) return <div>Fecha no disponible</div>;
+      try {
+        const date = new Date(d);
+        return <div>{date.toLocaleDateString("es-PE", { timeZone: "UTC" })}</div>;
+      } catch {
+        return <div>{String(d)}</div>;
+      }
+    },
   },
   {
     accessorKey: "user.name",
@@ -77,7 +80,7 @@ export const columns: ColumnDef<IDeposit>[] = [
   {
     id: "actions",
     header: "Opciones",
-    cell: () => (
+    cell: ({ table, row }) => (
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" className="h-8 w-8 p-0">
@@ -86,12 +89,14 @@ export const columns: ColumnDef<IDeposit>[] = [
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          <DropdownMenuItem>
+          <DropdownMenuItem onClick={() => (table.options.meta as TableMeta<IDeposit> & { onEdit?: (d: IDeposit) => void })?.onEdit?.(row.original)}>
             <Edit />
             Editar
           </DropdownMenuItem>
           <DropdownMenuSeparator />
-          <DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={() => (table.options.meta as TableMeta<IDeposit> & { onDelete?: (d: IDeposit) => void })?.onDelete?.(row.original)}
+          >
             <Trash />
             Eliminar
           </DropdownMenuItem>
@@ -103,8 +108,14 @@ export const columns: ColumnDef<IDeposit>[] = [
 
 export function DepositsTable() {
   const [sorting, setSorting] = useState<SortingState>([]);
-  const { deposits } = useContext(DepositContext);
+  const { deposits, setDeposits } = useContext(DepositContext);
   const [openDialog, setOpenDialog] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setLoading(false), 1000); // Show skeleton for 1 second to handle loading delay
+    return () => clearTimeout(timer);
+  }, []);
 
   const table = useReactTable({
     data: deposits,
@@ -113,6 +124,20 @@ export function DepositsTable() {
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
+    meta: {
+      onDelete: async (deposit: IDeposit) => {
+        if (!deposit.id) return;
+        const confirmDelete = window.confirm("¿Eliminar este depósito?");
+        if (!confirmDelete) return;
+        try {
+          await apiClient.delete(`/deposits/${deposit.id}`);
+          setDeposits?.(deposits.filter((d) => d.id !== deposit.id));
+        } catch (e) {
+          console.error(e);
+          alert("No se pudo eliminar. Intenta nuevamente.");
+        }
+      },
+    } as TableMeta<IDeposit> & { onDelete: (d: IDeposit) => Promise<void> },
     state: {
       sorting,
     },
@@ -149,7 +174,17 @@ export function DepositsTable() {
             ))}
           </TableHeader>
           <TableBody cy-data="loans-table-body">
-            {table.getRowModel().rows.length ? (
+            {loading ? (
+              // Skeleton rows
+              Array.from({ length: 5 }).map((_, index) => (
+                <TableRow key={index}>
+                  <TableCell><Skeleton className="h-4 w-20" /></TableCell>
+                  <TableCell><Skeleton className="h-4 w-32" /></TableCell>
+                  <TableCell><Skeleton className="h-4 w-16" /></TableCell>
+                  <TableCell><Skeleton className="h-8 w-8" /></TableCell>
+                </TableRow>
+              ))
+            ) : table.getRowModel().rows.length ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow key={row.id}>
                   {row.getVisibleCells().map((cell) => (

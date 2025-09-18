@@ -94,6 +94,10 @@ body {
     --sidebar-accent-foreground: 216 15% 20%;
     --sidebar-border: 210 20% 90%; /* #dde4ea - sidebar border */
     --sidebar-ring: 174 63% 21%;
+
+    /* Top header */
+    --top-header-background: 0 0% 100%;
+    --top-header-foreground: 216 15% 15%;
   }
   .dark {
     /* Main surfaces with sophisticated gray-blue palette */
@@ -149,5 +153,9 @@ body {
     --sidebar-accent-foreground: 210 12% 88%;
     --sidebar-border: 216 14% 18%; /* #29343f - subtle sidebar border */
     --sidebar-ring: 174 55% 42%;
+
+    /* Top header */
+    --top-header-background: 216 18% 8%;
+    --top-header-foreground: 210 12% 95%;
   }
 }

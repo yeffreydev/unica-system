@@ -16,3 +16,7 @@ export const apiGetAssemblyRun = async (id: string) => {
   const response = await apiClient.get<IAssemblyScheduleRun>(`/schedules/assembly/run/${id}`);
   return response.data;
 }
+export const apiUpdateParticipantStatusInAssemblyRun = async (participantId: string, status: string) => {
+    const response = await apiClient.patch(`/schedules/assembly/run/attendance/${participantId}`, { status });
+    return response.data as { count: number };
+}

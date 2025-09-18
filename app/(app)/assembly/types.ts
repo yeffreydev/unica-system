@@ -1,17 +1,33 @@
 import { IUser } from "@/types/IUser";
 
+// with lowercase for save in literal in db  
+export enum ScheduleRunStatusesTypes {
+  SCHEDULED = 'scheduled',
+  COMPLETED = 'completed',
+  IN_PROGRESS = 'in_progress',
+  CANCELLED = 'cancelled',
+}
+
+export enum ParticipantStatusTypes {
+  REGISTERED = 'registered',
+  CONFIRMED = 'confirmed',
+  DECLINED = 'declined',
+  ATTENDED = 'attended',
+  LATE = 'late',
+  ABSENT = 'absent',
+}
 export interface IAssemblyScheduleRun {
     id: string;
     startAt: Date;
     topic: string;
-    status: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'FAILED';
+    status: ScheduleRunStatusesTypes;
     endAt: Date;
     participants: IAssemblyParticipant[];
 }
 export interface IAssemblyParticipant {
     id: string;
     user: IUser;
-    status: 'PENDING' | 'CONFIRMED' | 'DECLINED' | 'REGISTERED' | 'MISSED' | 'PRESENT' | 'ABSENT' | 'LATE';
+    status: ParticipantStatusTypes;
 }
 export interface IAssemblySchedule {
     id: string;

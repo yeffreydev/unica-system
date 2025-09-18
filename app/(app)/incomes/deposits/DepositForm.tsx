@@ -17,7 +17,7 @@ import { ComboBoxUsers } from "../../../../components/combobox/ComboboxUsers";
 import { IUser } from "@/types/IUser";
 import { DepositContext } from "./DepositProvider";
 import apiClient from "@/config/apiClient";
-import { IDeposit } from "@/types/ITransaction";
+import { IDeposit } from "./types";
 
 export const DepositForm = ({
   setOpenDialog,
@@ -27,17 +27,28 @@ export const DepositForm = ({
   const { users, formCloseModalRef } = useContext(AppContext);
   const { addDeposit } = useContext(DepositContext);
   const [userSelected, setUserSelected] = useState<IUser | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const getPeruDate = () => {
+    const now = new Date();
+    const peruOffset = -5 * 60; // Peru is UTC-5
+    const peruTime = new Date(
+      now.getTime() + (peruOffset - now.getTimezoneOffset()) * 60000
+    );
+    return peruTime.toISOString().split("T")[0];
+  };
 
   const form = useForm({
     defaultValues: {
-      username: "", // Asegúrate de definir un valor inicial
+      username: "",
       amount: 0,
+      date: getPeruDate(),
     },
   });
 
   const createDeposit = async (data: IDeposit) => {
     try {
-      const res = await apiClient.post("/transactions/deposits", data);
+      const res = await apiClient.post("/deposits", data);
       if (res.data) {
         addDeposit!(res.data);
         form.reset();
@@ -47,13 +58,16 @@ export const DepositForm = ({
     } catch (e) {
       console.log(e);
       setOpenDialog?.(false);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   return (
     <Form {...form}>
       <form
-        onSubmit={form.handleSubmit((formData) => {
+        onSubmit={form.handleSubmit(async (formData) => {
+          if (isSubmitting) return; // Prevent multiple submissions
           if (formData.amount <= 0) {
             alert("La cantidad debe ser mayor a 0");
             return;
@@ -62,9 +76,11 @@ export const DepositForm = ({
             alert("Debes seleccionar un usuario");
             return;
           }
-          createDeposit({
+          setIsSubmitting(true);
+          await createDeposit({
             amount: formData.amount,
             userId: userSelected.id,
+            date: formData.date,
           });
         })}
       >
@@ -106,9 +122,19 @@ export const DepositForm = ({
             </FormItem>
           )}
         />
+        <FormItem>
+          <FormLabel>Fecha</FormLabel>
+          <FormControl>
+            <Input type="date" {...form.register("date")} />
+          </FormControl>
+          <FormDescription>
+            La fecha en que deseas que se registre el depósito.
+          </FormDescription>
+          <FormMessage />
+        </FormItem>
         <div>
-          <Button cy-data="save-btn" type="submit">
-            Guardar
+          <Button cy-data="save-btn" type="submit" disabled={isSubmitting}>
+            {isSubmitting ? "Guardando..." : "Guardar"}
           </Button>
         </div>
       </form>

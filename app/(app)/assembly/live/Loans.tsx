@@ -3,42 +3,70 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Checkbox } from "@/components/ui/checkbox";
 import { ClipboardCheck } from "lucide-react";
-import { useContext, useEffect, useState } from "react";
+import { useContext, useState } from "react";
 import { AppContext } from "@/context/AppContext";
 import { ComboBoxUsers } from "@/components/combobox/ComboboxUsers";
+import { ComboboxLoanTypes } from "@/components/combobox/ComboboxLoanTypes";
 import { IUser } from "@/types/IUser";
-type LoanReq = { id: string; dni: string; name: string; amount: number; months: number; status: "Pendiente" | "Aprobado" | "Rechazado" };
+import { ILoanType } from "@/types/ILoan";
+import { loanTypesData } from "@/constants";
+type LoanReq = { id: string; dni: string; name: string; amount: number; months: number; status: "Pendiente" | "Aprobado" | "Rechazado"; loanType?: string };
 
 export default function Loans() {
   const { users } = useContext(AppContext);
   const [items, setItems] = useState<LoanReq[]>([]);
   const [userSelected, setUserSelected] = useState<IUser | null>(null);
-  const [form, setForm] = useState<{ amount: number; months: number }>({ amount: 0, months: 6 });
-
-  useEffect(() => {
-    if (items.length > 0) return;
-    const baseUsers = users.length ? users.slice(0, 5) : [
-      { id: "1", dni: "12345678", email: "a@demo.com", name: "Ana", lastname: "Perez", password: "", roles: ["socio"], createdAt: new Date(), updatedAt: new Date() },
-      { id: "2", dni: "87654321", email: "b@demo.com", name: "Luis", lastname: "Ramos", password: "", roles: ["member"], createdAt: new Date(), updatedAt: new Date() },
-      { id: "3", dni: "45671234", email: "c@demo.com", name: "Marta", lastname: "Lopez", password: "", roles: ["user"], createdAt: new Date(), updatedAt: new Date() },
-      { id: "4", dni: "99887766", email: "d@demo.com", name: "Juan", lastname: "Quispe", password: "", roles: ["socio"], createdAt: new Date(), updatedAt: new Date() },
-      { id: "5", dni: "11223344", email: "e@demo.com", name: "Rosa", lastname: "Garcia", password: "", roles: ["user"], createdAt: new Date(), updatedAt: new Date() },
-    ];
-    const seed: LoanReq[] = baseUsers.map((u, i) => ({ id: crypto.randomUUID(), dni: u.dni, name: `${u.name} ${u.lastname}`, amount: 500 + i * 250, months: 6 + (i % 3) * 3, status: "Pendiente" }));
-    setItems(seed);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [users.length]);
+  const [form, setForm] = useState<{ amount: number; installments: number }>({ amount: 0, installments: 6 });
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [approvalModalOpen, setApprovalModalOpen] = useState(false);
+  const [approvalStep, setApprovalStep] = useState(0);
+  const [selectedLoan, setSelectedLoan] = useState<LoanReq | null>(null);
+  const [loanTypeSelected, setLoanTypeSelected] = useState<ILoanType | null>(null);
+  const [sendMessage, setSendMessage] = useState(false);
+  const [rejectModalOpen, setRejectModalOpen] = useState(false);
+  const [rejectReason, setRejectReason] = useState('');
+  const [rejectSendMessage, setRejectSendMessage] = useState(false);
+  const loanTypes: ILoanType[] = [
+    { id: "1", name: "FIXED" },
+    { id: "2", name: "VARIABLE" },
+    { id: "3", name: "REBATE" },
+    { id: "4", name: "MATURITY" },
+  ];
 
   const addItem = () => {
-    if (!userSelected || form.amount <= 0) return;
-    const entry: LoanReq = { id: crypto.randomUUID(), dni: userSelected.dni, name: `${userSelected.name} ${userSelected.lastname}`, amount: form.amount, months: form.months, status: "Pendiente" };
+    if (!userSelected || form.amount <= 0) return false;
+    const entry: LoanReq = { id: crypto.randomUUID(), dni: userSelected.dni, name: `${userSelected.name} ${userSelected.lastname}`, amount: form.amount, months: 0, status: "Pendiente" };
     setItems((prev) => [entry, ...prev]);
     setUserSelected(null);
-    setForm({ amount: 0, months: 6 });
+    setForm({ amount: 0, installments: 6 });
+    return true;
   };
-  const setStatus = (id: string, status: LoanReq["status"]) => setItems((prev) => prev.map((i) => (i.id === id ? { ...i, status } : i)));
+  const updateLoan = (id: string, updates: Partial<LoanReq>) => setItems((prev) => prev.map((i) => (i.id === id ? { ...i, ...updates } : i)));
+  const approveLoan = () => {
+    if (!selectedLoan || !loanTypeSelected || form.installments <= 0) return false;
+    updateLoan(selectedLoan.id, { amount: form.amount, loanType: loanTypeSelected.name, months: form.installments, status: "Aprobado" });
+    setApprovalModalOpen(false);
+    setSelectedLoan(null);
+    setLoanTypeSelected(null);
+    setForm({ amount: 0, installments: 6 });
+    setSendMessage(false);
+    return true;
+  };
+  const rejectLoan = () => {
+    if (!selectedLoan) return false;
+    updateLoan(selectedLoan.id, { status: "Rechazado" });
+    setRejectModalOpen(false);
+    setSelectedLoan(null);
+    setRejectReason('');
+    setRejectSendMessage(false);
+    return true;
+  };
 
   return (
    <div className="flex flex-col gap-4">
@@ -92,25 +120,22 @@ export default function Loans() {
       </Card>
      <Card>
       <CardHeader>
-        <CardTitle>Aplicación a créditos y evaluación</CardTitle>
-        <CardDescription>Registra solicitudes y define su estado</CardDescription>
+        <div className="flex items-center justify-between">
+          <div>
+            <CardTitle>Aplicación a créditos y evaluación</CardTitle>
+            <CardDescription>Registra solicitudes y define su estado</CardDescription>
+          </div>
+          <Button onClick={() => setIsModalOpen(true)} className="gap-2"><ClipboardCheck className="w-4 h-4" /> Agregar</Button>
+        </div>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-2">
-          <div>
-            <ComboBoxUsers users={users} controller={{ userSelected, setUserSelected }} />
-          </div>
-          <Input type="number" placeholder="Monto" value={form.amount} onChange={(e) => setForm((p) => ({ ...p, amount: Number(e.target.value || 0) }))} />
-          <Input type="number" placeholder="Meses" value={form.months} onChange={(e) => setForm((p) => ({ ...p, months: Number(e.target.value || 0) }))} />
-          <Button onClick={addItem} className="gap-2"><ClipboardCheck className="w-4 h-4" /> Agregar</Button>
-        </div>
-
         <div className="rounded-md border bg-card">
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>DNI</TableHead>
                 <TableHead>Nombre</TableHead>
+                <TableHead>Tipo de Préstamo</TableHead>
                 <TableHead>Monto</TableHead>
                 <TableHead>Meses</TableHead>
                 <TableHead>Estado</TableHead>
@@ -122,20 +147,21 @@ export default function Loans() {
                 <TableRow key={it.id}>
                   <TableCell className="text-sm">{it.dni}</TableCell>
                   <TableCell className="text-sm">{it.name}</TableCell>
+                  <TableCell className="text-sm">{it.loanType ? loanTypesData[it.loanType as keyof typeof loanTypesData] : '-'}</TableCell>
                   <TableCell>S/ {it.amount.toFixed(2)}</TableCell>
                   <TableCell>{it.months}</TableCell>
                   <TableCell>
                     <span className="text-xs px-2 py-1 rounded-md bg-muted text-foreground">{it.status}</span>
                   </TableCell>
                   <TableCell className="text-right space-x-2">
-                    <Button variant="outline" size="sm" onClick={() => setStatus(it.id, "Aprobado")}>Aprobar</Button>
-                    <Button variant="outline" size="sm" onClick={() => setStatus(it.id, "Rechazado")}>Rechazar</Button>
+                    <Button variant="outline" size="sm" onClick={() => { setSelectedLoan(it); setApprovalModalOpen(true); setApprovalStep(0); setForm({ amount: it.amount, installments: it.months || 6 }); setLoanTypeSelected(loanTypes.find(lt => lt.name === it.loanType) || null); setSendMessage(false); }}>Aprobar</Button>
+                    <Button variant="outline" size="sm" onClick={() => { setSelectedLoan(it); setRejectModalOpen(true); }}>Rechazar</Button>
                   </TableCell>
                 </TableRow>
               ))}
               {items.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center text-sm text-muted-foreground">Sin solicitudes</TableCell>
+                  <TableCell colSpan={7} className="text-center text-sm text-muted-foreground">Sin solicitudes</TableCell>
                 </TableRow>
               )}
             </TableBody>
@@ -143,6 +169,156 @@ export default function Loans() {
         </div>
       </CardContent>
     </Card>
+    <Dialog open={isModalOpen} onOpenChange={(open) => { setIsModalOpen(open); if (!open) { setUserSelected(null); setForm({ amount: 0, installments: 6 }); } }} modal={false}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Agregar Solicitud de Préstamo</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          <ComboBoxUsers users={users} controller={{ userSelected, setUserSelected }} />
+          <Input
+            type="number"
+            placeholder="Monto"
+            value={form.amount || ''}
+            onChange={(e) => {
+              const val = e.target.value;
+              setForm((p) => ({ ...p, amount: val === '' ? 0 : Number(val) || 0 }));
+            }}
+          />
+          <Button onClick={() => { if (addItem()) setIsModalOpen(false); }} className="w-full">Guardar</Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+    <Dialog open={approvalModalOpen} onOpenChange={(open) => { setApprovalModalOpen(open); if (!open) { setApprovalStep(0); setSelectedLoan(null); setLoanTypeSelected(null); setForm({ amount: 0, installments: 6 }); setSendMessage(false); } }} modal={false}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>Aprobar Solicitud de Préstamo - Paso {approvalStep + 1} de 3</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          {approvalStep === 0 && selectedLoan && (
+            <>
+              <div>
+                <Label>Usuario</Label>
+                <Input value={selectedLoan.name} readOnly />
+              </div>
+              <div>
+                <Label>Monto</Label>
+                <Input
+                  type="number"
+                  value={form.amount || ''}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setForm((p) => ({ ...p, amount: val === '' ? 0 : Number(val) || 0 }));
+                  }}
+                />
+                <div className="flex gap-2 mt-2">
+                  <Button variant="outline" size="sm" onClick={() => setForm((p) => ({ ...p, amount: selectedLoan.amount * 0.5 }))}>50%</Button>
+                  <Button variant="outline" size="sm" onClick={() => setForm((p) => ({ ...p, amount: selectedLoan.amount * 0.7 }))}>70%</Button>
+                </div>
+              </div>
+              {(() => {
+                const selectedUser = users.find(u => u.dni === selectedLoan.dni);
+                return selectedUser ? (
+                  <div className="p-4 border rounded bg-muted">
+                    <p><strong>DNI:</strong> {selectedUser.dni}</p>
+                    <p><strong>Email:</strong> {selectedUser.email}</p>
+                    <p><strong>Roles:</strong> {selectedUser.roles?.join(', ') || 'Sin roles'}</p>
+                    <p><strong>Préstamos Activos:</strong> {items.filter(it => it.dni === selectedUser.dni && it.status === "Aprobado").length}</p>
+                    <p><strong>Acciones:</strong> 0</p>
+                  </div>
+                ) : null;
+              })()}
+            </>
+          )}
+          {approvalStep === 1 && (
+            <>
+              <ComboboxLoanTypes loanTypes={loanTypes} controller={{ loanTypeSelected, setLoanTypeSelected }} />
+              <Input
+                type="number"
+                placeholder="Cuotas"
+                value={form.installments || ''}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setForm((p) => ({ ...p, installments: val === '' ? 0 : Number(val) || 0 }));
+                }}
+              />
+            </>
+          )}
+          {approvalStep === 2 && (
+            <>
+              <div className="rounded-md border bg-card">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Cuota</TableHead>
+                      <TableHead>Monto</TableHead>
+                      <TableHead>Fecha</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {Array.from({ length: form.installments }, (_, i) => {
+                      const installmentAmount = form.amount / form.installments;
+                      const date = new Date();
+                      date.setMonth(date.getMonth() + i + 1);
+                      return (
+                        <TableRow key={i}>
+                          <TableCell>{i + 1}</TableCell>
+                          <TableCell>S/ {installmentAmount.toFixed(2)}</TableCell>
+                          <TableCell>{date.toLocaleDateString()}</TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox id="send-message-approval" checked={sendMessage} onCheckedChange={(checked) => setSendMessage(checked === true)} />
+                <label htmlFor="send-message-approval">Enviar cuotas por mensaje</label>
+              </div>
+            </>
+          )}
+          <div className="flex justify-between">
+            <Button variant="outline" onClick={() => setApprovalStep(Math.max(0, approvalStep - 1))} disabled={approvalStep === 0}>
+              Anterior
+            </Button>
+            {approvalStep < 2 ? (
+              <Button onClick={() => setApprovalStep(approvalStep + 1)} disabled={approvalStep === 1 && (!loanTypeSelected || form.installments <= 0)}>
+                Siguiente
+              </Button>
+            ) : (
+              <Button onClick={() => { if (approveLoan()) setApprovalStep(0); }} className="w-full">
+                Aprobar
+              </Button>
+            )}
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+    <Dialog open={rejectModalOpen} onOpenChange={(open) => { setRejectModalOpen(open); if (!open) { setSelectedLoan(null); setRejectReason(''); setRejectSendMessage(false); } }} modal={false}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Rechazar Solicitud de Préstamo</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div>
+            <Label>Motivo del Rechazo</Label>
+            <Textarea
+              placeholder="Ingrese el motivo del rechazo..."
+              value={rejectReason}
+              onChange={(e) => setRejectReason(e.target.value)}
+            />
+          </div>
+          <div className="flex items-center space-x-2">
+            <Checkbox id="reject-send-message" checked={rejectSendMessage} onCheckedChange={(checked) => setRejectSendMessage(checked === true)} />
+            <label htmlFor="reject-send-message">Enviar por mensaje</label>
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setRejectModalOpen(false)}>Cancelar</Button>
+            <Button onClick={() => { if (rejectLoan()) {} }}>Rechazar</Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
    </div>
   );
 }

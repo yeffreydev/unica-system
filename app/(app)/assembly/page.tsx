@@ -7,6 +7,7 @@ import { AssemblyStartBanner } from "./components/AssemblyStartBanner";
 import { AssemblyProgressBanner } from "./components/AssemblyProgressBanner";
 import { NextAssemblyCard } from "./components/NextAssemblyCard";
 import { HistoricalSummary } from "./components/HistoricalSummary";
+import { ScheduleRunStatusesTypes } from "./types";
 
 
 export default function Assembly() {
@@ -75,11 +76,11 @@ export default function Assembly() {
    }, [assemblyState.isActive, upcomingDate]);
 
    if (!assembly) {
-     return <div className="px-2 md:px-4 lg:px-6 xl:px-8 2xl:px-10 py-8">Cargando datos de la asamblea...</div>;
+    return null;
    }
-
+   
    if (!upcomingData) {
-     return <div className="px-2 md:px-4 lg:px-6 xl:px-8 2xl:px-10 py-8">Cargando datos...</div>;
+     return null;
    }
 
    const {  daysUntil, hoursUntil, upcomingDateLabel, upcomingTimeLabel } = upcomingData;
@@ -128,8 +129,8 @@ export default function Assembly() {
 
 
         {
-          // if (!assemblyState.isActive) 
-         assembly.lastRun?.status=="IN_PROGRESS"  && (
+          // if (!assemblyState.isActive)
+          assembly.lastRun?.status === ScheduleRunStatusesTypes.IN_PROGRESS && (
             <AssemblyProgressBanner
               assemblyState={assemblyState}
               elapsed={elapsed}

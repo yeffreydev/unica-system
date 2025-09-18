@@ -8,7 +8,8 @@ import {
 } from "react";
 import apiClient from "@/config/apiClient";
 import { AuthContext } from "@/context/auth/AuthContex";
-import { IDeposit } from "@/types/ITransaction";
+import { IDeposit } from "./types";
+
 
 interface DepositContextType {
   deposits: IDeposit[];
@@ -60,7 +61,7 @@ export const DepositProvider: React.FC<DepositProviderProps> = ({
 
   const fetchDeposit = async () => {
     try {
-      const res = await apiClient.get("/transactions/deposits");
+      const res = await apiClient.get("/deposits");
       console.log(res.data);
       setDeposits(res.data.reverse());
     } catch (error) {

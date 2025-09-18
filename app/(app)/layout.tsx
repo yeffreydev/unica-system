@@ -1,10 +1,19 @@
 "use client";
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import Link from "next/link";
+// import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/Nav";
-import { Bell,  } from "lucide-react";
+import {  User, LogOut } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useContext } from "react";
+import { AuthContext } from "@/context/auth/AuthContex";
 
 const topData = [
   {
@@ -17,7 +26,7 @@ const topData = [
     title: "Chat",
     description: "Chat con el asistente Puki.",
   },
-   {
+  {
     path: "/assembly",
     title: "Asamblea",
     description: "Administra las asambleas de la Asociación.",
@@ -148,6 +157,8 @@ export default function AppLayout({
 }>) {
   const pathname = usePathname();
 
+  const{logout} = useContext(AuthContext)
+
 
 
   console.log("pathname", pathname);
@@ -164,41 +175,58 @@ export default function AppLayout({
 
 
 
- 
-  return (
-    <>
-      <SidebarProvider>
-        <AppSidebar />
-        <main className="w-full flex flex-col h-screen">
 
-        {/* top bar   */}
-          <div className="flex items-center gap-2">
-            <SidebarTrigger className="w-max ml-2 text-muted-foreground hover:text-foreground" />
-            <div className="w-full bg-card/95 supports-[backdrop-filter]:bg-card/80 backdrop-blur border-b flex items-center justify-between px-4 md:px-6 py-3">
-              <div className="min-w-0">
-                <h1 className="text-2xl tracking-tight leading-tight bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent truncate">
-                  {currentData.title}
-                </h1>
-                <p className="mt-0.5 text-sm md:text-base text-muted-foreground/90 pl-3 border-l border-primary/20 truncate">
-                  {currentData.description}
-                </p>
+  return (
+    <div className="flex flex-col w-screen h-screen">
+      {/* top bar */}
+      <div className="flex w-full items-center gap-2">
+        <div className="w-full bg-primary y dark:bg-background backdrop-blur flex items-center justify-between px-4 md:px-6 py-3">
+          <div className="flex items-center">
+            <Link href="/">
+              <img src="/aquinace-light.svg" alt="Aquinace" className="h-8 w-8" />
+            </Link>
+            <div className="h-8 w-[2px] bg-gray-400 mx-4"></div>
+            <div className="flex items-center gap-2">
+              <div className="px-3 py-1 rounded-full bg-white/10 text-white font-medium text-sm border border-white/20 hover:bg-white/15 transition-colors">
+                Montes y Vegas
               </div>
-              <div className="flex items-center gap-1.5">
-                <ThemeToggle />
-                <Button variant="ghost" size="icon" className="relative">
-                  <Bell  className="text-muted-foreground" />
-                  <span className="absolute top-2 right-2 inline-block w-2 h-2 rounded-full bg-primary"></span>
-                </Button>
+              <div className="px-2 py-0.5 rounded bg-white/10 text-white/90 text-xs font-medium">
+                32 miembros
               </div>
             </div>
           </div>
-           
-        
-          <div className="bg-muted/50 w-full flex-1 px-2 md:px-4">
+          <div className="flex items-center gap-1.5">
+            <div className="text-white">
+              <ThemeToggle />
+            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon" className="relative text-white">
+                  <User className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem>Perfil</DropdownMenuItem>
+                <DropdownMenuItem onClick={logout}>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  Cerrar Sesión
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex flex-1 flex-col lg:flex-row overflow-y-auto">
+        <aside className="w-1/5 px-4 pt-4 border-r dark:border-gray-700">
+          <AppSidebar />
+        </aside>
+        <div className="flex-1">
+          <div className="overflow-y-auto h-full w-full flex-1 px-2 md:px-4">
             {children}
           </div>
-        </main>
-      </SidebarProvider>
-    </>
+        </div>
+      </div>
+    </div>
   );
 }
