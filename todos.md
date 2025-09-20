@@ -30,3 +30,16 @@ agregale un fondo al topheader tanto para light y dark. ponle relacionado ocn el
 - [] mover totalees de acciones en la partes superior
 - [] mover totalees de interese en la partes superior
 - [] cambiar de Pago de interes a pago de prestamos
+
+
+- [x] credit application
+- [] cambir column initalInstallments to initialInstallments
+
+
+/*
+1. [x] crear credit application.
+2. [x] si se aprueba, crear el loan con el monto, tipo de prestamo y las cuotas.
+3. [x] si se rechaza, actualizar el estado y eliminar el loan si es que ya se creo.
+4.[x] poder eliminar la solicitud si es que no se ha aprobado. si se ha aprobado, eliminar pero tambien eliminar el loan y las cuotas y todo lo relacionado.
+5.[x] listar las solicitudes de credito en creditApplications {creditApplications,loan: (loans with installments)}
+*/

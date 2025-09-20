@@ -111,6 +111,7 @@ export function DepositsTable() {
   const { deposits, setDeposits } = useContext(DepositContext);
   const [openDialog, setOpenDialog] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [editDeposit, setEditDeposit] = useState<IDeposit | null>(null);
 
   useEffect(() => {
     const timer = setTimeout(() => setLoading(false), 1000); // Show skeleton for 1 second to handle loading delay
@@ -125,6 +126,9 @@ export function DepositsTable() {
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
     meta: {
+      onEdit: (deposit: IDeposit) => {
+        setEditDeposit(deposit);
+      },
       onDelete: async (deposit: IDeposit) => {
         if (!deposit.id) return;
         const confirmDelete = window.confirm("¿Eliminar este depósito?");
@@ -137,7 +141,7 @@ export function DepositsTable() {
           alert("No se pudo eliminar. Intenta nuevamente.");
         }
       },
-    } as TableMeta<IDeposit> & { onDelete: (d: IDeposit) => Promise<void> },
+    } as TableMeta<IDeposit> & { onDelete: (d: IDeposit) => Promise<void>; onEdit: (d: IDeposit) => void },
     state: {
       sorting,
     },
@@ -154,7 +158,7 @@ export function DepositsTable() {
           className="max-w-sm mr-auto bg-background border-border"
         />
         <DepositsDialog open={openDialog} onOpenChange={setOpenDialog}>
-          <DepositForm setOpenDialog={setOpenDialog} />
+          <DepositForm setOpenDialog={setOpenDialog} editDeposit={editDeposit} setEditDeposit={setEditDeposit} />
         </DepositsDialog>
       </div>
       <div className="bg-background border-border">

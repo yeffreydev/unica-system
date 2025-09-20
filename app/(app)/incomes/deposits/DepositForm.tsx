@@ -11,7 +11,7 @@ import {
 } from "../../../../components/ui/form";
 import { Input } from "../../../../components/ui/input";
 import { Button } from "../../../../components/ui/button";
-import { useContext, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { AppContext } from "@/context/AppContext";
 import { ComboBoxUsers } from "../../../../components/combobox/ComboboxUsers";
 import { IUser } from "@/types/IUser";
@@ -21,13 +21,18 @@ import { IDeposit } from "./types";
 
 export const DepositForm = ({
   setOpenDialog,
+  editDeposit,
+  setEditDeposit,
 }: {
   setOpenDialog?: (value: boolean) => void;
+  editDeposit?: IDeposit | null;
+  setEditDeposit?: (deposit: IDeposit | null) => void;
 }) => {
   const { users, formCloseModalRef } = useContext(AppContext);
   const { addDeposit } = useContext(DepositContext);
   const [userSelected, setUserSelected] = useState<IUser | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const isEdit = !!editDeposit?.id;
 
   const getPeruDate = () => {
     const now = new Date();
@@ -46,6 +51,14 @@ export const DepositForm = ({
     },
   });
 
+  // Prefill on edit
+  useEffect(() => {
+    if (!isEdit || !editDeposit) return;
+    setUserSelected(editDeposit.user as IUser);
+    form.setValue("amount", editDeposit.amount);
+    form.setValue("date", new Date(editDeposit.date).toISOString().split('T')[0]);
+  }, [isEdit, editDeposit, form]);
+
   const createDeposit = async (data: IDeposit) => {
     try {
       const res = await apiClient.post("/deposits", data);
@@ -63,11 +76,30 @@ export const DepositForm = ({
     }
   };
 
+  const updateDeposit = async (id: string, data: Partial<IDeposit>) => {
+    setIsSubmitting(true);
+    try {
+      const res = await apiClient.put(`/deposits/${id}`, data);
+      if (res.data) {
+        // Assuming context has updateDeposit function
+        // updateDeposit(res.data);
+        setOpenDialog?.(false);
+        setEditDeposit?.(null);
+        form.reset();
+      }
+    } catch (e) {
+      console.error(e);
+      alert("No se pudo actualizar. Intenta nuevamente.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit(async (formData) => {
-          if (isSubmitting) return; // Prevent multiple submissions
+          if (isSubmitting) return;
           if (formData.amount <= 0) {
             alert("La cantidad debe ser mayor a 0");
             return;
@@ -76,15 +108,22 @@ export const DepositForm = ({
             alert("Debes seleccionar un usuario");
             return;
           }
-          setIsSubmitting(true);
-          await createDeposit({
-            amount: formData.amount,
-            userId: userSelected.id,
-            date: formData.date,
-          });
+          if (isEdit && editDeposit?.id) {
+            await updateDeposit(editDeposit.id, {
+              amount: formData.amount,
+              userId: userSelected.id,
+              date: formData.date,
+            });
+          } else {
+            await createDeposit({
+              amount: formData.amount,
+              userId: userSelected.id,
+              date: formData.date,
+            });
+          }
         })}
       >
-        <h2>Deposito a Cuenta de ahorros.</h2>
+        <h2>{isEdit ? "Editar Depósito" : "Deposito a Cuenta de ahorros."}</h2>
         <FormField
           control={form.control}
           name="amount"

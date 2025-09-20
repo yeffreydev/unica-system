@@ -8,47 +8,95 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { PlusCircle } from "lucide-react";
-import { useContext, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { AppContext } from "@/context/AppContext";
 import { IUser } from "@/types/IUser";
+import { apiBuySharesInAssembly, apiGetAssemblyRun, apiGetPartnersWithShares } from "../api";
+import { IAssemblyScheduleRun, IPartnerShares, IUserStock } from "../types";
+import { useAssembly } from "../AssemblyContext";
 
-type SharePurchase = { userId: string; quantity: number; price: number };
 
 export default function Shares() {
   const { users } = useContext(AppContext);
-  const [purchases, setPurchases] = useState<Map<string, SharePurchase>>(new Map());
+    const { assembly } = useAssembly();
+  
+   const [assemblyRun, setAssemblyRun] = useState<IAssemblyScheduleRun | null>(null);
+  
   const [modalOpen, setModalOpen] = useState(false);
+  const [partnerShares, setPartnerShares] = useState<IPartnerShares[]>([]); // To store shares data
   const [selectedUser, setSelectedUser] = useState<IUser | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [price] = useState(10); // Fixed price for now
 
-  const handleAddShares = (user: IUser) => {
+  const handleAddShares = (user: IPartnerShares) => {
     setSelectedUser(user);
-    setQuantity(1);
+    const currentShares = user.shares.reduce((sum, share) => sum + share.quantity, 0);
+    setQuantity(currentShares || 1);
     setModalOpen(true);
   };
 
-  const confirmPurchase = () => {
-    if (!selectedUser || quantity <= 0) return;
+  const confirmPurchase = async () => {
+   try {
+     if (!selectedUser) return;
 
-    const purchase: SharePurchase = {
-      userId: selectedUser.id,
-      quantity,
-      price,
-    };
-
-    setPurchases(prev => new Map(prev.set(selectedUser!.id, purchase)));
+    const data: IUserStock = await apiBuySharesInAssembly(assemblyRun?.id || '', { userId: selectedUser.id, shares: quantity, date: new Date() });
+    
+    //update state on partnerShares
+    
+    const updatedShares = partnerShares.map(partner => {
+      if (partner.id === selectedUser.id) {
+        // Replace or add the new share in the user's shares array
+        const shares = partner.shares.some(share => share.id === data.id)
+          ? partner.shares.map(share => share.id === data.id ? data : share)
+          : [...partner.shares, data];
+        return {
+          ...partner,
+          shares,
+        };
+      }
+      return partner;
+    });
+    setPartnerShares(updatedShares);
+    
     setModalOpen(false);
     setSelectedUser(null);
+   } catch (error) {
+     console.error('Error confirming purchase:', error);
+   }
   };
 
-  const getUserPurchase = (userId: string) => {
-    return purchases.get(userId);
-  };
+  
 
-  const totalShares = Array.from(purchases.values()).reduce((sum, purchase) => sum + purchase.quantity, 0);
-  const totalAmount = Array.from(purchases.values()).reduce((sum, purchase) => sum + (purchase.quantity * purchase.price), 0);
+  // const totalShares = Array.from(purchases.values()).reduce((sum, purchase) => sum + purchase.quantity, 0);
+  // const totalAmount = Array.from(purchases.values()).reduce((sum, purchase) => sum + (purchase.quantity * purchase.price), 0);
+  useEffect(() => {
+     //get assembly run
+     (async () => {
+       if (!assembly?.lastRun) return;
+       const data = await apiGetAssemblyRun(assembly.lastRun.id);
+       console.log({ data });
+       setAssemblyRun(data);
+     })();
+   }, [assembly?.lastRun]);
+ 
+  useEffect(() => {
+    console.log('effect run');
+    console.log(assemblyRun)
+    if (!assemblyRun) return;
+    console.log(assemblyRun)
+    // Fetch partners with shares from the server
+    const fetchPartnersWithShares = async () => {
+      try {
+        const data = await apiGetPartnersWithShares(assemblyRun?.id || '');
+       console.log('Fetched partners with shares:', data);
+        setPartnerShares(data);
+      } catch (error) {
+        console.error('Error fetching partners with shares:', error);
+      }
+    };
 
+    fetchPartnersWithShares();
+  }, [assemblyRun]);
   return (
     <Card>
       <CardHeader>
@@ -60,7 +108,7 @@ export default function Shares() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>DNI</TableHead>
+                {/* <TableHead>DNI</TableHead> */}
                 <TableHead>Nombre</TableHead>
                 <TableHead>Acciones Compradas</TableHead>
                 <TableHead>Precio Unitario</TableHead>
@@ -69,36 +117,35 @@ export default function Shares() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {users.map((user) => {
-                const purchase = getUserPurchase(user.id);
-                const hasPurchased = purchase && purchase.quantity > 0;
+              {partnerShares.map((user: IPartnerShares) => {
+ const shares = user.shares.reduce((sum, share) => sum + share.quantity, 0);
                 return (
                   <TableRow key={user.id}>
-                    <TableCell className="text-sm">{user.dni}</TableCell>
+                    {/* <TableCell className="text-sm">{user.dni}</TableCell> */}
                     <TableCell className="text-sm font-medium">{`${user.name} ${user.lastname}`}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <Badge
-                          variant={hasPurchased ? "default" : "destructive"}
-                          className={`text-xs ${hasPurchased ? "bg-green-600 hover:bg-green-700" : "bg-orange-500 hover:bg-orange-600"}`}
+                          variant={shares> 0 ? "default" : "destructive"}
+                          className={`text-xs ${shares >0 ? "bg-green-600 hover:bg-green-700" : "bg-orange-500 hover:bg-orange-600"}`}
                         >
-                          {hasPurchased ? `${purchase.quantity} acciones` : "Sin comprar"}
+                          {shares > 0 ? `${shares} acciones` : "Sin comprar"}
                         </Badge>
                       </div>
                     </TableCell>
                     <TableCell>S/ {price.toFixed(2)}</TableCell>
-                    <TableCell className={`font-semibold ${hasPurchased ? "text-green-700 dark:text-green-400" : "text-gray-500"}`}>
-                      S/ {purchase ? (purchase.quantity * purchase.price).toFixed(2) : '0.00'}
+                    <TableCell className={`font-semibold ${shares >0 ? "text-green-700 dark:text-green-400" : "text-gray-500"}`}>
+                      S/ {shares >0 ? (shares * user.price).toFixed(2) : '0.00'}
                     </TableCell>
                     <TableCell>
                       <Button
                         onClick={() => handleAddShares(user)}
                         size="sm"
-                        variant={hasPurchased ? "outline" : "default"}
+                        variant={shares >0 ? "outline" : "default"}
                         className="gap-2"
                       >
                         <PlusCircle className="w-4 h-4" />
-                        {hasPurchased ? 'Actualizar' : 'Agregar'}
+                        {shares >0 ? 'Actualizar' : 'Agregar'}
                       </Button>
                     </TableCell>
                   </TableRow>
@@ -117,17 +164,21 @@ export default function Shares() {
 
         <div className="flex justify-between items-center text-sm">
           <div>
-            Total acciones: <span className="font-semibold">{totalShares}</span>
+            Total acciones: <span className="font-semibold">{'100'}</span>
           </div>
           <div>
-            Total monto: <span className="font-semibold text-foreground">S/ {totalAmount.toFixed(2)}</span>
+            Total monto: <span className="font-semibold text-foreground">S/ {100.32.toFixed(2)}</span>
           </div>
         </div>
 
         <Dialog open={modalOpen} onOpenChange={setModalOpen}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Comprar Acciones</DialogTitle>
+              <DialogTitle>
+                {selectedUser && (partnerShares.find(p => p.id === selectedUser.id)?.shares?.reduce((sum, share) => sum + share.quantity, 0) ?? 0) > 0
+                  ? "Actualizar Acciones"
+                  : "Comprar Acciones"}
+              </DialogTitle>
               <DialogDescription>
                 {selectedUser && `Comprar acciones para ${selectedUser.name} ${selectedUser.lastname}`}
               </DialogDescription>
@@ -141,9 +192,9 @@ export default function Shares() {
                   id="quantity"
                   type="number"
                   value={quantity}
-                  onChange={(e) => setQuantity(Number(e.target.value) || 1)}
+                  onChange={(e) => setQuantity(Number(e.target.value) || 0)}
                   className="col-span-3"
-                  min="1"
+                  min="0"
                 />
               </div>
               <div className="grid grid-cols-4 items-center gap-4">
@@ -162,7 +213,9 @@ export default function Shares() {
                 Cancelar
               </Button>
               <Button onClick={confirmPurchase}>
-                Confirmar Compra
+                {selectedUser && (partnerShares.find(p => p.id === selectedUser.id)?.shares?.reduce((sum, share) => sum + share.quantity, 0) ?? 0) > 0
+                  ? "Actualizar"
+                  : "Confirmar Compra"}
               </Button>
             </DialogFooter>
           </DialogContent>

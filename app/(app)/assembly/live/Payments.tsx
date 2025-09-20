@@ -8,30 +8,74 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { CreditCard, Info } from "lucide-react";
-import { useContext, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { AppContext } from "@/context/AppContext";
 import { IUser } from "@/types/IUser";
+import { IAssemblyScheduleRun, ILoanPayment, IPaymentData } from "../types";
+import { apiGetAssemblyRun, apiGetPaymentsData, apiRecordPayment } from "../api";
+import { useAssembly } from "../AssemblyContext";
+import { getPaymentStatusColor, getRowColor } from "./utils";
 
-type InterestPayment = { userId: string; quota: number; paidAmount: number; status: 'pending' | 'partial' | 'paid' };
-
-export default function Interests() {
+export default function Payments() {
   const { users } = useContext(AppContext);
-  const [payments, setPayments] = useState<Map<string, InterestPayment>>(new Map());
+   const { assembly } = useAssembly();
+    
+     const [assemblyRun, setAssemblyRun] = useState<IAssemblyScheduleRun | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [detailsModalOpen, setDetailsModalOpen] = useState(false);
+  const [paymentsData, setPaymentsData] = useState<IPaymentData> ({
+    partners: [],
+    installments: [],
+    payments: []
+  })
   const [selectedUser, setSelectedUser] = useState<IUser | null>(null);
-  const [paymentAmount, setPaymentAmount] = useState('');
+  const [capitalAmount, setCapitalAmount] = useState('');
+  const [interestAmount, setInterestAmount] = useState('');
+  const [description, setDescription] = useState('');
 
-  // Initialize simulated quotas for users
-  const getUserQuota = (userId: string) => {
-    // Simulate different quotas based on user index
-    const userIndex = users.findIndex(u => u.id === userId);
-    return 50 + (userIndex % 3) * 25; // 50, 75, 100, 50, 75...
-  };
+ useEffect(() => {
+     //get assembly run
+     (async () => {
+       if (!assembly?.lastRun) return;
+       const data = await apiGetAssemblyRun(assembly.lastRun.id);
+       console.log({ data });
+       setAssemblyRun(data);
+     })();
+   }, [assembly?.lastRun]);
 
+
+
+  //get payments data
+  useEffect(() => {
+    // Fetch or compute payments data here and set it
+    // setPaymentsData(fetchedData);
+       if (!assemblyRun) return;
+    const fetchData = async () => {
+      try {
+        const data = await apiGetPaymentsData(assemblyRun.id);
+        console.log("Fetched payments data:", data);
+        setPaymentsData(data);
+      } catch (error) {
+        console.error("Error fetching payments data:", error);
+      }
+    };
+    fetchData();
+  }, [assemblyRun]);
+
+
+ 
   const handlePayInterest = (user: IUser) => {
     setSelectedUser(user);
-    setPaymentAmount('');
+    const existingPayment = paymentsData.payments.find(p => p.userId === user.id);
+    if (existingPayment) {
+      setCapitalAmount(existingPayment.amount.toString());
+      setInterestAmount((existingPayment.interest ?? 0).toString());
+      setDescription(existingPayment.description || '');
+    } else {
+      setCapitalAmount('');
+      setInterestAmount('');
+      setDescription('');
+    }
     setModalOpen(true);
   };
 
@@ -40,67 +84,49 @@ export default function Interests() {
     setDetailsModalOpen(true);
   };
 
-  const fillRemainingQuota = () => {
+  
+
+  const confirmPayment = async() => {
     if (!selectedUser) return;
-    const quota = getUserQuota(selectedUser.id);
-    const currentPaid = getUserPayment(selectedUser.id)?.paidAmount || 0;
-    const remaining = Math.max(0, quota - currentPaid);
-    setPaymentAmount(remaining.toString());
-  };
 
-  const confirmPayment = () => {
-    if (!selectedUser || !paymentAmount.trim()) return;
+    const capital = parseFloat(capitalAmount) || 0;
+    const interest = parseFloat(interestAmount) || 0;
+    // const totalAmount = capital + interest;
 
-    const amount = parseFloat(paymentAmount);
-    if (isNaN(amount) || amount <= 0) return;
-
-    const quota = getUserQuota(selectedUser.id);
-    const existingPayment = payments.get(selectedUser.id);
-    const currentPaid = existingPayment?.paidAmount || 0;
-    const newPaidAmount = currentPaid + amount;
-
-    let status: 'pending' | 'partial' | 'paid';
-    if (newPaidAmount >= quota) {
-      status = 'paid';
-    } else if (newPaidAmount > 0) {
-      status = 'partial';
-    } else {
-      status = 'pending';
-    }
-
-    const payment: InterestPayment = {
+  const data: ILoanPayment = await apiRecordPayment(assemblyRun!.id, {
       userId: selectedUser.id,
-      quota,
-      paidAmount: Math.min(newPaidAmount, quota), // Don't exceed quota
-      status,
-    };
-
-    setPayments(prev => new Map(prev.set(selectedUser.id, payment)));
+      amount: Number(capital),
+      interest: Number(interest),
+      date: new Date(),
+      description: description || undefined,
+    });
+    console.log("Payment recorded:", data);
+    // Refresh payments data
+    if (data) {
+      const findPayment = paymentsData.payments.find(p => p.userId === selectedUser.id);
+      if (findPayment) {
+        // Update existing payment
+        findPayment.amount = Number(data.amount);
+        findPayment.interest = Number(data.interest);
+        findPayment.date = data.date; // Update to latest payment date
+      } else {
+        // Add new payment
+        setPaymentsData(prev => ({
+          ...prev,
+          payments: [...prev.payments, data]
+        }));
+      }
+    }
+    
     setModalOpen(false);
     setSelectedUser(null);
   };
 
-  const getUserPayment = (userId: string) => {
-    return payments.get(userId);
-  };
+  
 
-  const getPaymentStatusText = (payment: InterestPayment | undefined) => {
-    if (!payment || payment.paidAmount === 0) return "Pendiente";
-    if (payment.status === 'paid') return "Pagado Total";
-    if (payment.status === 'partial') return `Parcial S/ ${payment.paidAmount.toFixed(2)}`;
-    return "Pendiente";
-  };
 
-  const getPaymentStatusColor = (payment: InterestPayment | undefined) => {
-    if (!payment || payment.paidAmount === 0) return "bg-orange-500 hover:bg-orange-600";
-    if (payment.status === 'paid') return "bg-green-600 hover:bg-green-700";
-    if (payment.status === 'partial') return "bg-blue-500 hover:bg-blue-600";
-    return "bg-orange-500 hover:bg-orange-600";
-  };
+ 
 
-  const totalQuota = users.reduce((sum, user) => sum + getUserQuota(user.id), 0);
-  const totalPaid = Array.from(payments.values()).reduce((sum, payment) => sum + payment.paidAmount, 0);
-  const totalPending = totalQuota - totalPaid;
 
   return (
     <Card>
@@ -121,17 +147,23 @@ export default function Interests() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {users.map((user) => {
-                const payment = getUserPayment(user.id);
-                const quota = getUserQuota(user.id);
-                const hasPaid = payment && payment.paidAmount > 0;
+              {paymentsData.partners.map((user) => {
+                const payment = paymentsData.payments.find(p => p.userId === user.id);
+                const paymentAmount = Number(payment?.amount || 0) + Number(payment?.interest || 0);
+
+                 //cuota
+                const installment = paymentsData.installments.find(i => i.userId === user.id);
+                const hasPaid = (paymentAmount) > 0;
+                const installmentAmount = Number(installment?.amount) || 0;
+
+                //payment
                 return (
-                  <TableRow key={user.id} className={hasPaid ? "bg-green-50 dark:bg-green-950/10" : "bg-orange-50 dark:bg-orange-950/10"}>
+                  <TableRow key={user.id} className={getRowColor(hasPaid, installmentAmount)}>
                     <TableCell className="text-sm">{user.dni}</TableCell>
                     <TableCell className="text-sm font-medium">{`${user.name} ${user.lastname}`}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        <span className="font-semibold">S/ {quota.toFixed(2)}</span>
+                        <span className="font-semibold">S/ {installmentAmount.toFixed(2)}</span>
                         <Button
                           onClick={() => handleShowDetails(user)}
                           size="sm"
@@ -143,12 +175,26 @@ export default function Interests() {
                       </div>
                     </TableCell>
                     <TableCell>
-                      <Badge
-                        variant="secondary"
-                        className={`text-xs ${getPaymentStatusColor(payment)} text-white`}
-                      >
-                        {getPaymentStatusText(payment)}
-                      </Badge>
+                      <div className="flex items-center gap-2">
+                        <Badge
+                          variant="secondary"
+                          className={`text-xs ${getPaymentStatusColor(
+                            paymentAmount
+                          )} text-white`}
+                        >
+                          S/. {paymentAmount.toFixed(2)}
+                        </Badge>
+                       
+                          <Button
+                            onClick={() => handleShowDetails(user)}
+                            size="sm"
+                            variant="ghost"
+                            className="h-6 w-6 p-0"
+                          >
+                            <Info className="w-3 h-3" />
+                          </Button>
+                        
+                      </div>
                     </TableCell>
                     <TableCell>
                       <Button
@@ -158,7 +204,8 @@ export default function Interests() {
                         className="gap-2"
                       >
                         <CreditCard className="w-4 h-4" />
-                        {payment?.status === 'paid' ? 'Actualizar' : hasPaid ? 'Pagar Más' : 'Pagar'}
+                        Pagar
+                        {/* {payment?.status === 'paid' ? 'Actualizar' : hasPaid ? 'Pagar Más' : 'Pagar'} */}
                       </Button>
                     </TableCell>
                   </TableRow>
@@ -177,13 +224,13 @@ export default function Interests() {
 
         <div className="flex justify-between items-center text-sm">
           <div>
-            Total cuota: <span className="font-semibold">S/ {totalQuota.toFixed(2)}</span>
+            Total cuota: <span className="font-semibold">S/ 00.00</span>
           </div>
           <div>
-            Total pagado: <span className="font-semibold text-green-700 dark:text-green-400">S/ {totalPaid.toFixed(2)}</span>
+            Total pagado: <span className="font-semibold text-green-700 dark:text-green-400">S/ {'0.00'}</span>
           </div>
           <div>
-            Pendiente: <span className="font-semibold text-orange-600 dark:text-orange-400">S/ {totalPending.toFixed(2)}</span>
+            Pendiente: <span className="font-semibold text-orange-600 dark:text-orange-400">S/ {'0.00'}</span>
           </div>
         </div>
 
@@ -201,44 +248,57 @@ export default function Interests() {
                   <div className="grid grid-cols-4 items-center gap-4">
                     <Label className="text-right">Cuota Total</Label>
                     <div className="col-span-3 text-sm font-semibold">
-                      S/ {getUserQuota(selectedUser.id).toFixed(2)}
+                      S/ {(() => {
+                        const installment = paymentsData.installments.find(i => i.userId === selectedUser.id);
+                        return (Number(installment?.amount) || 0).toFixed(2);
+                      })()}
                     </div>
                   </div>
+                 
                   <div className="grid grid-cols-4 items-center gap-4">
-                    <Label className="text-right">Ya Pagado</Label>
-                    <div className="col-span-3 text-sm">
-                      S/ {getUserPayment(selectedUser.id)?.paidAmount.toFixed(2) || '0.00'}
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="amount" className="text-right">
-                      Monto a Pagar
+                    <Label htmlFor="capital" className="text-right">
+                      Capital a Pagar
                     </Label>
-                    <div className="col-span-3 flex gap-2">
+                    <div className="col-span-3">
                       <Input
-                        id="amount"
+                        id="capital"
                         type="number"
-                        value={paymentAmount}
-                        onChange={(e) => setPaymentAmount(e.target.value)}
+                        value={capitalAmount}
+                        onChange={(e) => setCapitalAmount(e.target.value)}
                         min="0"
                         step="0.01"
                         placeholder="0.00"
                       />
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={fillRemainingQuota}
-                        className="whitespace-nowrap"
-                      >
-                        Todo
-                      </Button>
                     </div>
                   </div>
                   <div className="grid grid-cols-4 items-center gap-4">
-                    <Label className="text-right">Total Después</Label>
-                    <div className="col-span-3 text-sm font-semibold">
-                      S/ {((getUserPayment(selectedUser.id)?.paidAmount || 0) + (parseFloat(paymentAmount) || 0)).toFixed(2)}
+                    <Label htmlFor="interest" className="text-right">
+                      Interés a Pagar
+                    </Label>
+                    <div className="col-span-3">
+                      <Input
+                        id="interest"
+                        type="number"
+                        value={interestAmount}
+                        onChange={(e) => setInterestAmount(e.target.value)}
+                        min="0"
+                        step="0.01"
+                        placeholder="0.00"
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="description" className="text-right">
+                      Propósito
+                    </Label>
+                    <div className="col-span-3">
+                      <Input
+                        id="description"
+                        type="text"
+                        value={description}
+                        onChange={(e) => setDescription(e.target.value)}
+                        placeholder="Descripción del pago"
+                      />
                     </div>
                   </div>
                 </>
@@ -258,31 +318,31 @@ export default function Interests() {
         <Dialog open={detailsModalOpen} onOpenChange={setDetailsModalOpen}>
           <DialogContent className="max-w-2xl">
             <DialogHeader>
-              <DialogTitle>Detalles de Cuota</DialogTitle>
+              <DialogTitle>Detalles de Pago</DialogTitle>
               <DialogDescription>
-                {selectedUser && `Información detallada de cuotas para ${selectedUser.name} ${selectedUser.lastname}`}
+                {selectedUser && `Información detallada de pagos para ${selectedUser.name} ${selectedUser.lastname}`}
               </DialogDescription>
             </DialogHeader>
             <div className="grid gap-6 py-4">
               {selectedUser && (
                 <>
-                  {/* Current Quota Summary */}
                   <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
                     <div>
-                      <Label className="text-sm font-medium text-gray-600 dark:text-gray-400">Cuota Actual</Label>
+                      <Label className="text-sm font-medium text-gray-600 dark:text-gray-400">Capital Pagado</Label>
                       <div className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                        S/ {getUserQuota(selectedUser.id).toFixed(2)}
+                        S/ {(() => {
+                          const payment = paymentsData.payments.find(p => p.userId === selectedUser.id);
+                          return (Number(payment?.amount) || 0).toFixed(2);
+                        })()}
                       </div>
                     </div>
                     <div>
-                      <Label className="text-sm font-medium text-gray-600 dark:text-gray-400">Estado de Pago</Label>
-                      <div className="text-lg font-semibold">
-                        <Badge
-                          variant="secondary"
-                          className={`text-sm ${getPaymentStatusColor(getUserPayment(selectedUser.id))} text-white`}
-                        >
-                          {getPaymentStatusText(getUserPayment(selectedUser.id))}
-                        </Badge>
+                      <Label className="text-sm font-medium text-gray-600 dark:text-gray-400">Interés Pagado</Label>
+                      <div className="text-2xl font-bold text-green-600 dark:text-green-400">
+                        S/ {(() => {
+                          const payment = paymentsData.payments.find(p => p.userId === selectedUser.id);
+                          return (Number(payment?.interest) || 0).toFixed(2);
+                        })()}
                       </div>
                     </div>
                   </div>
@@ -336,32 +396,35 @@ export default function Interests() {
                   <div className="space-y-3">
                     <Label className="text-base font-semibold">Historial de Pagos</Label>
                     <div className="space-y-2">
-                      {getUserPayment(selectedUser.id)?.paidAmount ? (
-                        <div className="p-3 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg">
-                          <div className="flex justify-between items-center">
-                            <div>
-                              <div className="font-medium text-green-800 dark:text-green-400">
-                                Pago Registrado
+                      {(() => {
+                        const payment = paymentsData.payments.find(p => p.userId === selectedUser.id);
+                        return payment ? (
+                          <div className="p-3 bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-800 rounded-lg">
+                            <div className="flex justify-between items-center">
+                              <div>
+                                <div className="font-medium text-green-800 dark:text-green-400">
+                                  Pago Registrado
+                                </div>
+                                <div className="text-sm text-green-600 dark:text-green-500">
+                                  {new Date(payment.date).toLocaleDateString('es-PE')}
+                                </div>
                               </div>
-                              <div className="text-sm text-green-600 dark:text-green-500">
-                                {new Date().toLocaleDateString('es-PE')}
-                              </div>
-                            </div>
-                            <div className="text-right">
-                              <div className="font-bold text-green-800 dark:text-green-400">
-                                S/ {getUserPayment(selectedUser.id)?.paidAmount.toFixed(2)}
-                              </div>
-                              <div className="text-sm text-green-600 dark:text-green-500">
-                                Monto pagado
+                              <div className="text-right">
+                                <div className="font-bold text-green-800 dark:text-green-400">
+                                  S/ {(Number(payment.amount) + Number(payment.interest)).toFixed(2)}
+                                </div>
+                                <div className="text-sm text-green-600 dark:text-green-500">
+                                  Monto pagado
+                                </div>
                               </div>
                             </div>
                           </div>
-                        </div>
-                      ) : (
-                        <div className="p-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-center text-gray-500">
-                          No hay pagos registrados
-                        </div>
-                      )}
+                        ) : (
+                          <div className="p-3 bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-center text-gray-500">
+                            No hay pagos registrados
+                          </div>
+                        );
+                      })()}
                     </div>
                   </div>
                 </>

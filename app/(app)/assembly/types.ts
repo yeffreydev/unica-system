@@ -1,3 +1,4 @@
+import { ILoan } from "@/types/ILoan";
 import { IUser } from "@/types/IUser";
 
 // with lowercase for save in literal in db  
@@ -36,4 +37,56 @@ export interface IAssemblySchedule {
     nextRun: Date;
     lastRun: IAssemblyScheduleRun | null;
     lastRuns: Array<IAssemblyScheduleRun>;
+}
+
+
+export interface IPartnerShares extends IUser {
+  shares: IUserStock[]; // number of shares owned
+  price: number;
+}
+
+export interface IUserStock {
+  id: string;
+  userId: string;
+  stockId: string;
+  quantity: number;
+  price: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface ILoanPayment {
+  id: string;
+  amount: number;
+  interest: number | null;
+  date: Date;
+  userId: string | null;
+  description?: string | null;
+}
+
+export interface IloanInstallment {
+  userId: string;
+  id: string;
+  amount: number;
+  interest: number;
+  balance: number;
+}
+
+export interface IPaymentData {
+  partners: IUser[];
+  payments: ILoanPayment[]
+  installments: IloanInstallment[];
+}
+export interface ICreditApplication {
+  id: string;
+  userId: string;
+  amount: number;
+  purpose: string;
+  rejectionReason?: string | null;
+  status: string;
+  createdAt: Date;
+  updatedAt: Date;
+  loan?: ILoan | null;
+  scheduleRunId?: string;
+  user: IUser;
 }

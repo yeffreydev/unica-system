@@ -20,3 +20,60 @@ export const apiUpdateParticipantStatusInAssemblyRun = async (participantId: str
     const response = await apiClient.patch(`/schedules/assembly/run/attendance/${participantId}`, { status });
     return response.data as { count: number };
 }
+
+export const apiGetPartnersWithShares = async (runId: string) => {
+    const response = await apiClient.get(`/schedules/assembly/run/${runId}/partners-shares`);
+    return response.data;
+}
+
+export const apiBuySharesInAssembly = async (runId: string, data: { userId: string; shares: number; date: Date; }) => {
+    const response = await apiClient.post(`/schedules/assembly/run/${runId}/buy-shares`, data);
+    return response.data;
+}
+
+//payments
+
+export const apiGetPaymentsData = async(runId: string) => {
+    const response = await apiClient.get(`/schedules/assembly/run/${runId}/payments-data`);
+    return response.data;
+}
+
+export const apiRecordPayment = async(runId: string, data: { userId: string; amount: number; interest: number; date: Date; description?: string; }) => {
+    const response = await apiClient.post(`/schedules/assembly/run/${runId}/record-payment`, data);
+    return response.data;
+}
+
+
+//credit applications
+export const apiCreateCreditApplication = async(data: { userId: string; amount: number; purpose: string;scheduleRunId:string }) => {
+    const response = await apiClient.post(`/schedules/assembly/run/credit-application`, data);
+    return response.data;
+}
+
+export const apiGetCreditApplicationsWithLoans = async(runId: string) => {
+    const response = await apiClient.get(`/schedules/assembly/run/${runId}/credit-applications`);
+    return response.data;
+}
+
+export const apiDeleteCreditApplication = async(id: string) => {
+    const response = await apiClient.delete(`/schedules/assembly/run/credit-application/${id}`);
+    return response.data;
+}
+
+export const apiApproveCreditApplication = async(id: string, data: {
+    userId: string;
+    amount: number;
+    interestRate: number;
+    initalInstallments: number;
+    loanTypeId: string;
+    date: Date;
+    paymentFrecuency: string;
+}) => {
+    const response = await apiClient.post(`/schedules/assembly/run/credit-application/${id}/approve`, data);
+    return response.data;
+}
+
+export const apiRejectCreditApplication = async(id: string, data: { confirm: boolean; reason?: string }) => {
+    const response = await apiClient.post(`/schedules/assembly/run/credit-application/${id}/reject`, data);
+    return response.data;
+}
