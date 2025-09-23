@@ -43,3 +43,18 @@ agregale un fondo al topheader tanto para light y dark. ponle relacionado ocn el
 4.[x] poder eliminar la solicitud si es que no se ha aprobado. si se ha aprobado, eliminar pero tambien eliminar el loan y las cuotas y todo lo relacionado.
 5.[x] listar las solicitudes de credito en creditApplications {creditApplications,loan: (loans with installments)}
 */
+
+
+- [ ] cada pago darle su link de lo que ha pagado, un comprobante 
+- [] se cobra 2 soles por solicitud de prestamo.
+
+
+1. (cuota fija) es interes + mas capital.
+2. (cuota al rebatir). el interes baja mientras baja el capital, el capital se mantiene
+3. (cuota variable). el interes y el capital es variable, y disminuye en ambos casos.
+4. (cuota al vencimiento), se paga solo interes y en el ultimo mes se paga el capital.
+
+
+- [ ] llenar toda la data
+- [ ] fondo social y reserva legal (que se pueda enviar sin usuario).
+- [ ] hacer calculos

@@ -31,14 +31,13 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import apiClient from "@/config/apiClient";
 import { AppContext } from "@/context/AppContext";
-import { IIncome } from "./types";
-import { OtherIncomeForm } from "./OtherIncomeForm";
-import { OthersDialog } from "./OthersDialog";
- 
+import { IWithdrawal } from "./types";
+import { WithdrawForm } from "./WithdrawForm";
+import { WithdrawalsDialog } from "./WithdrawalsDialog";
 
-export default function OthersTable() {
+export default function WithdrawalsTable() {
   const [sorting, setSorting] = useState<SortingState>([]);
-  const [otherIncomes, setOtherIncomes] = useState<IIncome[]>([]);
+  const [withdrawals, setWithdrawals] = useState<IWithdrawal[]>([]);
 
   const {
     bank: { bank },
@@ -48,7 +47,7 @@ export default function OthersTable() {
 
   const bankName = bank?.name;
 
-  const columns: ColumnDef<IIncome>[] = [
+  const columns: ColumnDef<IWithdrawal>[] = [
     {
       accessorKey: "date",
       header: "Fecha",
@@ -120,7 +119,7 @@ export default function OthersTable() {
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem
-              onClick={() => (table.options.meta as TableMeta<IIncome> & { onDelete?: (d: IIncome) => void })?.onDelete?.(row.original)}
+              onClick={() => (table.options.meta as TableMeta<IWithdrawal> & { onDelete?: (d: IWithdrawal) => void })?.onDelete?.(row.original)}
             >
               <Trash />
               Eliminar
@@ -132,40 +131,40 @@ export default function OthersTable() {
   ];
 
   useEffect(() => {
-    const fetchOtherIncomes = async () => {
+    const fetchWithdrawals = async () => {
       setLoading(true);
-      const response = await apiClient.get("/incomes/others/transactions");
+      const response = await apiClient.get("/withdrawals/transactions");
       const data = response.data;
 
       console.log(data);
 
-      setOtherIncomes(data);
+      setWithdrawals(data);
       setLoading(false);
     };
-    fetchOtherIncomes();
+    fetchWithdrawals();
   }, []);
 
   const table = useReactTable({
-    data: otherIncomes,
+    data: withdrawals,
     columns,
     onSortingChange: setSorting,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
     meta: {
-      onDelete: async (income: IIncome) => {
-        if (!income.id) return;
-        const confirmDelete = window.confirm("¿Eliminar este ingreso?");
+      onDelete: async (withdrawal: IWithdrawal) => {
+        if (!withdrawal.id) return;
+        const confirmDelete = window.confirm("¿Eliminar este retiro?");
         if (!confirmDelete) return;
         try {
-          await apiClient.delete(`/incomes/others/${income.id}`);
-          setOtherIncomes(otherIncomes.filter((t) => t.id !== income.id));
+          await apiClient.delete(`/withdrawals/${withdrawal.id}`);
+          setWithdrawals(withdrawals.filter((t) => t.id !== withdrawal.id));
         } catch (e) {
           console.error(e);
           alert("No se pudo eliminar. Intenta nuevamente.");
         }
       },
-    } as TableMeta<IIncome> & { onDelete: (d: IIncome) => Promise<void> },
+    } as TableMeta<IWithdrawal> & { onDelete: (d: IWithdrawal) => Promise<void> },
     state: {
       sorting,
     },
@@ -181,13 +180,13 @@ export default function OthersTable() {
           }
           className="max-w-sm mr-auto bg-background border-border"
         />
-        <OthersDialog open={openDialog} onOpenChange={setOpenDialog}>
-          <OtherIncomeForm
-            otherIncomes={otherIncomes}
-            setOtherIncomes={setOtherIncomes}
+        <WithdrawalsDialog open={openDialog} onOpenChange={setOpenDialog}>
+          <WithdrawForm
             setOpenDialog={setOpenDialog}
+            withdrawals={withdrawals}
+            setWithdrawals={setWithdrawals}
           />
-        </OthersDialog>
+        </WithdrawalsDialog>
       </div>
       <div className="bg-background border-border">
         <Table>

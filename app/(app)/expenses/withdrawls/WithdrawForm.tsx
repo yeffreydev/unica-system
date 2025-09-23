@@ -15,10 +15,19 @@ import { ComboBoxUsers } from "../../../../components/combobox/ComboboxUsers";
 import { useContext, useState } from "react";
 import { AppContext } from "@/context/AppContext";
 import { IUser } from "@/types/IUser";
+import { IWithdrawal } from "./types";
 import apiClient from "@/config/apiClient";
 import { toast } from "@/hooks/use-toast";
 
-export const WithdrawForm = () => {
+export const WithdrawForm = ({
+  setOpenDialog,
+  withdrawals,
+  setWithdrawals,
+}: {
+  setOpenDialog?: (value: boolean) => void;
+  withdrawals?: IWithdrawal[];
+  setWithdrawals?: (value: IWithdrawal[]) => void;
+}) => {
   const { users } = useContext(AppContext);
   const [userSelected, setUserSelected] = useState<IUser | null>(null);
 
@@ -26,6 +35,7 @@ export const WithdrawForm = () => {
     defaultValues: {
       username: "", // Asegúrate de definir un valor inicial
       amount: 0,
+      date: new Date().toISOString().split('T')[0],
     },
   });
 
@@ -38,33 +48,42 @@ export const WithdrawForm = () => {
       return;
     }
 
-    if (!userSelected) {
-      toast({
-        title: "Error",
-        description: "Debes seleccionar un usuario.",
-      });
-      return;
-    }
-
-    const res = await apiClient.post("/withdrawals", {
+    const res = await apiClient.post("/withdrawals/create-transaction", {
       amount: form.getValues("amount"),
       description: "Retiro de ahorros",
       userId: userSelected ? userSelected.id : null,
-      date: new Date(),
+      date: new Date(form.getValues("date")),
     });
     if (res.data) {
       form.reset();
+      setOpenDialog?.(false);
+      setWithdrawals?.([res.data, ...(withdrawals || [])]);
       toast({
-        title: "withdrawal creado.",
-        description: "el retiro de ahorros fue creado correctamente.",
+        title: "Retiro creado.",
+        description: "El retiro de ahorros fue creado correctamente.",
       });
-      if (window) window.location.reload();
     }
   };
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)}>
         <h2>Retiro de ahorros</h2>
+        <FormField
+          control={form.control}
+          name="date"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Fecha</FormLabel>
+              <FormControl>
+                <Input type="date" {...field} />
+              </FormControl>
+              <FormDescription>
+                La fecha del retiro.
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
         <FormField
           control={form.control}
           name="username"
@@ -80,18 +99,12 @@ export const WithdrawForm = () => {
                 </div>
               </FormControl>
               <FormDescription>
-                El usuario que desea retirar de ahorros.
+                El usuario que desea retirar de ahorros. (Opcional)
               </FormDescription>
               <FormMessage />
             </FormItem>
           )}
         />
-        <div className="flex flex-col">
-          <span>Ahorros: S/. 5000</span>
-          <span>Acciones: S/. 5000</span>
-          <span>Prestamo: S/. 500</span>
-          <span>Disponibles para Retirar Ahorros: S/.4000</span>
-        </div>
         <FormField
           control={form.control}
           name="amount"
@@ -101,7 +114,6 @@ export const WithdrawForm = () => {
               <FormControl>
                 <div className="flex flex-col gap-2">
                   <Input type="number" {...field} />
-                  <p>S/ {field.value * 10}</p>
                 </div>
               </FormControl>
               <FormDescription>

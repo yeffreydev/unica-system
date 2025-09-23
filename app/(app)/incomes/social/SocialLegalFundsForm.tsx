@@ -11,6 +11,10 @@ import {
 } from "../../../../components/ui/form";
 import { Input } from "../../../../components/ui/input";
 import { Button } from "../../../../components/ui/button";
+import { useContext, useState } from "react";
+import { AppContext } from "@/context/AppContext";
+import { ComboBoxUsers } from "../../../../components/combobox/ComboboxUsers";
+import { IUser } from "@/types/IUser";
 import { ISocialFunds, ISocialFundsTransaction } from "@/types/ISocialFunds";
 import apiClient from "@/config/apiClient";
 import { toast } from "@/hooks/use-toast";
@@ -27,10 +31,15 @@ export const SocialLegalFundsForm = ({
   socialFundsTransactions: ISocialFundsTransaction[];
   setSocialFundsTransactions: (value: ISocialFundsTransaction[]) => void;
 }) => {
+  const { users } = useContext(AppContext);
+  const [userSelected, setUserSelected] = useState<IUser | null>(null);
+
   const form = useForm({
     defaultValues: {
       socialFund: "",
       amount: 0,
+      date: new Date().toISOString().split('T')[0],
+      username: "",
     },
   });
 
@@ -50,26 +59,18 @@ export const SocialLegalFundsForm = ({
       });
       return;
     }
-    const res = await apiClient.post("/social-funds/create-transaction", {
+    const res = await apiClient.post("/incomes/social-funds/create-transaction", {
       socialFundsId: form.getValues("socialFund"),
       amount: form.getValues("amount"),
       description: "Ingreso a fondo",
-      date: new Date(),
+      date: new Date(form.getValues("date")),
+      userId: userSelected ? userSelected.id : null,
     });
+    console.log(res);;
     if (res.data) {
       form.reset();
       setOpenDialog?.(false);
-
-      //build the data to add to the transactions list
-      const data = {
-        ...res.data,
-        socialFunds: {
-          id: res.data.socialFundsId,
-          name: socialFunds.find((f) => f.id === res.data.socialFundsId)
-            ?.name as keyof typeof socialFundsData,
-        },
-      };
-      setSocialFundsTransactions([data, ...socialFundsTransactions]);
+      setSocialFundsTransactions([res.data, ...socialFundsTransactions]);
       toast({
         title: "Ingreso a fondo creado.",
         description: "El ingreso a fondo fue creado correctamente.",
@@ -80,7 +81,6 @@ export const SocialLegalFundsForm = ({
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)}>
-        <h2 className="text-xl font-semibold">Nuevo ingreso a Fondos</h2>
         <FormField
           control={form.control}
           name="socialFund"
@@ -124,6 +124,43 @@ export const SocialLegalFundsForm = ({
               </FormControl>
               <FormDescription>
                 El monto que deseas ingresar al fondo.
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="date"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Fecha</FormLabel>
+              <FormControl>
+                <Input cy-data="funds-date" type="date" {...field} />
+              </FormControl>
+              <FormDescription>
+                La fecha del ingreso al fondo.
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="username"
+          render={() => (
+            <FormItem>
+              <FormLabel>Usuario</FormLabel>
+              <FormControl>
+                <div>
+                  <ComboBoxUsers
+                    controller={{ userSelected, setUserSelected }}
+                    users={users}
+                  />
+                </div>
+              </FormControl>
+              <FormDescription>
+                El usuario al que se le asignará el ingreso. (Opcional)
               </FormDescription>
               <FormMessage />
             </FormItem>

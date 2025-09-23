@@ -31,24 +31,26 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import apiClient from "@/config/apiClient";
 import { AppContext } from "@/context/AppContext";
-import { IIncome } from "./types";
-import { OtherIncomeForm } from "./OtherIncomeForm";
-import { OthersDialog } from "./OthersDialog";
- 
-
-export default function OthersTable() {
+import { ISocialFunds, ISocialFundsTransaction } from "@/types/ISocialFunds";
+import { LegalsDialog } from "./LegalsDialog";
+import { SocialLegalFundsForm } from "./SocialLegalFundsForm";
+export default function LegalsTable() {
   const [sorting, setSorting] = useState<SortingState>([]);
-  const [otherIncomes, setOtherIncomes] = useState<IIncome[]>([]);
+  const [socialFundsTransactions, setSocialFundsTransactions] = useState<
+    ISocialFundsTransaction[]
+  >([]);
 
   const {
     bank: { bank },
   } = useContext(AppContext);
+  const [socialFunds, setSocialFunds] = useState<ISocialFunds[]>([]);
+
   const [openDialog, setOpenDialog] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const bankName = bank?.name;
 
-  const columns: ColumnDef<IIncome>[] = [
+  const columns: ColumnDef<ISocialFundsTransaction>[] = [
     {
       accessorKey: "date",
       header: "Fecha",
@@ -64,7 +66,7 @@ export default function OthersTable() {
       },
     },
     {
-      accessorKey: "user.name",
+      accessorKey: "bank.name",
       header: ({ column }) => (
         <Button
           variant="ghost"
@@ -83,19 +85,19 @@ export default function OthersTable() {
       ),
     },
     {
-      accessorKey: "description",
+      accessorKey: "socialFunds.name",
       header: ({ column }) => (
         <Button
           variant="ghost"
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
         >
-          Descripción
+          Nombre del Fondo
           <ArrowUpDown />
         </Button>
       ),
       cell: ({ row }) => (
         <div>
-          {row.original.description}
+          {row.original.socialFunds?.name}
         </div>
       ),
     },
@@ -120,7 +122,7 @@ export default function OthersTable() {
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem
-              onClick={() => (table.options.meta as TableMeta<IIncome> & { onDelete?: (d: IIncome) => void })?.onDelete?.(row.original)}
+              onClick={() => (table.options.meta as TableMeta<ISocialFundsTransaction> & { onDelete?: (d: ISocialFundsTransaction) => void })?.onDelete?.(row.original)}
             >
               <Trash />
               Eliminar
@@ -132,40 +134,50 @@ export default function OthersTable() {
   ];
 
   useEffect(() => {
-    const fetchOtherIncomes = async () => {
+    const fetchSocialFunds = async () => {
+      const response = await apiClient.get("/banks/social-funds-types");
+      const data = response.data;
+
+      setSocialFunds(data);
+    };
+    fetchSocialFunds();
+  }, []);
+
+  useEffect(() => {
+    const fetchSocialFundsTransactions = async () => {
       setLoading(true);
-      const response = await apiClient.get("/incomes/others/transactions");
+      const response = await apiClient.get("/incomes/social-funds/transactions");
       const data = response.data;
 
       console.log(data);
 
-      setOtherIncomes(data);
+      setSocialFundsTransactions(data);
       setLoading(false);
     };
-    fetchOtherIncomes();
+    fetchSocialFundsTransactions();
   }, []);
 
   const table = useReactTable({
-    data: otherIncomes,
+    data: socialFundsTransactions,
     columns,
     onSortingChange: setSorting,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
     meta: {
-      onDelete: async (income: IIncome) => {
-        if (!income.id) return;
-        const confirmDelete = window.confirm("¿Eliminar este ingreso?");
+      onDelete: async (transaction: ISocialFundsTransaction) => {
+        if (!transaction.id) return;
+        const confirmDelete = window.confirm("¿Eliminar esta transacción?");
         if (!confirmDelete) return;
         try {
-          await apiClient.delete(`/incomes/others/${income.id}`);
-          setOtherIncomes(otherIncomes.filter((t) => t.id !== income.id));
+          await apiClient.delete(`/incomes/social-funds/${transaction.id}`);
+          setSocialFundsTransactions(socialFundsTransactions.filter((t) => t.id !== transaction.id));
         } catch (e) {
           console.error(e);
           alert("No se pudo eliminar. Intenta nuevamente.");
         }
       },
-    } as TableMeta<IIncome> & { onDelete: (d: IIncome) => Promise<void> },
+    } as TableMeta<ISocialFundsTransaction> & { onDelete: (d: ISocialFundsTransaction) => Promise<void> },
     state: {
       sorting,
     },
@@ -177,17 +189,18 @@ export default function OthersTable() {
         <Input
           placeholder="Filtrar nombres..."
           onChange={(event) =>
-            table.getColumn("user.name")?.setFilterValue(event.target.value)
+            table.getColumn("bank.name")?.setFilterValue(event.target.value)
           }
           className="max-w-sm mr-auto bg-background border-border"
         />
-        <OthersDialog open={openDialog} onOpenChange={setOpenDialog}>
-          <OtherIncomeForm
-            otherIncomes={otherIncomes}
-            setOtherIncomes={setOtherIncomes}
+        <LegalsDialog open={openDialog} onOpenChange={setOpenDialog}>
+          <SocialLegalFundsForm
+            socialFunds={socialFunds}
             setOpenDialog={setOpenDialog}
+            socialFundsTransactions={socialFundsTransactions}
+            setSocialFundsTransactions={setSocialFundsTransactions}
           />
-        </OthersDialog>
+        </LegalsDialog>
       </div>
       <div className="bg-background border-border">
         <Table>

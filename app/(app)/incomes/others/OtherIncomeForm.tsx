@@ -36,6 +36,7 @@ export const OtherIncomeForm = ({
       username: "", // Asegúrate de definir un valor inicial
       amount: 0,
       description: "",
+      date: new Date().toISOString().split('T')[0],
     },
   });
 
@@ -55,11 +56,11 @@ export const OtherIncomeForm = ({
       });
       return;
     }
-    const res = await apiClient.post("/incomes/create-other-income", {
+    const res = await apiClient.post("/incomes/others/create-transaction", {
       amount: form.getValues("amount"),
       description: form.getValues("description"),
       userId: userSelected ? userSelected.id : null,
-      date: new Date(),
+      date: new Date(form.getValues("date")),
     });
     if (res.data) {
       form.reset();
@@ -102,6 +103,22 @@ export const OtherIncomeForm = ({
                 <Input cy-data="other-description" type="text" {...field} />
               </FormControl>
               <FormDescription>La descripción del ingreso.</FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="date"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Fecha</FormLabel>
+              <FormControl>
+                <Input cy-data="other-date" type="date" {...field} />
+              </FormControl>
+              <FormDescription>
+                La fecha del ingreso.
+              </FormDescription>
               <FormMessage />
             </FormItem>
           )}

@@ -12,7 +12,7 @@ import {
 import { Edit } from "lucide-react";
 import { ReactNode } from "react";
 
-export function LegalsDialog({
+export function WithdrawalsDialog({
   children,
   isEdit = false,
   disabledTrigger = false,
@@ -44,12 +44,12 @@ export function LegalsDialog({
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>
-            {isEdit ? "Editar Pago" : "Pago de capital e intereses"}
+            {isEdit ? "Editar Retiro" : "Retiro de ahorros"}
           </DialogTitle>
           <DialogDescription>
             {isEdit
-              ? "Modifica los detalles del pago aquí."
-              : "Ingresa los detalles del nuevo pago aquí."}
+              ? "Modifica los detalles del retiro."
+              : "Ingresa los detalles del retiro de ahorros."}
           </DialogDescription>
         </DialogHeader>
         {children}

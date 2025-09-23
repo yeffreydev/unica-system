@@ -9,6 +9,11 @@ export interface ISocialFundsTransaction {
   amount: number;
   description: string;
   date: Date;
-  userId: number;
+  userId?: number;
   socialFunds: ISocialFunds;
+  user?: {
+    id: number;
+    name: string;
+    lastname: string;
+  };
 }
