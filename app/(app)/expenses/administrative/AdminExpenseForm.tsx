@@ -15,10 +15,19 @@ import { useContext, useState } from "react";
 import { AppContext } from "@/context/AppContext";
 import { ComboBoxUsers } from "../../../../components/combobox/ComboboxUsers";
 import { IUser } from "@/types/IUser";
+import { IAdministrativeExpense } from "./types";
 import { toast } from "@/hooks/use-toast";
 import apiClient from "@/config/apiClient";
 
-export const AdminExpenseForm = () => {
+export const AdminExpenseForm = ({
+  setOpenDialog,
+  administrativeExpenses,
+  setAdministrativeExpenses,
+}: {
+  setOpenDialog?: (value: boolean) => void;
+  administrativeExpenses?: IAdministrativeExpense[];
+  setAdministrativeExpenses?: (value: IAdministrativeExpense[]) => void;
+}) => {
   const { users } = useContext(AppContext);
   const [userSelected, setUserSelected] = useState<IUser | null>(null);
 
@@ -27,6 +36,7 @@ export const AdminExpenseForm = () => {
       description: "",
       username: "", // Asegúrate de definir un valor inicial
       amount: 0,
+      date: new Date().toISOString().split('T')[0],
     },
   });
 
@@ -39,33 +49,42 @@ export const AdminExpenseForm = () => {
       return;
     }
 
-    if (!userSelected) {
-      toast({
-        title: "Error",
-        description: "Debes seleccionar un usuario.",
-      });
-      return;
-    }
-
-    const res = await apiClient.post("/expenses/administrative", {
+    const res = await apiClient.post("/expenses/administrative/create-transaction", {
       amount: form.getValues("amount"),
       description: form.getValues("description"),
       userId: userSelected ? userSelected.id : null,
-      date: new Date(),
+      date: new Date(form.getValues("date")),
     });
     if (res.data) {
       form.reset();
+      setOpenDialog?.(false);
+      setAdministrativeExpenses?.([res.data, ...(administrativeExpenses || [])]);
       toast({
         title: "Gasto administrativo creado.",
         description: "el gasto administrativo fue creado correctamente.",
       });
-      if (window) window.location.reload();
     }
   };
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)}>
         <h2>Nuevo Gasto Administrativo</h2>
+        <FormField
+          control={form.control}
+          name="date"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Fecha</FormLabel>
+              <FormControl>
+                <Input type="date" {...field} />
+              </FormControl>
+              <FormDescription>
+                La fecha del gasto administrativo.
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
         <FormField
           control={form.control}
           name="amount"
@@ -75,7 +94,6 @@ export const AdminExpenseForm = () => {
               <FormControl>
                 <div className="flex flex-col gap-2">
                   <Input type="number" {...field} />
-                  <p>S/ {field.value * 10}</p>
                 </div>
               </FormControl>
               <FormDescription>Monto del gasto</FormDescription>

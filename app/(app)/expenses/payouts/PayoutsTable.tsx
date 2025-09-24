@@ -31,13 +31,13 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import apiClient from "@/config/apiClient";
 import { AppContext } from "@/context/AppContext";
-import { IExpense } from "./types";
-import { OtherExpenseForm } from "./OtherExpenseForm";
-import { OthersExpenseDialog } from "./OthersExpenseDialog";
+import { IPayout } from "./types";
+import { InterestPaymentForm } from "./InterestPaymentForm";
+import { PayoutsDialog } from "./PayoutsDialog";
 
-export default function OtherExpensesTable() {
+export default function PayoutsTable() {
   const [sorting, setSorting] = useState<SortingState>([]);
-  const [otherExpenses, setOtherExpenses] = useState<IExpense[]>([]);
+  const [payouts, setPayouts] = useState<IPayout[]>([]);
 
   const {
     bank: { bank },
@@ -47,7 +47,7 @@ export default function OtherExpensesTable() {
 
   const bankName = bank?.name;
 
-  const columns: ColumnDef<IExpense>[] = [
+  const columns: ColumnDef<IPayout>[] = [
     {
       accessorKey: "date",
       header: "Fecha",
@@ -119,7 +119,7 @@ export default function OtherExpensesTable() {
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem
-              onClick={() => (table.options.meta as TableMeta<IExpense> & { onDelete?: (d: IExpense) => void })?.onDelete?.(row.original)}
+              onClick={() => (table.options.meta as TableMeta<IPayout> & { onDelete?: (d: IPayout) => void })?.onDelete?.(row.original)}
             >
               <Trash />
               Eliminar
@@ -131,40 +131,40 @@ export default function OtherExpensesTable() {
   ];
 
   useEffect(() => {
-    const fetchOtherExpenses = async () => {
+    const fetchPayouts = async () => {
       setLoading(true);
-      const response = await apiClient.get("/expenses/others/transactions");
+      const response = await apiClient.get("/payouts/transactions");
       const data = response.data;
 
       console.log(data);
 
-      setOtherExpenses(data);
+      setPayouts(data);
       setLoading(false);
     };
-    fetchOtherExpenses();
+    fetchPayouts();
   }, []);
 
   const table = useReactTable({
-    data: otherExpenses,
+    data: payouts,
     columns,
     onSortingChange: setSorting,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
     meta: {
-      onDelete: async (expense: IExpense) => {
-        if (!expense.id) return;
-        const confirmDelete = window.confirm("¿Eliminar este egreso?");
+      onDelete: async (payout: IPayout) => {
+        if (!payout.id) return;
+        const confirmDelete = window.confirm("¿Eliminar este pago de intereses?");
         if (!confirmDelete) return;
         try {
-          await apiClient.delete(`/expenses/others/${expense.id}`);
-          setOtherExpenses(otherExpenses.filter((t) => t.id !== expense.id));
+          await apiClient.delete(`/payouts/${payout.id}`);
+          setPayouts(payouts.filter((t) => t.id !== payout.id));
         } catch (e) {
           console.error(e);
           alert("No se pudo eliminar. Intenta nuevamente.");
         }
       },
-    } as TableMeta<IExpense> & { onDelete: (d: IExpense) => Promise<void> },
+    } as TableMeta<IPayout> & { onDelete: (d: IPayout) => Promise<void> },
     state: {
       sorting,
     },
@@ -180,13 +180,13 @@ export default function OtherExpensesTable() {
           }
           className="max-w-sm mr-auto bg-background border-border"
         />
-        <OthersExpenseDialog open={openDialog} onOpenChange={setOpenDialog}>
-          <OtherExpenseForm
+        <PayoutsDialog open={openDialog} onOpenChange={setOpenDialog}>
+          <InterestPaymentForm
             setOpenDialog={setOpenDialog}
-            otherExpenses={otherExpenses}
-            setOtherExpenses={setOtherExpenses}
+            payouts={payouts}
+            setPayouts={setPayouts}
           />
-        </OthersExpenseDialog>
+        </PayoutsDialog>
       </div>
       <div className="bg-background border-border">
         <Table>
@@ -204,7 +204,7 @@ export default function OtherExpensesTable() {
               </TableRow>
             ))}
           </TableHeader>
-          <TableBody cy-data="other-expenses-table-body">
+          <TableBody cy-data="payouts-table-body">
             {loading ? (
               // Skeleton rows
               Array.from({ length: 5 }).map((_, index) => (

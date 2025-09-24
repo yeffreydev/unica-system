@@ -31,13 +31,13 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import apiClient from "@/config/apiClient";
 import { AppContext } from "@/context/AppContext";
-import { IExpense } from "./types";
-import { OtherExpenseForm } from "./OtherExpenseForm";
-import { OthersExpenseDialog } from "./OthersExpenseDialog";
+import { IAdministrativeExpense } from "./types";
+import { AdminExpenseForm } from "./AdminExpenseForm";
+import { AdministrativeDialog } from "./AdministrativeDialog";
 
-export default function OtherExpensesTable() {
+export default function AdministrativeTable() {
   const [sorting, setSorting] = useState<SortingState>([]);
-  const [otherExpenses, setOtherExpenses] = useState<IExpense[]>([]);
+  const [administrativeExpenses, setAdministrativeExpenses] = useState<IAdministrativeExpense[]>([]);
 
   const {
     bank: { bank },
@@ -47,7 +47,7 @@ export default function OtherExpensesTable() {
 
   const bankName = bank?.name;
 
-  const columns: ColumnDef<IExpense>[] = [
+  const columns: ColumnDef<IAdministrativeExpense>[] = [
     {
       accessorKey: "date",
       header: "Fecha",
@@ -119,7 +119,7 @@ export default function OtherExpensesTable() {
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem
-              onClick={() => (table.options.meta as TableMeta<IExpense> & { onDelete?: (d: IExpense) => void })?.onDelete?.(row.original)}
+              onClick={() => (table.options.meta as TableMeta<IAdministrativeExpense> & { onDelete?: (d: IAdministrativeExpense) => void })?.onDelete?.(row.original)}
             >
               <Trash />
               Eliminar
@@ -131,40 +131,40 @@ export default function OtherExpensesTable() {
   ];
 
   useEffect(() => {
-    const fetchOtherExpenses = async () => {
+    const fetchAdministrativeExpenses = async () => {
       setLoading(true);
-      const response = await apiClient.get("/expenses/others/transactions");
+      const response = await apiClient.get("/expenses/administrative/transactions");
       const data = response.data;
 
       console.log(data);
 
-      setOtherExpenses(data);
+      setAdministrativeExpenses(data);
       setLoading(false);
     };
-    fetchOtherExpenses();
+    fetchAdministrativeExpenses();
   }, []);
 
   const table = useReactTable({
-    data: otherExpenses,
+    data: administrativeExpenses,
     columns,
     onSortingChange: setSorting,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
     meta: {
-      onDelete: async (expense: IExpense) => {
-        if (!expense.id) return;
-        const confirmDelete = window.confirm("¿Eliminar este egreso?");
+      onDelete: async (administrativeExpense: IAdministrativeExpense) => {
+        if (!administrativeExpense.id) return;
+        const confirmDelete = window.confirm("¿Eliminar este gasto administrativo?");
         if (!confirmDelete) return;
         try {
-          await apiClient.delete(`/expenses/others/${expense.id}`);
-          setOtherExpenses(otherExpenses.filter((t) => t.id !== expense.id));
+          await apiClient.delete(`/expenses/administrative/${administrativeExpense.id}`);
+          setAdministrativeExpenses(administrativeExpenses.filter((t) => t.id !== administrativeExpense.id));
         } catch (e) {
           console.error(e);
           alert("No se pudo eliminar. Intenta nuevamente.");
         }
       },
-    } as TableMeta<IExpense> & { onDelete: (d: IExpense) => Promise<void> },
+    } as TableMeta<IAdministrativeExpense> & { onDelete: (d: IAdministrativeExpense) => Promise<void> },
     state: {
       sorting,
     },
@@ -180,13 +180,13 @@ export default function OtherExpensesTable() {
           }
           className="max-w-sm mr-auto bg-background border-border"
         />
-        <OthersExpenseDialog open={openDialog} onOpenChange={setOpenDialog}>
-          <OtherExpenseForm
+        <AdministrativeDialog open={openDialog} onOpenChange={setOpenDialog}>
+          <AdminExpenseForm
             setOpenDialog={setOpenDialog}
-            otherExpenses={otherExpenses}
-            setOtherExpenses={setOtherExpenses}
+            administrativeExpenses={administrativeExpenses}
+            setAdministrativeExpenses={setAdministrativeExpenses}
           />
-        </OthersExpenseDialog>
+        </AdministrativeDialog>
       </div>
       <div className="bg-background border-border">
         <Table>
@@ -204,7 +204,7 @@ export default function OtherExpensesTable() {
               </TableRow>
             ))}
           </TableHeader>
-          <TableBody cy-data="other-expenses-table-body">
+          <TableBody cy-data="administrative-table-body">
             {loading ? (
               // Skeleton rows
               Array.from({ length: 5 }).map((_, index) => (

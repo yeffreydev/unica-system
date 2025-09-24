@@ -22,7 +22,7 @@ const incomesItems = [
 const expensesItems =[
   { title: "Retiros", href: "/expenses/withdrawls", icon: ArrowDown },
   { title: "Prestamos", href: "/expenses/loans", icon: HandCoins },
-  { title: "Intereses Pagados", href: "/expenses/interest", icon: Receipt },
+  { title: "Intereses Pagados", href: "/expenses/payouts", icon: Receipt },
   { title: "Gastos Administrativos", href: "/expenses/administrative", icon: Building },
   { title: "Utilidades Distribuidas", href: "/expenses/dividends", icon: Share2 },
   { title: "Reserva Legal y Fondo Social", href: "/expenses/social", icon: Shield },

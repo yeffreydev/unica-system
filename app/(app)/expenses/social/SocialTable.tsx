@@ -31,23 +31,25 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import apiClient from "@/config/apiClient";
 import { AppContext } from "@/context/AppContext";
-import { IExpense } from "./types";
-import { OtherExpenseForm } from "./OtherExpenseForm";
-import { OthersExpenseDialog } from "./OthersExpenseDialog";
+import { ISocialFundsExpenseTransaction } from "./types";
+import { SocialLegalFundsExpenseForm } from "./SocialLegalFundsExpenseForm";
+import { SocialDialog } from "./SocialDialog";
+import { ISocialFunds } from "@/types/ISocialFunds";
 
-export default function OtherExpensesTable() {
+export default function SocialTable() {
   const [sorting, setSorting] = useState<SortingState>([]);
-  const [otherExpenses, setOtherExpenses] = useState<IExpense[]>([]);
+  const [socialFundsTransactions, setSocialFundsTransactions] = useState<ISocialFundsExpenseTransaction[]>([]);
 
   const {
     bank: { bank },
   } = useContext(AppContext);
   const [openDialog, setOpenDialog] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [socialFunds, setSocialFunds] = useState<ISocialFunds[]>([]);
 
   const bankName = bank?.name;
 
-  const columns: ColumnDef<IExpense>[] = [
+  const columns: ColumnDef<ISocialFundsExpenseTransaction>[] = [
     {
       accessorKey: "date",
       header: "Fecha",
@@ -78,6 +80,23 @@ export default function OtherExpensesTable() {
           {row.original.user
             ? row.original.user.name + " " + row.original.user.lastname
             : bankName}
+        </div>
+      ),
+    },
+    {
+      accessorKey: "socialFunds.name",
+      header: ({ column }) => (
+        <Button
+          variant="ghost"
+          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        >
+          Tipo de Fondo
+          <ArrowUpDown />
+        </Button>
+      ),
+      cell: ({ row }) => (
+        <div>
+          {row.original.socialFunds.name}
         </div>
       ),
     },
@@ -119,7 +138,7 @@ export default function OtherExpensesTable() {
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem
-              onClick={() => (table.options.meta as TableMeta<IExpense> & { onDelete?: (d: IExpense) => void })?.onDelete?.(row.original)}
+              onClick={() => (table.options.meta as TableMeta<ISocialFundsExpenseTransaction> & { onDelete?: (d: ISocialFundsExpenseTransaction) => void })?.onDelete?.(row.original)}
             >
               <Trash />
               Eliminar
@@ -131,40 +150,46 @@ export default function OtherExpensesTable() {
   ];
 
   useEffect(() => {
-    const fetchOtherExpenses = async () => {
+    const fetchSocialFundsTransactions = async () => {
       setLoading(true);
-      const response = await apiClient.get("/expenses/others/transactions");
+      const response = await apiClient.get("/expenses/social-funds/transactions");
       const data = response.data;
 
       console.log(data);
 
-      setOtherExpenses(data);
+      setSocialFundsTransactions(data);
       setLoading(false);
     };
-    fetchOtherExpenses();
+    const fetchSocialFunds = async () => {
+      const response = await apiClient.get("/banks/social-funds-types");
+      const data = response.data;
+      setSocialFunds(data);
+    };
+    fetchSocialFundsTransactions();
+    fetchSocialFunds();
   }, []);
 
   const table = useReactTable({
-    data: otherExpenses,
+    data: socialFundsTransactions,
     columns,
     onSortingChange: setSorting,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
     meta: {
-      onDelete: async (expense: IExpense) => {
-        if (!expense.id) return;
-        const confirmDelete = window.confirm("¿Eliminar este egreso?");
+      onDelete: async (socialFundsTransaction: ISocialFundsExpenseTransaction) => {
+        if (!socialFundsTransaction.id) return;
+        const confirmDelete = window.confirm("¿Eliminar este egreso de fondos?");
         if (!confirmDelete) return;
         try {
-          await apiClient.delete(`/expenses/others/${expense.id}`);
-          setOtherExpenses(otherExpenses.filter((t) => t.id !== expense.id));
+          await apiClient.delete(`/expenses/social-funds/${socialFundsTransaction.id}`);
+          setSocialFundsTransactions(socialFundsTransactions.filter((t) => t.id !== socialFundsTransaction.id));
         } catch (e) {
           console.error(e);
           alert("No se pudo eliminar. Intenta nuevamente.");
         }
       },
-    } as TableMeta<IExpense> & { onDelete: (d: IExpense) => Promise<void> },
+    } as TableMeta<ISocialFundsExpenseTransaction> & { onDelete: (d: ISocialFundsExpenseTransaction) => Promise<void> },
     state: {
       sorting,
     },
@@ -180,13 +205,14 @@ export default function OtherExpensesTable() {
           }
           className="max-w-sm mr-auto bg-background border-border"
         />
-        <OthersExpenseDialog open={openDialog} onOpenChange={setOpenDialog}>
-          <OtherExpenseForm
+        <SocialDialog open={openDialog} onOpenChange={setOpenDialog}>
+          <SocialLegalFundsExpenseForm
+            socialFunds={socialFunds}
             setOpenDialog={setOpenDialog}
-            otherExpenses={otherExpenses}
-            setOtherExpenses={setOtherExpenses}
+            socialFundsTransactions={socialFundsTransactions}
+            setSocialFundsTransactions={setSocialFundsTransactions}
           />
-        </OthersExpenseDialog>
+        </SocialDialog>
       </div>
       <div className="bg-background border-border">
         <Table>
@@ -204,13 +230,14 @@ export default function OtherExpensesTable() {
               </TableRow>
             ))}
           </TableHeader>
-          <TableBody cy-data="other-expenses-table-body">
+          <TableBody cy-data="social-table-body">
             {loading ? (
               // Skeleton rows
               Array.from({ length: 5 }).map((_, index) => (
                 <TableRow key={index}>
                   <TableCell><Skeleton className="h-4 w-20" /></TableCell>
                   <TableCell><Skeleton className="h-4 w-32" /></TableCell>
+                  <TableCell><Skeleton className="h-4 w-24" /></TableCell>
                   <TableCell><Skeleton className="h-4 w-24" /></TableCell>
                   <TableCell><Skeleton className="h-4 w-16" /></TableCell>
                   <TableCell><Skeleton className="h-8 w-8" /></TableCell>

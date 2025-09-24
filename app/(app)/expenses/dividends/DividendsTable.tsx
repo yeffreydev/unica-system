@@ -31,13 +31,13 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import apiClient from "@/config/apiClient";
 import { AppContext } from "@/context/AppContext";
-import { IExpense } from "./types";
-import { OtherExpenseForm } from "./OtherExpenseForm";
-import { OthersExpenseDialog } from "./OthersExpenseDialog";
+import { IDividendsWithdraw } from "./types";
+import { DividendsWithdrawForm } from "./DividendsWithdrawForm";
+import { DividendsDialog } from "./DividendsDialog";
 
-export default function OtherExpensesTable() {
+export default function DividendsTable() {
   const [sorting, setSorting] = useState<SortingState>([]);
-  const [otherExpenses, setOtherExpenses] = useState<IExpense[]>([]);
+  const [dividends, setDividends] = useState<IDividendsWithdraw[]>([]);
 
   const {
     bank: { bank },
@@ -47,7 +47,7 @@ export default function OtherExpensesTable() {
 
   const bankName = bank?.name;
 
-  const columns: ColumnDef<IExpense>[] = [
+  const columns: ColumnDef<IDividendsWithdraw>[] = [
     {
       accessorKey: "date",
       header: "Fecha",
@@ -119,7 +119,7 @@ export default function OtherExpensesTable() {
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem
-              onClick={() => (table.options.meta as TableMeta<IExpense> & { onDelete?: (d: IExpense) => void })?.onDelete?.(row.original)}
+              onClick={() => (table.options.meta as TableMeta<IDividendsWithdraw> & { onDelete?: (d: IDividendsWithdraw) => void })?.onDelete?.(row.original)}
             >
               <Trash />
               Eliminar
@@ -131,40 +131,40 @@ export default function OtherExpensesTable() {
   ];
 
   useEffect(() => {
-    const fetchOtherExpenses = async () => {
+    const fetchDividends = async () => {
       setLoading(true);
-      const response = await apiClient.get("/expenses/others/transactions");
+      const response = await apiClient.get("/expenses/dividends/transactions");
       const data = response.data;
 
       console.log(data);
 
-      setOtherExpenses(data);
+      setDividends(data);
       setLoading(false);
     };
-    fetchOtherExpenses();
+    fetchDividends();
   }, []);
 
   const table = useReactTable({
-    data: otherExpenses,
+    data: dividends,
     columns,
     onSortingChange: setSorting,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
     meta: {
-      onDelete: async (expense: IExpense) => {
-        if (!expense.id) return;
-        const confirmDelete = window.confirm("¿Eliminar este egreso?");
+      onDelete: async (dividend: IDividendsWithdraw) => {
+        if (!dividend.id) return;
+        const confirmDelete = window.confirm("¿Eliminar este retiro de utilidades?");
         if (!confirmDelete) return;
         try {
-          await apiClient.delete(`/expenses/others/${expense.id}`);
-          setOtherExpenses(otherExpenses.filter((t) => t.id !== expense.id));
+          await apiClient.delete(`/expenses/dividends/${dividend.id}`);
+          setDividends(dividends.filter((t) => t.id !== dividend.id));
         } catch (e) {
           console.error(e);
           alert("No se pudo eliminar. Intenta nuevamente.");
         }
       },
-    } as TableMeta<IExpense> & { onDelete: (d: IExpense) => Promise<void> },
+    } as TableMeta<IDividendsWithdraw> & { onDelete: (d: IDividendsWithdraw) => Promise<void> },
     state: {
       sorting,
     },
@@ -180,13 +180,13 @@ export default function OtherExpensesTable() {
           }
           className="max-w-sm mr-auto bg-background border-border"
         />
-        <OthersExpenseDialog open={openDialog} onOpenChange={setOpenDialog}>
-          <OtherExpenseForm
+        <DividendsDialog open={openDialog} onOpenChange={setOpenDialog}>
+          <DividendsWithdrawForm
             setOpenDialog={setOpenDialog}
-            otherExpenses={otherExpenses}
-            setOtherExpenses={setOtherExpenses}
+            dividends={dividends}
+            setDividends={setDividends}
           />
-        </OthersExpenseDialog>
+        </DividendsDialog>
       </div>
       <div className="bg-background border-border">
         <Table>
@@ -204,7 +204,7 @@ export default function OtherExpensesTable() {
               </TableRow>
             ))}
           </TableHeader>
-          <TableBody cy-data="other-expenses-table-body">
+          <TableBody cy-data="dividends-table-body">
             {loading ? (
               // Skeleton rows
               Array.from({ length: 5 }).map((_, index) => (

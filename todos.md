@@ -58,3 +58,4 @@ agregale un fondo al topheader tanto para light y dark. ponle relacionado ocn el
 - [ ] llenar toda la data
 - [ ] fondo social y reserva legal (que se pueda enviar sin usuario).
 - [ ] hacer calculos
+- [ ] los usuarios que tenga balance en UserBalance,  (acciones, ahorros,)

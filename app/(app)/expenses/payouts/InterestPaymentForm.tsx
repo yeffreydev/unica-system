@@ -15,10 +15,19 @@ import { useContext, useState } from "react";
 import { AppContext } from "@/context/AppContext";
 import { ComboBoxUsers } from "../../../../components/combobox/ComboboxUsers";
 import { IUser } from "@/types/IUser";
+import { IPayout } from "./types";
 import { toast } from "@/hooks/use-toast";
 import apiClient from "@/config/apiClient";
 
-export const InterestPaymentForm = () => {
+export const InterestPaymentForm = ({
+  setOpenDialog,
+  payouts,
+  setPayouts,
+}: {
+  setOpenDialog?: (value: boolean) => void;
+  payouts?: IPayout[];
+  setPayouts?: (value: IPayout[]) => void;
+}) => {
   const { users } = useContext(AppContext);
   const [userSelected, setUserSelected] = useState<IUser | null>(null);
 
@@ -26,6 +35,7 @@ export const InterestPaymentForm = () => {
     defaultValues: {
       username: "", // Asegúrate de definir un valor inicial
       amount: 0,
+      date: new Date().toISOString().split('T')[0],
     },
   });
 
@@ -38,34 +48,43 @@ export const InterestPaymentForm = () => {
       return;
     }
 
-    if (!userSelected) {
-      toast({
-        title: "Error",
-        description: "Debes seleccionar un usuario.",
-      });
-      return;
-    }
 
-    const res = await apiClient.post("/payouts", {
+    const res = await apiClient.post("/payouts/create-transaction", {
       amount: form.getValues("amount"),
       description: "Pago de intereses",
       userId: userSelected ? userSelected.id : null,
-      date: new Date(),
+      date: new Date(form.getValues("date")),
     });
     if (res.data) {
       form.reset();
+      setOpenDialog?.(false);
+      setPayouts?.([res.data, ...(payouts || [])]);
       toast({
         title: "Payout creado.",
         description: "Pagos de interes creado correctamente.",
       });
-      if (window) window.location.reload();
     }
   };
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-        <h2>Pagos de Intereses</h2>
+        <FormField
+          control={form.control}
+          name="date"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Fecha</FormLabel>
+              <FormControl>
+                <Input type="date" {...field} />
+              </FormControl>
+              <FormDescription>
+                La fecha del pago de intereses.
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
         <FormField
           control={form.control}
           name="username"
@@ -87,11 +106,7 @@ export const InterestPaymentForm = () => {
             </FormItem>
           )}
         />
-        <div className="flex flex-col">
-          <span>Ahorros: S/. 5000</span>
-          <span>Acciones: S/. 5000</span>
-          <span>Interes Ganado de ahorros: S/. 500</span>
-        </div>
+        
         <FormField
           control={form.control}
           name="amount"
@@ -101,7 +116,6 @@ export const InterestPaymentForm = () => {
               <FormControl>
                 <div className="flex flex-col gap-2">
                   <Input type="number" {...field} />
-                  <p>S/ {field.value * 10}</p>
                 </div>
               </FormControl>
               <FormDescription>

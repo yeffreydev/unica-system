@@ -15,10 +15,19 @@ import { useContext, useState } from "react";
 import { AppContext } from "@/context/AppContext";
 import { ComboBoxUsers } from "../../../../components/combobox/ComboboxUsers";
 import { IUser } from "@/types/IUser";
+import { IDividendsWithdraw } from "./types";
 import { toast } from "@/hooks/use-toast";
 import apiClient from "@/config/apiClient";
 
-export const DividendsWithdrawForm = () => {
+export const DividendsWithdrawForm = ({
+  setOpenDialog,
+  dividends,
+  setDividends,
+}: {
+  setOpenDialog?: (value: boolean) => void;
+  dividends?: IDividendsWithdraw[];
+  setDividends?: (value: IDividendsWithdraw[]) => void;
+}) => {
   const { users } = useContext(AppContext);
   const [userSelected, setUserSelected] = useState<IUser | null>(null);
 
@@ -26,6 +35,7 @@ export const DividendsWithdrawForm = () => {
     defaultValues: {
       username: "", // Asegúrate de definir un valor inicial
       amount: 0,
+      date: new Date().toISOString().split('T')[0],
     },
   });
   const onSubmit = async () => {
@@ -37,33 +47,42 @@ export const DividendsWithdrawForm = () => {
       return;
     }
 
-    if (!userSelected) {
-      toast({
-        title: "Error",
-        description: "Debes seleccionar un usuario.",
-      });
-      return;
-    }
 
-    const res = await apiClient.post("/expenses/dividends", {
+    const res = await apiClient.post("/expenses/dividends/create-transaction", {
       amount: form.getValues("amount"),
       description: "Retiro de Utilidades",
       userId: userSelected ? userSelected.id : null,
-      date: new Date(),
+      date: new Date(form.getValues("date")),
     });
     if (res.data) {
       form.reset();
+      setOpenDialog?.(false);
+      setDividends?.([res.data, ...(dividends || [])]);
       toast({
-        title: "Gasto administrativo creado.",
-        description: "el gasto administrativo fue creado correctamente.",
+        title: "Retiro de utilidades creado.",
+        description: "el retiro de utilidades fue creado correctamente.",
       });
-      if (window) window.location.reload();
     }
   };
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-        <h2>Retiro de Utilidades</h2>
+        <FormField
+          control={form.control}
+          name="date"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Fecha</FormLabel>
+              <FormControl>
+                <Input type="date" {...field} />
+              </FormControl>
+              <FormDescription>
+                La fecha del retiro de utilidades.
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
         <FormField
           control={form.control}
           name="username"
@@ -85,11 +104,6 @@ export const DividendsWithdrawForm = () => {
             </FormItem>
           )}
         />
-        <div className="flex flex-col">
-          <span>Acciones: S/. 5000</span>
-          <span>Utilidades: S/. 5000</span>
-          <span>Disponible para retirar: S/. 50</span>
-        </div>
         <FormField
           control={form.control}
           name="amount"
@@ -99,7 +113,6 @@ export const DividendsWithdrawForm = () => {
               <FormControl>
                 <div className="flex flex-col gap-2">
                   <Input type="number" {...field} />
-                  <p>S/ {field.value * 10}</p>
                 </div>
               </FormControl>
               <FormDescription>
