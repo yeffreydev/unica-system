@@ -31,14 +31,14 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import apiClient from "@/config/apiClient";
 import { AppContext } from "@/context/AppContext";
-import { IIncome } from "./types";
+import { IOtherIncome } from "./types";
 import { OtherIncomeForm } from "./OtherIncomeForm";
 import { OthersDialog } from "./OthersDialog";
  
 
 export default function OthersTable() {
   const [sorting, setSorting] = useState<SortingState>([]);
-  const [otherIncomes, setOtherIncomes] = useState<IIncome[]>([]);
+  const [otherIncomes, setOtherIncomes] = useState<IOtherIncome[]>([]);
 
   const {
     bank: { bank },
@@ -48,7 +48,7 @@ export default function OthersTable() {
 
   const bankName = bank?.name;
 
-  const columns: ColumnDef<IIncome>[] = [
+  const columns: ColumnDef<IOtherIncome>[] = [
     {
       accessorKey: "date",
       header: "Fecha",
@@ -120,7 +120,7 @@ export default function OthersTable() {
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem
-              onClick={() => (table.options.meta as TableMeta<IIncome> & { onDelete?: (d: IIncome) => void })?.onDelete?.(row.original)}
+              onClick={() => (table.options.meta as TableMeta<IOtherIncome> & { onDelete?: (d: IOtherIncome) => void })?.onDelete?.(row.original)}
             >
               <Trash />
               Eliminar
@@ -153,7 +153,7 @@ export default function OthersTable() {
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
     meta: {
-      onDelete: async (income: IIncome) => {
+      onDelete: async (income: IOtherIncome) => {
         if (!income.id) return;
         const confirmDelete = window.confirm("¿Eliminar este ingreso?");
         if (!confirmDelete) return;
@@ -165,7 +165,7 @@ export default function OthersTable() {
           alert("No se pudo eliminar. Intenta nuevamente.");
         }
       },
-    } as TableMeta<IIncome> & { onDelete: (d: IIncome) => Promise<void> },
+    } as TableMeta<IOtherIncome> & { onDelete: (d: IOtherIncome) => Promise<void> },
     state: {
       sorting,
     },

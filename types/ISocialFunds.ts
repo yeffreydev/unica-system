@@ -1,18 +1,18 @@
 export interface ISocialFunds {
-  id: number;
+  id: string;
   name: string;
 }
 
 export interface ISocialFundsTransaction {
-  id: number;
-  socialFundsId: number;
+  id: string;
+  socialFundsId: string;
   amount: number;
   description: string;
   date: Date;
-  userId?: number;
+  userId?: string;
   socialFunds: ISocialFunds;
   user?: {
-    id: number;
+    id: string;
     name: string;
     lastname: string;
   };

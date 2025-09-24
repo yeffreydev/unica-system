@@ -75,8 +75,8 @@ export default function AppLayout({
         <aside className="w-1/5 px-4 pt-4 border-r dark:border-gray-700">
           <AppSidebar />
         </aside>
-        <div className="flex-1">
-          <div className="overflow-y-auto h-full w-full flex-1 px-2 md:px-4">
+        <div className="w-4/5">
+          <div className="overflow-auto h-full w-full flex-1 px-2 md:px-4">
             {children}
           </div>
         </div>
