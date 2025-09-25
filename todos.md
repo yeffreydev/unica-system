@@ -59,3 +59,23 @@ agregale un fondo al topheader tanto para light y dark. ponle relacionado ocn el
 - [ ] fondo social y reserva legal (que se pueda enviar sin usuario).
 - [ ] hacer calculos
 - [ ] los usuarios que tenga balance en UserBalance,  (acciones, ahorros,)
+
+
+
+Nueva Unica 2.0 
+
+Qipi 1.o
+qipi 1.0
+
+- [ ] si no paga una multa o tardanza, esta bien, puedes pagarlo el siguiente mes, pero se te quedara como un prestamo, osea tienes que pagar el interes.
+
+- [ ] hacer documentacion 
+- [ ] poder hacer el balance de los prestamos en live y el balance de las cuotas. desde el adminsitrador de prestamos correguir eso. y que seiempre te calcule la cuotas
+- [ ] integrar operaciones en la asamblea.
+
+
+
+#ERRORES 
+- [ ] al crear nueva accion no multiplica por el precio
+- [ ] en la lista, se duplica mucho los usuarios
+- [ ] operaciones 

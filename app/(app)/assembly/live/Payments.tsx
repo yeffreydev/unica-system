@@ -97,7 +97,7 @@ export default function Payments() {
       userId: selectedUser.id,
       amount: Number(capital),
       interest: Number(interest),
-      date: new Date(),
+      date: assemblyRun?.startAt ?? new Date(),
       description: description || undefined,
     });
     console.log("Payment recorded:", data);

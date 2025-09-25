@@ -39,7 +39,14 @@ export default function Shares() {
    try {
      if (!selectedUser) return;
 
-    const data: IUserStock = await apiBuySharesInAssembly(assemblyRun?.id || '', { userId: selectedUser.id, shares: quantity, date: new Date() });
+    const data: IUserStock = await apiBuySharesInAssembly(
+      assemblyRun?.id || '',
+      {
+      userId: selectedUser.id,
+      shares: quantity,
+      date: assemblyRun?.startAt ?? new Date(),
+      }
+    );
     
     //update state on partnerShares
     

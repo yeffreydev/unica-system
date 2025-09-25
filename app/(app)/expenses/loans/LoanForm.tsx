@@ -127,14 +127,14 @@ export const LoanForm = ({
         form.getValues("amount"),
         0.05,
         form.getValues("months"),
-        new Date()
+        new Date(form.getValues("date") + 'T00:00:00-05:00')
       );
       const installments = calculateInstallments(
         loanTypeSelected.name as keyof typeof loanTypesData,
         form.getValues("amount"),
         0.05,
         form.getValues("months"),
-        new Date()
+        new Date(form.getValues("date") + 'T00:00:00-05:00')
       );
       console.log(installments);
       setInstallments(installments);
@@ -175,7 +175,7 @@ export const LoanForm = ({
             userId: userSelected?.id,
             loanTypeId: loanTypeSelected?.id as string,
             initalInstallments: formData.months,
-            date: new Date(),
+            date: new Date(formData.date + 'T00:00:00-05:00'),
             interestRate: 0.05,
           };
           createLoan(data);

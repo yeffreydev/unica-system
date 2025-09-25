@@ -88,16 +88,12 @@ export function LoansTable() {
 
   const columns: ColumnDef<ILoan>[] = [
     {
-      accessorKey: "createdAt",
+      accessorKey: "date",
       header: "Fecha",
       cell: ({ row }) => (
         <div>
-          {row.original?.createdAt
-            ? `${new Date(
-                row.original.createdAt
-              ).toLocaleDateString()} ${new Date(
-                row.original.createdAt
-              ).toLocaleTimeString()}`
+          {row.original?.date
+            ? new Date(row.original.date).toLocaleDateString()
             : "Fecha no disponible"}
         </div>
       ),

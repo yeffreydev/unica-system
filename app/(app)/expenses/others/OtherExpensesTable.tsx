@@ -31,13 +31,13 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import apiClient from "@/config/apiClient";
 import { AppContext } from "@/context/AppContext";
-import { IExpense } from "./types";
+import { IOtherExpense } from "./types";
 import { OtherExpenseForm } from "./OtherExpenseForm";
 import { OthersExpenseDialog } from "./OthersExpenseDialog";
 
 export default function OtherExpensesTable() {
   const [sorting, setSorting] = useState<SortingState>([]);
-  const [otherExpenses, setOtherExpenses] = useState<IExpense[]>([]);
+  const [otherExpenses, setOtherExpenses] = useState<IOtherExpense[]>([]);
 
   const {
     bank: { bank },
@@ -47,7 +47,7 @@ export default function OtherExpensesTable() {
 
   const bankName = bank?.name;
 
-  const columns: ColumnDef<IExpense>[] = [
+  const columns: ColumnDef<IOtherExpense>[] = [
     {
       accessorKey: "date",
       header: "Fecha",
@@ -119,7 +119,7 @@ export default function OtherExpensesTable() {
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuItem
-              onClick={() => (table.options.meta as TableMeta<IExpense> & { onDelete?: (d: IExpense) => void })?.onDelete?.(row.original)}
+              onClick={() => (table.options.meta as TableMeta<IOtherExpense> & { onDelete?: (d: IOtherExpense) => void })?.onDelete?.(row.original)}
             >
               <Trash />
               Eliminar
@@ -152,7 +152,7 @@ export default function OtherExpensesTable() {
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
     meta: {
-      onDelete: async (expense: IExpense) => {
+      onDelete: async (expense: IOtherExpense) => {
         if (!expense.id) return;
         const confirmDelete = window.confirm("¿Eliminar este egreso?");
         if (!confirmDelete) return;
@@ -164,7 +164,7 @@ export default function OtherExpensesTable() {
           alert("No se pudo eliminar. Intenta nuevamente.");
         }
       },
-    } as TableMeta<IExpense> & { onDelete: (d: IExpense) => Promise<void> },
+    } as TableMeta<IOtherExpense> & { onDelete: (d: IOtherExpense) => Promise<void> },
     state: {
       sorting,
     },

@@ -100,8 +100,8 @@ import { FileText, FileSpreadsheet } from "lucide-react";
       deposits: data.deposits.reduce((acc,i) => acc+i.amount,0) + data.accumulated.deposits,
       payments: data.payments.reduce((acc,i) => acc+i.amount,0) + data.accumulated.payments,
       interests: data.payments.reduce((acc,i) => acc+Number(i.interest),0) + data.accumulated.interests,
-      socialFundsLegal: data.socialFunds.reduce((acc,i) => acc+i.amount,0) + data.accumulated.socialFundsLegal,
-      socialFundsSocial: data.socialFunds.reduce((acc,i) => acc+i.amount,0)+ data.accumulated.socialFundsSocial,
+      socialFundsLegal: data.socialFunds.filter(item => !item.userId && item.socialFunds.name=='LEGAL').reduce((acc,i) => acc+i.amount,0) + data.accumulated.socialFundsLegal,
+      socialFundsSocial: data.socialFunds.filter(item => !item.userId && item.socialFunds.name=='SOCIAL').reduce((acc,i) => acc+i.amount,0)+ data.accumulated.socialFundsSocial,
       others: data.others.reduce((acc,i) => acc+i.amount,0) + + data.accumulated.others,
     };
     return sum;

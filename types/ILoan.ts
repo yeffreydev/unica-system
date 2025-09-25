@@ -5,7 +5,7 @@ export interface ILoan {
   user?: IUser;
   loanType?: ILoanType;
   id?: string;
-  amount?: number;
+  amount: number;
   loanTypeId: string;
   userId?: string;
   createdAt?: Date;

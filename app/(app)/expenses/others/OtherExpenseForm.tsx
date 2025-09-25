@@ -15,7 +15,7 @@ import { useContext, useState } from "react";
 import { AppContext } from "@/context/AppContext";
 import { ComboBoxUsers } from "../../../../components/combobox/ComboboxUsers";
 import { IUser } from "@/types/IUser";
-import { IExpense } from "./types";
+import { IOtherExpense } from "./types";
 import { toast } from "@/hooks/use-toast";
 import apiClient from "@/config/apiClient";
 
@@ -25,8 +25,8 @@ export const OtherExpenseForm = ({
   setOtherExpenses,
 }: {
   setOpenDialog?: (value: boolean) => void;
-  otherExpenses?: IExpense[];
-  setOtherExpenses?: (value: IExpense[]) => void;
+  otherExpenses?: IOtherExpense[];
+  setOtherExpenses?: (value: IOtherExpense[]) => void;
 }) => {
   const { users } = useContext(AppContext);
   const [userSelected, setUserSelected] = useState<IUser | null>(null);

@@ -15,18 +15,69 @@ import { AppContext } from "@/context/AppContext";
 import { ComboBoxUsers } from "@/components/combobox/ComboboxUsers";
 import { ComboboxLoanTypes } from "@/components/combobox/ComboboxLoanTypes";
 import { IUser } from "@/types/IUser";
-import { ILoanType } from "@/types/ILoan";
+import { ILoan, ILoanType } from "@/types/ILoan";
 import { loanTypesData, LoanTypesEnum } from "@/constants";
-import { IAssemblyScheduleRun, ICreditApplication } from "../types";
+import { IAssemblyScheduleRun, ICreditApplication, ILoanPayment, IUserStock } from "../types";
 import { apiCreateCreditApplication, apiGetAssemblyRun, apiGetCreditApplicationsWithLoans, apiDeleteCreditApplication, apiApproveCreditApplication, apiRejectCreditApplication } from "../api";
 import { useAssembly } from "../AssemblyContext";
 import apiClient from "@/config/apiClient";
+import { IDeposit } from "../../incomes/deposits/types";
+import {  ISocialFundsTransaction } from "@/types/ISocialFunds";
+import { IOtherIncome } from "../../incomes/others/types";
+import { formatCurrency } from "@/lib/utils";
+import { IWithdrawal } from "../../expenses/withdrawls/types";
+import { IPayout } from "../../expenses/payouts/types";
+import { ISocialFundsExpenseTransaction } from "../../expenses/social/types";
+import { IOtherExpense } from "../../expenses/others/types";
+import { IDividendsWithdraw } from "../../expenses/dividends/types";
+import { IAdministrativeExpense } from "../../expenses/administrative/types";
+import { getExpensesSum } from "../../reports/expenses/utils";
 type LoanReq = { id: string; dni: string; name: string; amount: number; months: number; status: "Pendiente" | "Aprobado" | "Rechazado"; loanType?: string };
 
 export default function Loans() {
   const { users } = useContext(AppContext);
   const [creditApplications, setCreditApplications] = useState<ICreditApplication[]>([]);
   const { assembly } = useAssembly();
+  const [lastMonthBalance, setLastMonthBalance] = useState<{
+     incomes: {
+        deposits: IDeposit[],
+    users: IUser[],
+    payments: ILoanPayment[];
+    stocks: IUserStock[]
+    socialFunds: ISocialFundsTransaction[]
+    others: IOtherIncome[]
+    }
+    expenses: {
+       withdrawals: IWithdrawal[],
+        // users: IUser[],
+        loans: ILoan[],
+        payouts: IPayout[],
+        socialFunds: ISocialFundsExpenseTransaction[],
+        others: IOtherExpense[],
+        dividends: IDividendsWithdraw[],
+        administrative: IAdministrativeExpense[],
+    },
+    balance: number
+  }>({
+    incomes: {
+      deposits: [],
+      users: [],
+      payments: [],
+      stocks: [],
+      socialFunds: [],
+      others: []
+    },
+    expenses: {
+      withdrawals: [],
+      loans: [],
+      dividends: [],
+      administrative: [],
+      others: [],
+      socialFunds: [],
+      payouts: [],
+    }
+    ,balance: 0
+  });
       
        const [assemblyRun, setAssemblyRun] = useState<IAssemblyScheduleRun | null>(null);
   const [userSelected, setUserSelected] = useState<IUser | null>(null);
@@ -63,6 +114,21 @@ export default function Loans() {
     fetchLoanTypes();
   }, []);
 
+  const fetchLastMonthBalance = async() => {
+    if (!assemblyRun) return;
+    console.log(assemblyRun.startAt);
+    const currentDate = new Date(assemblyRun?.startAt).toISOString();
+    const res = await apiClient.get('/reports/balances/month?date=' + currentDate)
+    console.log('Last month balance:', res.data);
+    if (res.data) {
+      setLastMonthBalance(res.data)
+    }
+  }
+
+  useEffect(() => {
+    fetchLastMonthBalance();
+  },[assemblyRun])
+
   const handleCreateCreditApplication = async () => {
     if (isSubmitting) return; // Prevent duplicate submissions
 
@@ -97,10 +163,18 @@ export default function Loans() {
 
     setIsDeleting(true);
     try {
+      // Find the application to check if it has a loan
+      const application = creditApplications.find(app => app.id === applicationToDelete);
+      if (application?.loan) {
+        // Delete the associated loan
+        await apiClient.delete(`/loans/${application.loan.id}`);
+      }
       await apiDeleteCreditApplication(applicationToDelete);
       setCreditApplications((prev) => prev.filter((app) => app.id !== applicationToDelete));
       setDeleteConfirmOpen(false);
       setApplicationToDelete(null);
+      // Refresh the balance after deletion
+      await fetchLastMonthBalance();
     } catch (error) {
       console.error("Error deleting credit application:", error);
     } finally {
@@ -175,10 +249,10 @@ export default function Loans() {
       const loanData = {
         userId: creditApp.userId, // Use the actual user ID from the credit application
         amount: form.amount,
-        interestRate: 0.05, // Default interest rate, you may want to make this configurable
+        interestRate: 0.02, // Default interest rate, you may want to make this configurable
         initalInstallments: form.installments,
         loanTypeId: loanTypeSelected?.id || '', // Assuming loanTypeSelected has an id
-        date: new Date(),
+        date: assemblyRun?.startAt ?? new Date(),
         paymentFrecuency: "monthly"
       };
 
@@ -189,6 +263,9 @@ export default function Loans() {
         const data = await apiGetCreditApplicationsWithLoans(assemblyRun.id);
         setCreditApplications(data);
       }
+
+      // Refresh the last month balance to include the new loan
+      await fetchLastMonthBalance();
 
       setApprovalModalOpen(false);
       setSelectedLoan(null);
@@ -208,6 +285,12 @@ export default function Loans() {
 
     setIsRejecting(true);
     try {
+      // Find the application to check if it has a loan
+      const application = creditApplications.find(app => app.id === selectedLoan.id);
+      if (application?.loan) {
+        // Delete the associated loan
+        await apiClient.delete(`/loans/${application.loan.id}`);
+      }
       await apiRejectCreditApplication(selectedLoan.id, {
         confirm: true,
         reason: rejectReason.trim()
@@ -223,6 +306,8 @@ export default function Loans() {
       setSelectedLoan(null);
       setRejectReason('');
       setRejectSendMessage(false);
+      // Refresh the balance after rejection
+      await fetchLastMonthBalance();
       return true;
     } catch (error) {
       console.error("Error rejecting credit application:", error);
@@ -232,6 +317,28 @@ export default function Loans() {
     }
   };
 
+  const expensesSum = getExpensesSum(lastMonthBalance.expenses);
+
+  const getCurrentBalance = (data: {
+        deposits: IDeposit[],
+    users: IUser[],
+    payments: ILoanPayment[];
+    stocks: IUserStock[]
+    socialFunds: ISocialFundsTransaction[]
+    others: IOtherIncome[]
+    }) => {
+      const deposits = data.deposits.reduce((acc,it) => acc + it.amount,0)
+      const payments = data.payments.reduce((acc,it) => acc + it.amount + Number(it.interest),0)
+      const stocks = data.stocks.reduce((acc,it)=> acc + (it.quantity * it.price),0)
+      const socialFunds = data.socialFunds.reduce((acc,it) => acc+it.amount,0);
+      const others = data.others.reduce((acc,it) => acc + it.amount,0)
+      return deposits + payments + stocks + socialFunds + others
+    }
+
+  const currentBalance =  getCurrentBalance(lastMonthBalance.incomes);
+  const currentApplicationsSum  = creditApplications.filter(item => item.status==='pending').reduce((acc,item) => acc + item.amount,0);
+  const expenseKeys: (keyof typeof expensesSum)[] = Object.keys(expensesSum) as (keyof typeof expensesSum)[];
+  const expensesAmount = expenseKeys.reduce((acc, it) => acc + expensesSum[it], 0) + currentApplicationsSum;
   return (
    <div className="flex flex-col gap-4">
     <Card>
@@ -255,19 +362,19 @@ export default function Loans() {
                   <TableBody>
                     <TableRow>
                       <TableCell className="text-sm">1. Saldo del mes anterior</TableCell>
-                      <TableCell className="text-right border-r">S/. 100</TableCell>
+                      <TableCell className="text-right border-r">{formatCurrency(lastMonthBalance.balance)}</TableCell>
                       <TableCell className="text-sm">2. Ingresos del mes</TableCell>
-                      <TableCell className="text-right">S/. 100</TableCell>
+                      <TableCell className="text-right">{formatCurrency(currentBalance)}</TableCell>
                     </TableRow>
                     <TableRow>
                       <TableCell className="text-sm font-medium">3. Saldo Bruto del Mes (2+1)</TableCell>
-                      <TableCell className="text-right border-r">S/. 100</TableCell>
+                      <TableCell className="text-right border-r">{formatCurrency(currentBalance + lastMonthBalance.balance)}</TableCell>
                       <TableCell className="text-sm">4. Egresos del Mes</TableCell>
-                      <TableCell className="text-right">S/. 100</TableCell>
+                      <TableCell className="text-right">{formatCurrency(expensesAmount)}</TableCell>
                     </TableRow>
                     <TableRow>
                       <TableCell className="text-sm font-semibold">Saldo Neto del Mes (3-4)</TableCell>
-                      <TableCell className="text-right font-semibold">S/. 100</TableCell>
+                      <TableCell className="text-right font-semibold">{formatCurrency(currentBalance + lastMonthBalance.balance - expensesAmount)}</TableCell>
                       <TableCell />
                       <TableCell />
                     </TableRow>

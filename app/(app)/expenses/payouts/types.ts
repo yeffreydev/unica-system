@@ -5,5 +5,6 @@ export interface IPayout {
   description: string;
   amount: number;
   date: Date;
+  userId: string;
   user: IUser;
 }

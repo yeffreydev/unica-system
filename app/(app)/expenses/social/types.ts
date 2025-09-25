@@ -7,7 +7,7 @@ export interface ISocialFundsExpenseTransaction {
   amount: number;
   description: string;
   date: Date;
-  userId: number;
+  userId: string;
   socialFunds: ISocialFunds;
   user: IUser;
 }

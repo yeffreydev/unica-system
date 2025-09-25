@@ -1,8 +1,8 @@
 import { IUser } from "@/types/IUser";
 
 export interface IDividendsWithdraw {
-  id: number;
-  userId: number;
+  id: string;
+  userId: string;
   description: string;
   amount: number;
   date: Date;
