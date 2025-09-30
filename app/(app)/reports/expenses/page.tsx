@@ -300,6 +300,13 @@ function ExpensesReportTable() {
           <TableCell className="min-w-[100px] w-fit whitespace-nowrap">{formatCurrency(totalSum.others)}</TableCell>
           <TableCell className="min-w-[100px] w-fit whitespace-nowrap">{formatCurrency(totalSum.withdrawals + totalSum.loans + totalSum.payouts + totalSum.administrative + totalSum.dividends + totalSum.socialFundsLegal + totalSum.socialFundsSocial + totalSum.others)}</TableCell>
         </TableRow>
+        <TableRow className="border-t border-gray-200 dark:border-gray-700">
+          <TableCell colSpan={11} className="py-2">
+            <div className="text-center text-sm text-gray-500">
+              ******************** Fin del Reporte de Egresos ********************
+            </div>
+          </TableCell>
+        </TableRow>
       </TableFooter>
             </Table>
           </div>

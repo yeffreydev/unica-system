@@ -100,8 +100,8 @@ import { FileText, FileSpreadsheet } from "lucide-react";
       deposits: data.deposits.reduce((acc,i) => acc+i.amount,0) + data.accumulated.deposits,
       payments: data.payments.reduce((acc,i) => acc+i.amount,0) + data.accumulated.payments,
       interests: data.payments.reduce((acc,i) => acc+Number(i.interest),0) + data.accumulated.interests,
-      socialFundsLegal: data.socialFunds.filter(item => !item.userId && item.socialFunds.name=='LEGAL').reduce((acc,i) => acc+i.amount,0) + data.accumulated.socialFundsLegal,
-      socialFundsSocial: data.socialFunds.filter(item => !item.userId && item.socialFunds.name=='SOCIAL').reduce((acc,i) => acc+i.amount,0)+ data.accumulated.socialFundsSocial,
+      socialFundsLegal: data.socialFunds.filter(item => item.socialFunds.name=='LEGAL').reduce((acc,i) => acc+i.amount,0) + data.accumulated.socialFundsLegal,
+      socialFundsSocial: data.socialFunds.filter(item => item.socialFunds.name=='SOCIAL').reduce((acc,i) => acc+i.amount,0)+ data.accumulated.socialFundsSocial,
       others: data.others.reduce((acc,i) => acc+i.amount,0) + + data.accumulated.others,
     };
     return sum;
@@ -333,6 +333,13 @@ function IncomesReportTable() {
           <TableCell className="min-w-[100px] w-fit whitespace-nowrap">{formatCurrency(totalSum.socialFundsSocial)}</TableCell>
           <TableCell className="min-w-[100px] w-fit whitespace-nowrap">{formatCurrency(totalSum.others)}</TableCell>
           <TableCell className="min-w-[100px] w-fit whitespace-nowrap">{formatCurrency(totalSum.deposits + totalSum.payments + totalSum.interests + totalSum.stocksValue + totalSum.socialFundsLegal + totalSum.socialFundsSocial + totalSum.others)}</TableCell>
+        </TableRow>
+         <TableRow className="border-t border-gray-200 dark:border-gray-700">
+          <TableCell colSpan={11} className="py-2">
+            <div className="text-center text-sm text-gray-500">
+              ******************** Fin del Reporte de Ingresos ********************
+            </div>
+          </TableCell>
         </TableRow>
       </TableFooter>
             </Table>

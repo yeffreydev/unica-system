@@ -79,3 +79,7 @@ qipi 1.0
 - [ ] al crear nueva accion no multiplica por el precio
 - [ ] en la lista, se duplica mucho los usuarios
 - [ ] operaciones 
+- [ ] hacer dashboard
+- [ ] calcular cuotas correctamente segun el tipo de prestamo.
+- [ ] disenar logica de utilidades.
+- [ ] hacer bien la documentacion para gestionar las asambleas.
