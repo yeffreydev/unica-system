@@ -108,7 +108,7 @@ export const columns: ColumnDef<IDeposit>[] = [
 
 export function DepositsTable() {
   const [sorting, setSorting] = useState<SortingState>([]);
-  const { deposits, setDeposits } = useContext(DepositContext);
+  const { deposits, setDeposits, addDeposit } = useContext(DepositContext);
   const [openDialog, setOpenDialog] = useState(false);
   const [loading, setLoading] = useState(true);
   const [editDeposit, setEditDeposit] = useState<IDeposit | null>(null);
@@ -158,7 +158,7 @@ export function DepositsTable() {
           className="max-w-sm mr-auto bg-background border-border"
         />
         <DepositsDialog open={openDialog} onOpenChange={setOpenDialog}>
-          <DepositForm setOpenDialog={setOpenDialog} editDeposit={editDeposit} setEditDeposit={setEditDeposit} />
+          <DepositForm addDeposit={addDeposit!} setOpenDialog={setOpenDialog} editDeposit={editDeposit} setEditDeposit={setEditDeposit} />
         </DepositsDialog>
       </div>
       <div className="bg-background border-border">

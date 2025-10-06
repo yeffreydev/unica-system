@@ -1,7 +1,7 @@
 import { IUser } from "@/types/IUser";
 
 export interface IOtherIncome {
-  id: number;
+  id: string;
   amount: number;
   date: string;
   description: string;

@@ -30,7 +30,7 @@ export default function StepLayout({ children }: { children: React.ReactNode }) 
   // const handleStartAssembly = () => {
   //   startAssembly();
   // };
-  const progress = Math.round((assemblyState.currentStep / 8) * 100);
+  const progress = Math.round((assemblyState.currentStep / assemblySteps.length) * 100);
 
   const currentStepData = assemblySteps.find(step => step.id === assemblyState.currentStep);
 

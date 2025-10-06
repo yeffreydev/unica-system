@@ -31,7 +31,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import apiClient from "@/config/apiClient";
 import { AppContext } from "@/context/AppContext";
-import { ISocialFunds, ISocialFundsTransaction } from "@/types/ISocialFunds";
+import {  ISocialFundsTransaction } from "@/types/ISocialFunds";
 import { LegalsDialog } from "./LegalsDialog";
 import { SocialLegalFundsForm } from "./SocialLegalFundsForm";
 export default function LegalsTable() {
@@ -43,7 +43,6 @@ export default function LegalsTable() {
   const {
     bank: { bank },
   } = useContext(AppContext);
-  const [socialFunds, setSocialFunds] = useState<ISocialFunds[]>([]);
 
   const [openDialog, setOpenDialog] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -133,15 +132,7 @@ export default function LegalsTable() {
     },
   ];
 
-  useEffect(() => {
-    const fetchSocialFunds = async () => {
-      const response = await apiClient.get("/banks/social-funds-types");
-      const data = response.data;
 
-      setSocialFunds(data);
-    };
-    fetchSocialFunds();
-  }, []);
 
   useEffect(() => {
     const fetchSocialFundsTransactions = async () => {
@@ -195,7 +186,6 @@ export default function LegalsTable() {
         />
         <LegalsDialog open={openDialog} onOpenChange={setOpenDialog}>
           <SocialLegalFundsForm
-            socialFunds={socialFunds}
             setOpenDialog={setOpenDialog}
             socialFundsTransactions={socialFundsTransactions}
             setSocialFundsTransactions={setSocialFundsTransactions}

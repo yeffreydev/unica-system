@@ -1,5 +1,6 @@
 import apiClient from "@/config/apiClient";
 import { IAssemblySchedule, IAssemblyScheduleRun } from "./types";
+import { OtherIncomesTags } from "@/constants";
 
 
 export const apiGetAssemblySchedule = async () => {
@@ -77,3 +78,20 @@ export const apiRejectCreditApplication = async(id: string, data: { confirm: boo
     const response = await apiClient.post(`/schedules/assembly/run/credit-application/${id}/reject`, data);
     return response.data;
 }
+
+
+//pay late or absence fees
+export const apiCreateOtherIncomesTransaction = async(data: { userId?: string; description: string; amount: number; date: Date; scheduleRunId?: string; tag?: OtherIncomesTags; }) => {
+    const response = await apiClient.post(`/incomes/others/create-transaction`, data);
+    return response.data;
+}
+export const apiGetOtherIncomesByScheduleRun = async(runId: string) => {
+    const response = await apiClient.get(`/schedules/assembly/run/${runId}/other-incomes`);
+    return response.data;
+  }
+
+
+export const apiDeleteOtherIncomesTransactionAssembly = async (transactionId: string) => {
+  const response = await apiClient.delete(`/incomes/others/${transactionId}`);
+  return response.data;
+};

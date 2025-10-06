@@ -11,7 +11,7 @@ import {
 } from "../../../../components/ui/form";
 import { Input } from "../../../../components/ui/input";
 import { Button } from "../../../../components/ui/button";
-import { useContext, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { AppContext } from "@/context/AppContext";
 import { ComboBoxUsers } from "../../../../components/combobox/ComboboxUsers";
 import { IUser } from "@/types/IUser";
@@ -24,21 +24,36 @@ export const SocialLegalFundsForm = ({
   setOpenDialog,
   socialFundsTransactions,
   setSocialFundsTransactions,
-  socialFunds,
+  scheduleRunId,
+  defaultDate,
 }: {
-  socialFunds: ISocialFunds[];
   setOpenDialog?: (value: boolean) => void;
   socialFundsTransactions: ISocialFundsTransaction[];
   setSocialFundsTransactions: (value: ISocialFundsTransaction[]) => void;
+  scheduleRunId?: string;
+  defaultDate?: Date;
 }) => {
   const { users } = useContext(AppContext);
   const [userSelected, setUserSelected] = useState<IUser | null>(null);
+  const [socialFunds, setSocialFunds] = useState<ISocialFunds[]>([]);
 
+
+    useEffect(() => {
+    const fetchSocialFunds = async () => {
+      const response = await apiClient.get("/banks/social-funds-types");
+      const data = response.data;
+
+      setSocialFunds(data);
+    };
+    fetchSocialFunds();
+  }, []);
   const form = useForm({
     defaultValues: {
       socialFund: "",
       amount: 0,
-      date: new Date().toISOString().split('T')[0],
+      date: defaultDate
+        ? new Date(defaultDate).toISOString().split("T")[0]
+        : new Date().toISOString().split("T")[0],
       username: "",
     },
   });
@@ -65,8 +80,9 @@ export const SocialLegalFundsForm = ({
       description: "Ingreso a fondo",
       date: new Date(form.getValues("date")),
       userId: userSelected ? userSelected.id : null,
+      scheduleRunId: scheduleRunId || null,
     });
-    console.log(res);;
+    console.log(res);
     if (res.data) {
       form.reset();
       setOpenDialog?.(false);

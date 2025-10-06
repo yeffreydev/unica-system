@@ -26,17 +26,30 @@ export const SocialLegalFundsExpenseForm = ({
   setOpenDialog,
   socialFundsTransactions,
   setSocialFundsTransactions,
+  defaultDate,
+  scheduleRunId,
 }: {
   socialFunds: ISocialFunds[];
   setOpenDialog?: (value: boolean) => void;
   socialFundsTransactions?: ISocialFundsExpenseTransaction[];
   setSocialFundsTransactions?: (value: ISocialFundsExpenseTransaction[]) => void;
+  defaultDate?: Date;
+  scheduleRunId?: string;
 }) => {
+  const getPeruDate = () => {
+    const now = new Date();
+    const peruOffset = -5 * 60;
+    const peruTime = new Date(
+      now.getTime() + (peruOffset - now.getTimezoneOffset()) * 60000
+    );
+    return peruTime.toISOString().split("T")[0];
+  };
+
   const form = useForm({
     defaultValues: {
       socialFund: "",
       amount: 0,
-      date: new Date().toISOString().split('T')[0],
+      date: defaultDate ? new Date(defaultDate).toISOString().split("T")[0] : getPeruDate(),
       username: "",
     },
   });
@@ -67,6 +80,7 @@ export const SocialLegalFundsExpenseForm = ({
         description: "Egreso de fondos",
         date: new Date(form.getValues("date")),
         userId: userSelected ? userSelected.id : null,
+        scheduleRunId: scheduleRunId || null,
       }
     );
     if (res.data) {

@@ -76,10 +76,36 @@ qipi 1.0
 
 
 #ERRORES 
-- [ ] al crear nueva accion no multiplica por el precio
-- [ ] en la lista, se duplica mucho los usuarios
-- [ ] operaciones 
-- [ ] hacer dashboard
+- [x] al crear nueva accion no multiplica por el precio
+- [x] en la lista de una asamblea, se duplica mucho los usuarios
 - [ ] calcular cuotas correctamente segun el tipo de prestamo.
-- [ ] disenar logica de utilidades.
 - [ ] hacer bien la documentacion para gestionar las asambleas.
+- [x] ingresos se cruza en la fila de acumulados al mes anterior, hay un error, donde se cruza la suma de fondo social con reserva legal.
+- [x] en el reporte de ingresos en interes obtiene un dato de intereses pagado de egresos.
+- [] sumas totales en pasos de la asamblea
+
+
+#FEATURES
+- [x] pagar faltas y tardanzas al llamar lista.
+- [ ] operaciones 
+- [x] disenar logica de utilidades.
+- [ ] en prestamos agregar balance, que es el prestamo vigente por pagar, y a partir de ahi poder generar cuotas. 
+- [ ] hacer dashboard con data real.
+- [ ] configuracion de faltas y tardanzas.
+
+
+## entregable
+- [ ] asamblea, donde pudes adminstrar los participantes de una instancia y de la asamblea general.
+- [ ] y poder configurar las fechas de la asamblea.
+- [ ] poder pagar bien las tardanzas.
+- [ ] ver las cuotas reales que toca pagar a un usuario durante la asamblea, bueno correguir junto con saldo sobrante de un prestamo.
+- [ ] poder realizar las operacioens durante la asamblea.
+# sprint 
+- [ ] subir un nuevo proyecto 
+
+
+# Modulo Asamblea
+- [ ] agregar que se pueda pagar tardanza o falta. (que se configurable)
+- [ ] agregar el paso de operaciones
+
+# Modulo Dashboard

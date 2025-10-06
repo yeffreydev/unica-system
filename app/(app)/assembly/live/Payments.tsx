@@ -86,6 +86,19 @@ export default function Payments() {
 
   
 
+  // Calculate totals
+  const calculateTotals = () => {
+    const totalInstallment = paymentsData.installments.reduce((sum, inst) => sum + Number(inst.amount || 0), 0);
+    const totalPaid = paymentsData.payments.reduce((sum, payment) => sum + Number(payment.amount || 0) + Number(payment.interest || 0), 0);
+    const totalPending = totalInstallment - totalPaid;
+    
+    return {
+      totalInstallment,
+      totalPaid,
+      totalPending
+    };
+  };
+
   const confirmPayment = async() => {
     if (!selectedUser) return;
 
@@ -135,12 +148,31 @@ export default function Payments() {
         <CardDescription>Lista de usuarios - registra pagos de intereses</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
+        {/* Totals Section - Moved to top */}
+        <div className="grid grid-cols-3 gap-4 p-4 bg-muted/50 rounded-lg">
+          <div className="text-center">
+            <div className="text-sm text-muted-foreground mb-1">Total Cuota</div>
+            <div className="text-2xl font-bold">S/ {calculateTotals().totalInstallment.toFixed(2)}</div>
+          </div>
+          <div className="text-center">
+            <div className="text-sm text-muted-foreground mb-1">Total Pagado</div>
+            <div className="text-2xl font-bold text-green-700 dark:text-green-400">
+              S/ {calculateTotals().totalPaid.toFixed(2)}
+            </div>
+          </div>
+          <div className="text-center">
+            <div className="text-sm text-muted-foreground mb-1">Pendiente</div>
+            <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
+              S/ {calculateTotals().totalPending.toFixed(2)}
+            </div>
+          </div>
+        </div>
+
         <div className="rounded-md border bg-card">
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>DNI</TableHead>
-                <TableHead>Nombre</TableHead>
+                <TableHead>Nombres</TableHead>
                 <TableHead>Cuota</TableHead>
                 <TableHead>Pagado</TableHead>
                 <TableHead>Acción</TableHead>
@@ -159,7 +191,6 @@ export default function Payments() {
                 //payment
                 return (
                   <TableRow key={user.id} className={getRowColor(hasPaid, installmentAmount)}>
-                    <TableCell className="text-sm">{user.dni}</TableCell>
                     <TableCell className="text-sm font-medium">{`${user.name} ${user.lastname}`}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
@@ -220,18 +251,6 @@ export default function Payments() {
               )}
             </TableBody>
           </Table>
-        </div>
-
-        <div className="flex justify-between items-center text-sm">
-          <div>
-            Total cuota: <span className="font-semibold">S/ 00.00</span>
-          </div>
-          <div>
-            Total pagado: <span className="font-semibold text-green-700 dark:text-green-400">S/ {'0.00'}</span>
-          </div>
-          <div>
-            Pendiente: <span className="font-semibold text-orange-600 dark:text-orange-400">S/ {'0.00'}</span>
-          </div>
         </div>
 
         <Dialog open={modalOpen} onOpenChange={setModalOpen}>

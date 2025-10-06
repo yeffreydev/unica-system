@@ -2,7 +2,6 @@ import { Metadata } from "next";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -22,11 +21,11 @@ export default function Dashboard() {
         <div className="flex-1 space-y-4 pt-6">
           <Tabs defaultValue="overview" className="space-y-4">
             <TabsContent value="overview" className="space-y-4">
-              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">
-                      Total Revenue
+                      Capital Total
                     </CardTitle>
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -42,16 +41,16 @@ export default function Dashboard() {
                     </svg>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">$45,231.89</div>
+                    <div className="text-2xl font-bold">S/. 300 120</div>
                     <p className="text-xs text-muted-foreground">
-                      +20.1% from last month
+                      +20.1% del ultimo mes
                     </p>
                   </CardContent>
                 </Card>
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">
-                      Subscriptions
+                      Prestamos Realizados
                     </CardTitle>
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -69,40 +68,16 @@ export default function Dashboard() {
                     </svg>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">+2350</div>
+                    <div className="text-2xl font-bold">+300</div>
                     <p className="text-xs text-muted-foreground">
-                      +180.1% from last month
+                      +20.1% del ultimo mes
                     </p>
                   </CardContent>
                 </Card>
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Sales</CardTitle>
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      className="h-4 w-4 text-muted-foreground"
-                    >
-                      <rect width="20" height="14" x="2" y="5" rx="2" />
-                      <path d="M2 10h20" />
-                    </svg>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">+12,234</div>
-                    <p className="text-xs text-muted-foreground">
-                      +19% from last month
-                    </p>
-                  </CardContent>
-                </Card>
-                <Card className="">
-                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                     <CardTitle className="text-sm font-medium">
-                      Active Now
+                      Intereses Recibidos
                     </CardTitle>
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -114,13 +89,13 @@ export default function Dashboard() {
                       strokeWidth="2"
                       className="h-4 w-4 text-muted-foreground"
                     >
-                      <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
+                      <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
                     </svg>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">+573</div>
+                    <div className="text-2xl font-bold">S/. 100 100</div>
                     <p className="text-xs text-muted-foreground">
-                      +201 since last hour
+                      +20.1% del ultimo mes
                     </p>
                   </CardContent>
                 </Card>
@@ -128,7 +103,7 @@ export default function Dashboard() {
               <div className="flex gap-4 flex-col lg:grid lg:grid-cols-7 ">
                 <Card className="col-span-4">
                   <CardHeader>
-                    <CardTitle>Overview</CardTitle>
+                    <CardTitle>Intereses Recibidos</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <Overview />
@@ -136,10 +111,7 @@ export default function Dashboard() {
                 </Card>
                 <Card className="col-span-3">
                   <CardHeader>
-                    <CardTitle>Recent Sales</CardTitle>
-                    <CardDescription>
-                      You made 265 sales this month.
-                    </CardDescription>
+                    <CardTitle>Prestamos Reciente</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <RecentSales />

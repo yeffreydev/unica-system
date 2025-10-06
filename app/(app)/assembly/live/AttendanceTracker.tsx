@@ -1,20 +1,36 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Users, CheckCircle, XCircle } from "lucide-react";
+import { Users, CheckCircle, XCircle, DollarSign, UserPlus, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { apiGetAssemblyRun, apiUpdateParticipantStatusInAssemblyRun } from "../api";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { apiGetAssemblyRun, apiUpdateParticipantStatusInAssemblyRun, apiCreateOtherIncomesTransaction, apiGetOtherIncomesByScheduleRun, apiDeleteOtherIncomesTransactionAssembly } from "../api";
 import { useAssembly } from "../AssemblyContext";
 import { IAssemblyScheduleRun, ParticipantStatusTypes } from "../types";
 import { translateParticipantStatus } from "../utils";
+import { ComboBoxUsers } from "@/components/combobox/ComboboxUsers";
+import { useContext } from "react";
+import { AppContext } from "@/context/AppContext";
+import { IUser } from "@/types/IUser";
+import { OtherIncomesTags } from "@/constants";
+import { IOtherIncome } from "../../incomes/others/types";
 
 
 export function AttendanceTracker() {
   const { assembly } = useAssembly();
+  const { users } = useContext(AppContext);
   const [assemblyRun, setAssemblyRun] = useState<IAssemblyScheduleRun | null>(null);
+  const [payments, setPayments] = useState<Record<string, {amount: number; transactionIds: string[]}>>({});
+  const [openModal, setOpenModal] = useState<string | null>(null);
+  const [amount, setAmount] = useState<number>(0);
+  const [openAddModal, setOpenAddModal] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<IUser | null>(null);
+  const [confirmChange, setConfirmChange] = useState<{id: string, status: ParticipantStatusTypes} | null>(null);
+  const [confirmDeletePayment, setConfirmDeletePayment] = useState<string | null>(null);
  
   useEffect(() => {
     //get assembly run
@@ -23,6 +39,33 @@ export function AttendanceTracker() {
       const data = await apiGetAssemblyRun(assembly.lastRun.id);
       console.log({ data });
       setAssemblyRun(data);
+    
+      // Fetch other incomes for payments
+      if (data.id) {
+        try {
+          const otherIncomes = await apiGetOtherIncomesByScheduleRun(data.id);
+          console.log({ otherIncomes });
+          const userData: Record<string, {amount: number; transactionIds: string[]}> = {};
+          otherIncomes.forEach((income: IOtherIncome) => {
+            const uid = income.userId || '';
+            if (!userData[uid]) {
+              userData[uid] = {amount: 0, transactionIds: []};
+            }
+            userData[uid].amount += income.amount;
+            userData[uid].transactionIds.push(income.id);
+          });
+          const newPayments: Record<string, {amount: number; transactionIds: string[]}> = {};
+            data.participants.forEach((attendee) => {
+            const userDataEntry = userData[attendee.user.id];
+            if (userDataEntry) {
+              newPayments[attendee.id] = userDataEntry;
+            }
+            });
+          setPayments(newPayments);
+        } catch (error) {
+          console.error('Error fetching other incomes:', error);
+        }
+      }
     })();
   }, [assembly?.lastRun]);
 
@@ -35,6 +78,14 @@ export function AttendanceTracker() {
 
   const handleStatusChange = async (participantId: string, status: ParticipantStatusTypes) => {
     try {
+      // Delete payments if exist
+      const paymentData = payments[participantId];
+      if (paymentData?.amount > 0 && paymentData.transactionIds.length > 0) {
+        for (const transactionId of paymentData.transactionIds) {
+          await apiDeleteOtherIncomesTransactionAssembly(transactionId);
+        }
+      }
+
       //fetch to patch endpoint
     if (!assembly.lastRun?.id) return;
     const data = await apiUpdateParticipantStatusInAssemblyRun( participantId, status);
@@ -42,20 +93,33 @@ export function AttendanceTracker() {
       throw new Error('No se pudo actualizar el estado del participante');
     }
 
-    const updatedAttendees = assemblyRun?.participants.map(attendee => 
+    const updatedAttendees = assemblyRun?.participants.map(attendee =>
 
       attendee.id === participantId
         ? { ...attendee, status, time: status === ParticipantStatusTypes.ATTENDED || status === ParticipantStatusTypes.LATE ? new Date().toLocaleTimeString() : undefined }
         : attendee
     );
     setAssemblyRun(prev => prev ? { ...prev, participants: updatedAttendees || [] } : prev);
+    setPayments(prev => ({ ...prev, [participantId]: {amount: 0, transactionIds: []} }));
     } catch (error) {
       console.error("Error updating status:", error);
     }
   
   };
 
- 
+  const handleDeletePayment = async (participantId: string) => {
+    try {
+      const paymentData = payments[participantId];
+      if (paymentData?.transactionIds.length > 0) {
+        for (const transactionId of paymentData.transactionIds) {
+          await apiDeleteOtherIncomesTransactionAssembly(transactionId);
+        }
+      }
+      setPayments(prev => ({ ...prev, [participantId]: {amount: 0, transactionIds: []} }));
+    } catch (error) {
+      console.error("Error deleting payment:", error);
+    }
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -77,6 +141,14 @@ export function AttendanceTracker() {
     }
   };
 
+  const handleAddAttendee = () => {
+    if (!selectedUser) return;
+    // TODO: implement add participant API
+    console.log('Add attendee:', selectedUser);
+    setSelectedUser(null);
+    setOpenAddModal(false);
+  };
+
   const presentCount = assemblyRun?.participants.filter(a => a.status === ParticipantStatusTypes.ATTENDED).length || 0;
   const absentCount = assemblyRun?.participants.filter(a => a.status === ParticipantStatusTypes.ABSENT).length || 0;
   const lateCount = assemblyRun?.participants.filter(a => a.status === ParticipantStatusTypes.LATE).length || 0;
@@ -85,11 +157,36 @@ export function AttendanceTracker() {
   return (
     <Card className="w-full">
       <CardHeader>
-        <CardTitle className="flex items-center space-x-2 text-lg">
-          <Users className="w-5 h-5" />
-          <span>Control de Asistencia</span>
-        </CardTitle>
+        <div className="flex justify-between items-center">
+          <CardTitle className="flex items-center space-x-2 text-lg">
+            <Users className="w-5 h-5" />
+            <span>Control de Asistencia</span>
+          </CardTitle>
+          <Button onClick={() => setOpenAddModal(true)} size="sm" className="flex items-center space-x-1">
+            <UserPlus className="w-4 h-4" />
+            <span>Agregar Participante</span>
+          </Button>
+        </div>
       </CardHeader>
+      <Dialog open={openAddModal} onOpenChange={setOpenAddModal} modal={false}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Agregar Participante</DialogTitle>
+            <DialogDescription>
+              Selecciona un usuario para agregarlo como participante a la asamblea.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <ComboBoxUsers
+              users={users}
+              controller={{ userSelected: selectedUser, setUserSelected: setSelectedUser }}
+            />
+            <Button onClick={handleAddAttendee} className="w-full" disabled={!selectedUser}>
+              Confirmar
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
       <CardContent className="space-y-4">
         {!assemblyRun ? (
           <>
@@ -155,24 +252,10 @@ export function AttendanceTracker() {
               </div>
             </div>
 
-            {/* Add new attendee
-            <div className="flex space-x-2">
-              <Input
-                placeholder="Agregar asistente..."
-                value={newAttendee}
-                onChange={(e) => setNewAttendee(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleAddAttendee()}
-              />
-              <Button onClick={handleAddAttendee} size="sm" className="flex items-center space-x-1">
-                <UserPlus className="w-4 h-4" />
-                <span>Agregar</span>
-              </Button>
-            </div> */}
-
             {/* Attendees list */}
             <div className="space-y-2 max-h-128 overflow-y-auto">
               {assemblyRun?.participants.map((attendee) => (
-                <div key={attendee.id} className="flex items-center justify-between p-2 border rounded">
+                <div key={attendee.id} className={`flex items-center justify-between p-2 border rounded ${(attendee.status === ParticipantStatusTypes.LATE || attendee.status === ParticipantStatusTypes.ABSENT) && (payments[attendee.id]?.amount == null || payments[attendee.id]?.amount === 0) ? 'bg-red-100 dark:bg-red-900/20' : ''}`}>
                   <div className="flex-1">
                     <div className="font-medium text-foreground">{attendee.user.name}</div>
                     {/* {attendee.time && (
@@ -190,11 +273,75 @@ export function AttendanceTracker() {
                         <span className="capitalize">{translateParticipantStatus(attendee.status)}</span>
                       </div>
                     </Badge>
+                    {payments[attendee.id]?.amount > 0 && (
+                      <Button
+                        variant="secondary"
+                        className="bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400 h-auto px-2 py-1"
+                        onClick={() => setConfirmDeletePayment(attendee.id)}
+                      >
+                        Pagado: ${payments[attendee.id].amount}
+                        <Info className="w-4 h-4 ml-1" />
+                      </Button>
+                    )}
+                    {(attendee.status === ParticipantStatusTypes.LATE || attendee.status === ParticipantStatusTypes.ABSENT) && (
+                      <Dialog open={openModal === attendee.id} onOpenChange={(open) => setOpenModal(open ? attendee.id : null)}>
+                        <DialogTrigger asChild>
+                          <Button size="sm" variant="outline" className="h-8 w-8 p-0" onClick={() => { setAmount(attendee.status === ParticipantStatusTypes.LATE ? 5 : 20); setOpenModal(attendee.id); }}>
+                            <DollarSign className="w-4 h-4" />
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent>
+                          <DialogHeader>
+                            <DialogTitle>Pagar {attendee.status === ParticipantStatusTypes.LATE ? 'Tardanza' : 'Falta'}</DialogTitle>
+                          </DialogHeader>
+                          <div className="space-y-4">
+                            <div>
+                              <label htmlFor="amount" className="block text-sm font-medium">Monto</label>
+                              <Input id="amount" type="number" value={amount} onChange={(e) => setAmount(Number(e.target.value))} />
+                            </div>
+                            <p>¿Confirmar pago para {attendee.user.name} {attendee.user.lastname}?</p>
+                            <Button onClick={async () => {
+                              try {
+                                const description = attendee.status === ParticipantStatusTypes.LATE ? 'Pago por tardanza en asamblea' : 'Pago por falta en asamblea';
+                                const data = await apiCreateOtherIncomesTransaction({
+                                  userId: attendee.user.id,
+                                  description,
+                                  amount,
+                                  date: assemblyRun.startAt,
+                                  scheduleRunId: assembly.lastRun!.id,
+                                  tag: attendee.status === ParticipantStatusTypes.LATE ? OtherIncomesTags.LATE : OtherIncomesTags.ABSENCE,
+                                });
+                                const transactionId = data.id;
+                                setPayments(prev => {
+                                  const existing = prev[attendee.id];
+                                  const newAmount = (existing ? existing.amount : 0) + amount;
+                                  const newIds = existing ? [...existing.transactionIds, transactionId] : [transactionId];
+                                  return { ...prev, [attendee.id]: {amount: newAmount, transactionIds: newIds} };
+                                });
+                                setOpenModal(null);
+                              } catch (error) {
+                                console.error('Error creating payment:', error);
+                                // Optionally show toast error
+                              }
+                            }} className="w-full">
+                              Confirmar Pago
+                            </Button>
+                          </div>
+                        </DialogContent>
+                      </Dialog>
+                    )}
                     <div className="flex space-x-1">
                       <Button
                         size="sm"
                         variant={attendee.status === ParticipantStatusTypes.ATTENDED ? 'default' : 'outline'}
-                        onClick={() => handleStatusChange(attendee.id, ParticipantStatusTypes.ATTENDED)}
+                        onClick={() => {
+                          if (attendee.status === ParticipantStatusTypes.ATTENDED) return;
+                          if (payments[attendee.id]?.amount > 0) {
+                            setConfirmChange({id: attendee.id, status: ParticipantStatusTypes.ATTENDED});
+                          } else {
+                            handleStatusChange(attendee.id, ParticipantStatusTypes.ATTENDED);
+                          }
+                        }}
                         className="h-8 w-8 p-0"
                       >
                         <CheckCircle className="w-4 h-4" />
@@ -202,7 +349,14 @@ export function AttendanceTracker() {
                       <Button
                         size="sm"
                         variant={attendee.status === ParticipantStatusTypes.LATE ? 'default' : 'outline'}
-                        onClick={() => handleStatusChange(attendee.id, ParticipantStatusTypes.LATE)}
+                        onClick={() => {
+                          if (attendee.status === ParticipantStatusTypes.LATE) return;
+                          if (payments[attendee.id]?.amount > 0) {
+                            setConfirmChange({id: attendee.id, status: ParticipantStatusTypes.LATE});
+                          } else {
+                            handleStatusChange(attendee.id, ParticipantStatusTypes.LATE);
+                          }
+                        }}
                         className="h-8 w-8 p-0"
                       >
                         <Users className="w-4 h-4" />
@@ -210,7 +364,14 @@ export function AttendanceTracker() {
                       <Button
                         size="sm"
                         variant={attendee.status === ParticipantStatusTypes.ABSENT ? 'default' : 'outline'}
-                        onClick={() => handleStatusChange(attendee.id, ParticipantStatusTypes.ABSENT)}
+                        onClick={() => {
+                          if (attendee.status === ParticipantStatusTypes.ABSENT) return;
+                          if (payments[attendee.id]?.amount > 0) {
+                            setConfirmChange({id: attendee.id, status: ParticipantStatusTypes.ABSENT});
+                          } else {
+                            handleStatusChange(attendee.id, ParticipantStatusTypes.ABSENT);
+                          }
+                        }}
                         className="h-8 w-8 p-0"
                       >
                         <XCircle className="w-4 h-4" />
@@ -220,6 +381,66 @@ export function AttendanceTracker() {
                 </div>
               ))}
             </div>
+            <Dialog open={!!confirmChange} onOpenChange={() => setConfirmChange(null)}>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Confirmar cambio de estado</DialogTitle>
+                  <DialogDescription>
+                    El participante {assemblyRun?.participants.find(p => p.id === confirmChange?.id)?.user.name || ''} tiene un pago de ${payments[confirmChange?.id || '']?.amount || 0}. ¿Estás seguro de que deseas cambiar el estado a {translateParticipantStatus(confirmChange?.status || ParticipantStatusTypes.ATTENDED)}? Esto eliminará el pago.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="flex space-x-2 pt-4">
+                  <Button
+                    onClick={() => {
+                      if (confirmChange) {
+                        handleStatusChange(confirmChange.id, confirmChange.status);
+                      }
+                      setConfirmChange(null);
+                    }}
+                    className="flex-1"
+                  >
+                    Sí, cambiar estado
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => setConfirmChange(null)}
+                    className="flex-1"
+                  >
+                    Cancelar
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+            <Dialog open={!!confirmDeletePayment} onOpenChange={() => setConfirmDeletePayment(null)}>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Eliminar Pago</DialogTitle>
+                  <DialogDescription>
+                    ¿Estás seguro de que deseas eliminar el pago de {assemblyRun?.participants.find(p => p.id === confirmDeletePayment)?.user.name || ''}?
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="flex space-x-2 pt-4">
+                  <Button
+                    onClick={() => {
+                      if (confirmDeletePayment) {
+                        handleDeletePayment(confirmDeletePayment);
+                      }
+                      setConfirmDeletePayment(null);
+                    }}
+                    className="flex-1"
+                  >
+                    Sí, eliminar
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => setConfirmDeletePayment(null)}
+                    className="flex-1"
+                  >
+                    Cancelar
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
           </>
         )}
       </CardContent>

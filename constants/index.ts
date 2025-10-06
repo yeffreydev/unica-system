@@ -15,6 +15,12 @@ export const socialFundsData = {
   LEGAL: "Fondo legal",
   SOCIAL: "Fondo social",
 };
-
+export enum OtherIncomesTags {
+  FINE = 'FINE', //multa
+  LATE = 'LATE_FEE', //tardanza
+  ABSENCE = 'ABSENCE_FEE', //falta
+  DONATION = 'DONATION', //donacion
+  UNCLASSIFIED = 'UNCLASSIFIED', //sin clasificar
+}
 
 export const ParticipantStatus =  {'registered': 'Registrado', 'confirmed': 'Confirmado', 'declined': 'Rechazado', 'attended': 'Asistió', 'late': 'Tarde', 'absent': 'Ausente'};

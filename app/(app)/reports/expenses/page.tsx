@@ -18,7 +18,7 @@ import { useContext, useEffect, useState } from "react";
 import { FileText, FileSpreadsheet } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 import { IDataStateExpenses } from "./types";
-import { getExpensesSum } from "./utils";
+// import { getExpensesSum } from "./utils";
 
 
 const months = [

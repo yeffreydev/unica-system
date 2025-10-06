@@ -1,12 +1,13 @@
 import React from "react";
+import { IUser } from "@/types/IUser";
 
 export const useUsers = () => {
-  const [users, setUsers] = React.useState<UserActivation[]>([]);
+  const [users, setUsers] = React.useState<IUser[]>([]);
 
   React.useEffect(() => {
     const fetchUsers = async () => {
       try {
-        const response = await fetch("/users");
+        const response = await fetch("/api/users");
         if (!response.ok) {
           throw new Error("Network response was not ok");
         }
@@ -20,6 +21,5 @@ export const useUsers = () => {
     fetchUsers();
   }, []);
 
-  function UserActivation() {}
-  return { users, UserActivation, setUsers };
+  return { users, setUsers };
 };

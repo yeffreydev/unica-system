@@ -464,7 +464,7 @@ export default function Loans() {
                           variant="outline"
                           size="sm"
                           onClick={() => {
-                            setSelectedLoan({ id: it.id, dni: it.user.dni, name: it.user.name, amount: it.amount, months: it.loan?.initalInstallments || 6, status: it.status as "Pendiente" | "Aprobado" | "Rechazado" });
+                            setSelectedLoan({ id: it.id, dni: it.user.dni ?? "", name: it.user.name, amount: it.amount, months: it.loan?.initalInstallments || 6, status: it.status as "Pendiente" | "Aprobado" | "Rechazado" });
                             setApproveConfirmOpen(true);
                             setDropdownOpen(null);
                           }}
@@ -503,7 +503,7 @@ export default function Loans() {
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               onClick={() => {
-                                setSelectedLoan({ id: it.id, dni: it.user.dni, name: it.user.name, amount: it.amount, months: it.loan?.initalInstallments || 6, status: it.status as "Pendiente" | "Aprobado" | "Rechazado" });
+                                setSelectedLoan({ id: it.id, dni: it.user.dni ?? "", name: it.user.name, amount: it.amount, months: it.loan?.initalInstallments || 6, status: it.status as "Pendiente" | "Aprobado" | "Rechazado" });
                                 setRejectConfirmOpen(true);
                                 setDropdownOpen(null);
                               }}
@@ -627,7 +627,7 @@ export default function Loans() {
                   <div className="p-4 border rounded bg-muted">
                     <p><strong>DNI:</strong> {selectedUser.dni}</p>
                     <p><strong>Email:</strong> {selectedUser.email}</p>
-                    <p><strong>Roles:</strong> {selectedUser.roles?.join(', ') || 'Sin roles'}</p>
+                    {/* <p><strong>Roles:</strong> {selectedUser.roles?.join(', ') || 'Sin roles'}</p> */}
                     <p><strong>Préstamos Activos:</strong> {creditApplications.filter(app => app.user.dni === selectedUser.dni && app.status === "approved").length}</p>
                     <p><strong>Acciones:</strong> 0</p>
                   </div>

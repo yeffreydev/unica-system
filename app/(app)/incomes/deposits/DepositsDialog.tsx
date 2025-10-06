@@ -9,7 +9,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { Edit } from "lucide-react";
+import { Edit, Plus } from "lucide-react";
 import { ReactNode } from "react";
 
 export function DepositsDialog({
@@ -36,6 +36,7 @@ export function DepositsDialog({
             </Button>
           ) : (
             <Button variant="default" cy-data="open-dialog">
+              <Plus className="mr-2 h-4 w-4" />
               Agregar
             </Button>
           )}

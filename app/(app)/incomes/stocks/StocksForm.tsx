@@ -190,7 +190,7 @@ export const StocksForm = ({
                     </div>
                     <div>
                       <span className="text-muted-foreground">Roles</span>
-                      <div className="font-medium">{userSelected.roles?.join(", ")}</div>
+                      {/* <div className="font-medium">{userSelected.roles?.join(", ")}</div> */}
                     </div>
                   </div>
                 ) : (

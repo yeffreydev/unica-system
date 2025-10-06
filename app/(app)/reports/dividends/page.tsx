@@ -6,7 +6,6 @@ import apiClient from "@/config/apiClient";
 
 
 import {  useState } from "react";
-import { IUser } from "@/types/IUser";
 import { transformPartnersProfits } from "./utils";
 import { DividendsTable } from "./Table";
 import { IProfitsResponse } from "./types";

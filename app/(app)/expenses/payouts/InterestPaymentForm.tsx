@@ -23,19 +23,32 @@ export const InterestPaymentForm = ({
   setOpenDialog,
   payouts,
   setPayouts,
+  defaultDate,
+  scheduleRunId,
 }: {
   setOpenDialog?: (value: boolean) => void;
   payouts?: IPayout[];
   setPayouts?: (value: IPayout[]) => void;
+  defaultDate?: Date;
+  scheduleRunId?: string;
 }) => {
   const { users } = useContext(AppContext);
   const [userSelected, setUserSelected] = useState<IUser | null>(null);
 
+  const getPeruDate = () => {
+    const now = new Date();
+    const peruOffset = -5 * 60;
+    const peruTime = new Date(
+      now.getTime() + (peruOffset - now.getTimezoneOffset()) * 60000
+    );
+    return peruTime.toISOString().split("T")[0];
+  };
+
   const form = useForm({
     defaultValues: {
-      username: "", // Asegúrate de definir un valor inicial
+      username: "",
       amount: 0,
-      date: new Date().toISOString().split('T')[0],
+      date: defaultDate ? new Date(defaultDate).toISOString().split("T")[0] : getPeruDate(),
     },
   });
 
@@ -54,6 +67,7 @@ export const InterestPaymentForm = ({
       description: "Pago de intereses",
       userId: userSelected ? userSelected.id : null,
       date: new Date(form.getValues("date")),
+      scheduleRunId: scheduleRunId || null,
     });
     if (res.data) {
       form.reset();

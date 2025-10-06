@@ -23,20 +23,33 @@ export const AdminExpenseForm = ({
   setOpenDialog,
   administrativeExpenses,
   setAdministrativeExpenses,
+  defaultDate,
+  scheduleRunId,
 }: {
   setOpenDialog?: (value: boolean) => void;
   administrativeExpenses?: IAdministrativeExpense[];
   setAdministrativeExpenses?: (value: IAdministrativeExpense[]) => void;
+  defaultDate?: Date;
+  scheduleRunId?: string;
 }) => {
   const { users } = useContext(AppContext);
   const [userSelected, setUserSelected] = useState<IUser | null>(null);
 
+  const getPeruDate = () => {
+    const now = new Date();
+    const peruOffset = -5 * 60;
+    const peruTime = new Date(
+      now.getTime() + (peruOffset - now.getTimezoneOffset()) * 60000
+    );
+    return peruTime.toISOString().split("T")[0];
+  };
+
   const form = useForm({
     defaultValues: {
       description: "",
-      username: "", // Asegúrate de definir un valor inicial
+      username: "",
       amount: 0,
-      date: new Date().toISOString().split('T')[0],
+      date: defaultDate ? new Date(defaultDate).toISOString().split("T")[0] : getPeruDate(),
     },
   });
 
@@ -54,6 +67,7 @@ export const AdminExpenseForm = ({
       description: form.getValues("description"),
       userId: userSelected ? userSelected.id : null,
       date: new Date(form.getValues("date")),
+      scheduleRunId: scheduleRunId || null,
     });
     if (res.data) {
       form.reset();

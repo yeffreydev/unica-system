@@ -55,6 +55,17 @@ export const assemblySteps: IAssemblyStep[] = [
   },
   {
     id: 5,
+    title: "Operaciones",
+    description: "Registrar operaciones de ingresos y egresos",
+    icon: TrendingUp,
+    details: [
+      "Registrar ingresos (depósitos, fondos, otros)",
+      "Registrar egresos (retiros, gastos administrativos, pagos, fondos sociales, otros)",
+      "Actualizar balances"
+    ]
+  },
+  {
+    id: 6,
     title: "Aplicación a Créditos y Evaluación",
     description: "Procesar solicitudes de crédito y evaluar candidatos",
     icon: ClipboardCheck,
@@ -75,7 +86,7 @@ export const assemblySteps: IAssemblyStep[] = [
   // },
 
   {
-    id: 6,
+    id: 7,
     title: "Decisiones y Proceso de Documentación",
     description: "Documentar decisiones tomadas y acuerdos alcanzados",
     icon: FileCheck,

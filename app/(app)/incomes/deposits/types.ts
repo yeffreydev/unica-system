@@ -7,4 +7,5 @@ export interface IDeposit  {
   user?: IUser;
   date: string;
   userId?: string;
+  scheduleRunId?: string;
 }

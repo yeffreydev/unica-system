@@ -3,7 +3,7 @@
 import { useAssembly } from "@/app/(app)/assembly/AssemblyContext";
 import { assemblySteps } from "./steps";
 import { useEffect, useMemo, useState } from "react";
-import { AssemblyStartBanner } from "./components/AssemblyStartBanner";
+// import { AssemblyStartBanner } from "./components/AssemblyStartBanner";
 import { AssemblyProgressBanner } from "./components/AssemblyProgressBanner";
 import { NextAssemblyCard } from "./components/NextAssemblyCard";
 import { HistoricalSummary } from "./components/HistoricalSummary";
@@ -18,7 +18,7 @@ export default function Assembly() {
    } = useAssembly();
 
    const [elapsed, setElapsed] = useState("00:00:00");
-   const [waitingElapsed, setWaitingElapsed] = useState("00:00:00");
+  //  const [waitingElapsed, setWaitingElapsed] = useState("00:00:00");
    const totalSteps = assemblySteps.length;
    const currentStepMeta = useMemo(() => assemblySteps.find(s => s.id === assemblyState.currentStep), [assemblyState.currentStep]);
 
@@ -64,10 +64,10 @@ export default function Assembly() {
      const tick = () => {
        const diff = Date.now() - upcomingDate.getTime();
        if (diff >= 0) {
-         const h = Math.floor(diff / 3600000).toString().padStart(2, "0");
-         const m = Math.floor((diff % 3600000) / 60000).toString().padStart(2, "0");
-         const s = Math.floor((diff % 60000) / 1000).toString().padStart(2, "0");
-         setWaitingElapsed(`${h}:${m}:${s}`);
+        //  const h = Math.floor(diff / 3600000).toString().padStart(2, "0");
+        //  const m = Math.floor((diff % 3600000) / 60000).toString().padStart(2, "0");
+        //  const s = Math.floor((diff % 60000) / 1000).toString().padStart(2, "0");
+        //  setWaitingElapsed(`${h}:${m}:${s}`);
        }
      };
      tick();

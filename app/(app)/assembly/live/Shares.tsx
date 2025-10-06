@@ -104,6 +104,10 @@ export default function Shares() {
 
     fetchPartnersWithShares();
   }, [assemblyRun]);
+
+  const totalShares = partnerShares.reduce((sum, user) => sum + user.shares.reduce((s, share) => s + share.quantity, 0), 0);
+  const totalAmount = partnerShares.reduce((sum, user) => sum + user.shares.reduce((s, share) => s + (share.quantity * share.price), 0), 0);
+
   return (
     <Card>
       <CardHeader>
@@ -111,6 +115,14 @@ export default function Shares() {
         <CardDescription>Lista de usuarios - haz clic en &quot;Agregar&quot; para comprar acciones</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
+        <div className="flex justify-between items-center text-sm">
+          <div>
+            Total acciones: <span className="font-semibold">{totalShares}</span>
+          </div>
+          <div>
+            Total monto: <span className="font-semibold text-foreground">S/ {totalAmount.toFixed(2)}</span>
+          </div>
+        </div>
         <div className="rounded-md border bg-card">
           <Table>
             <TableHeader>
@@ -125,7 +137,8 @@ export default function Shares() {
             </TableHeader>
             <TableBody>
               {partnerShares.map((user: IPartnerShares) => {
- const shares = user.shares.reduce((sum, share) => sum + share.quantity, 0);
+  const shares = user.shares.reduce((sum, share) => sum + share.quantity, 0);
+  const totalForUser = user.shares.reduce((sum, share) => sum + (share.quantity * share.price), 0);
                 return (
                   <TableRow key={user.id}>
                     {/* <TableCell className="text-sm">{user.dni}</TableCell> */}
@@ -141,8 +154,8 @@ export default function Shares() {
                       </div>
                     </TableCell>
                     <TableCell>S/ {price.toFixed(2)}</TableCell>
-                    <TableCell className={`font-semibold ${shares >0 ? "text-green-700 dark:text-green-400" : "text-gray-500"}`}>
-                      S/ {shares >0 ? (shares * user.price).toFixed(2) : '0.00'}
+                    <TableCell className={`font-semibold ${totalForUser >0 ? "text-green-700 dark:text-green-400" : "text-gray-500"}`}>
+                      S/ {totalForUser >0 ? totalForUser.toFixed(2) : '0.00'}
                     </TableCell>
                     <TableCell>
                       <Button
@@ -167,15 +180,6 @@ export default function Shares() {
               )}
             </TableBody>
           </Table>
-        </div>
-
-        <div className="flex justify-between items-center text-sm">
-          <div>
-            Total acciones: <span className="font-semibold">{'100'}</span>
-          </div>
-          <div>
-            Total monto: <span className="font-semibold text-foreground">S/ {100.32.toFixed(2)}</span>
-          </div>
         </div>
 
         <Dialog open={modalOpen} onOpenChange={setModalOpen}>

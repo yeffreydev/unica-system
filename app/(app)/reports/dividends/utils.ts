@@ -1,4 +1,3 @@
-import { IUser } from "@/types/IUser";
 import { IProfits, IProfitsResponse } from "./types";
 
 export const transformPartnersProfits=(data: IProfitsResponse,startMonth:string,endMonth: string): IProfits[] => {

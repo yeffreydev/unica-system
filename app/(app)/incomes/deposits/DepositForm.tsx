@@ -15,7 +15,6 @@ import { useContext, useEffect, useState } from "react";
 import { AppContext } from "@/context/AppContext";
 import { ComboBoxUsers } from "../../../../components/combobox/ComboboxUsers";
 import { IUser } from "@/types/IUser";
-import { DepositContext } from "./DepositProvider";
 import apiClient from "@/config/apiClient";
 import { IDeposit } from "./types";
 
@@ -23,13 +22,19 @@ export const DepositForm = ({
   setOpenDialog,
   editDeposit,
   setEditDeposit,
+  addDeposit,
+  scheduleRunId,
+  defaultDate,
+
 }: {
   setOpenDialog?: (value: boolean) => void;
   editDeposit?: IDeposit | null;
   setEditDeposit?: (deposit: IDeposit | null) => void;
+  addDeposit: (deposit: IDeposit) => void;
+  scheduleRunId?: string;
+  defaultDate?: Date;
 }) => {
   const { users, formCloseModalRef } = useContext(AppContext);
-  const { addDeposit } = useContext(DepositContext);
   const [userSelected, setUserSelected] = useState<IUser | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const isEdit = !!editDeposit?.id;
@@ -47,7 +52,7 @@ export const DepositForm = ({
     defaultValues: {
       username: "",
       amount: 0,
-      date: getPeruDate(),
+      date: defaultDate ? new Date(defaultDate).toISOString().split("T")[0] : getPeruDate(),
     },
   });
 
@@ -61,9 +66,12 @@ export const DepositForm = ({
 
   const createDeposit = async (data: IDeposit) => {
     try {
+      if (scheduleRunId) {
+        data.scheduleRunId = scheduleRunId;
+      }
       const res = await apiClient.post("/deposits", data);
       if (res.data) {
-        addDeposit!(res.data);
+        addDeposit(res.data);
         form.reset();
         formCloseModalRef?.current?.click();
         setOpenDialog?.(false);

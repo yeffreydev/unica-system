@@ -80,19 +80,19 @@ import { FileText, FileSpreadsheet } from "lucide-react";
     return bankIncomes;
   }
 
-   const getSum = (data: IDataState) => {
-    const sum = {
-      stocks: data.stocks.reduce((acc,i)=> acc+Number(i.quantity),0),
-      stocksValue: data.stocks.reduce((acc,i)=> acc + (Number(i.quantity) * i.price),0),
-      deposits: data.deposits.reduce((acc,i) => acc+i.amount,0),
-      payments: data.payments.reduce((acc,i) => acc+i.amount,0),
-      interests: data.payments.reduce((acc,i) => acc+Number(i.interest),0),
-      socialFundsLegal: data.socialFunds.reduce((acc,i) => acc+i.amount,0),
-      socialFundsSocial: data.socialFunds.reduce((acc,i) => acc+i.amount,0),
-      others: data.others.reduce((acc,i) => acc+i.amount,0),
-    };
-    return sum;
-  }
+  //  const getSum = (data: IDataState) => {
+  //   const sum = {
+  //     stocks: data.stocks.reduce((acc,i)=> acc+Number(i.quantity),0),
+  //     stocksValue: data.stocks.reduce((acc,i)=> acc + (Number(i.quantity) * i.price),0),
+  //     deposits: data.deposits.reduce((acc,i) => acc+i.amount,0),
+  //     payments: data.payments.reduce((acc,i) => acc+i.amount,0),
+  //     interests: data.payments.reduce((acc,i) => acc+Number(i.interest),0),
+  //     socialFundsLegal: data.socialFunds.reduce((acc,i) => acc+i.amount,0),
+  //     socialFundsSocial: data.socialFunds.reduce((acc,i) => acc+i.amount,0),
+  //     others: data.others.reduce((acc,i) => acc+i.amount,0),
+  //   };
+  //   return sum;
+  // }
  const getTotalSum = (data: IDataState) => {
     const sum = {
       stocks: data.stocks.reduce((acc,i)=> acc+Number(i.quantity),0)+data.accumulated.stocks,
@@ -156,7 +156,7 @@ function IncomesReportTable() {
   }, [selectedMonth])
 
   const bankIncomes = getBankIncomes(data);
-  const sum = getSum(data);
+  // const sum = getSum(data);
   const totalSum = getTotalSum(data);
   const monthOptions = generateMonthOptions();
 
@@ -165,7 +165,7 @@ function IncomesReportTable() {
   const filteredDeposits = data.deposits.filter(item => item.userId && filteredUsers.some(u => u.id === item.userId)).reduce((acc, i) => acc + i.amount, 0);
   const filteredPayments = data.payments.filter(item => item.userId && filteredUsers.some(u => u.id === item.userId)).reduce((acc, i) => acc + i.amount, 0);
   const filteredInterests = data.payments.filter(item => item.userId && filteredUsers.some(u => u.id === item.userId)).reduce((acc, i) => acc + Number(i.interest), 0);
-  const filteredStocks = data.stocks.filter(item => item.userId && filteredUsers.some(u => u.id === item.userId)).reduce((acc, i) => acc + Number(i.quantity), 0);
+  // const filteredStocks = data.stocks.filter(item => item.userId && filteredUsers.some(u => u.id === item.userId)).reduce((acc, i) => acc + Number(i.quantity), 0);
   const filteredStocksValue = data.stocks.filter(item => item.userId && filteredUsers.some(u => u.id === item.userId)).reduce((acc, i) => acc + (Number(i.quantity) * i.price), 0);
   const filteredSocialFundsLegal = data.socialFunds.filter(item => item.userId && filteredUsers.some(u => u.id === item.userId) && item.socialFunds.name === 'LEGAL').reduce((acc, i) => acc + i.amount, 0);
   const filteredSocialFundsSocial = data.socialFunds.filter(item => item.userId && filteredUsers.some(u => u.id === item.userId) && item.socialFunds.name === 'SOCIAL').reduce((acc, i) => acc + i.amount, 0);
@@ -316,8 +316,8 @@ function IncomesReportTable() {
           <TableCell className="min-w-[100px] w-fit whitespace-nowrap">{formatCurrency(data.accumulated.payments)}</TableCell>
           <TableCell className="min-w-[100px] w-fit whitespace-nowrap">{formatCurrency(data.accumulated.interests)}</TableCell>
           <TableCell className="min-w-[100px] w-fit whitespace-nowrap">{formatCurrency(data.accumulated.stocksValue)}</TableCell>
-          <TableCell className="min-w-[100px] w-fit whitespace-nowrap">{formatCurrency(data.accumulated.socialFundsSocial)}</TableCell>
           <TableCell className="min-w-[100px] w-fit whitespace-nowrap">{formatCurrency(data.accumulated.socialFundsLegal)}</TableCell>
+          <TableCell className="min-w-[100px] w-fit whitespace-nowrap">{formatCurrency(data.accumulated.socialFundsSocial)}</TableCell>
           <TableCell className="min-w-[100px] w-fit whitespace-nowrap">{formatCurrency(data.accumulated.others)}</TableCell>
           <TableCell className="min-w-[100px] w-fit whitespace-nowrap">{formatCurrency(data.accumulated.deposits + data.accumulated.payments + data.accumulated.interests + data.accumulated.stocksValue + data.accumulated.socialFundsSocial + data.accumulated.socialFundsLegal + data.accumulated.others)}</TableCell>
         </TableRow>

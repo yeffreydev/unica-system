@@ -21,7 +21,7 @@ export function DividendsTable({
     endMonth?: string
 }) {
   const [selectedUser, setSelectedUser] = useState<IProfits | null>(null);
-  const monthsAbbr = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
+  // const monthsAbbr = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
 
   const monthColumns: MonthColumn[] = [];
   if (startMonth && endMonth) {
