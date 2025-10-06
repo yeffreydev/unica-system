@@ -89,11 +89,15 @@ export default function Payments() {
   // Calculate totals
   const calculateTotals = () => {
     const totalInstallment = paymentsData.installments.reduce((sum, inst) => sum + Number(inst.amount || 0), 0);
-    const totalPaid = paymentsData.payments.reduce((sum, payment) => sum + Number(payment.amount || 0) + Number(payment.interest || 0), 0);
+    const totalCapital = paymentsData.payments.reduce((sum, payment) => sum + Number(payment.amount || 0), 0);
+    const totalInterest = paymentsData.payments.reduce((sum, payment) => sum + Number(payment.interest || 0), 0);
+    const totalPaid = totalCapital + totalInterest;
     const totalPending = totalInstallment - totalPaid;
     
     return {
       totalInstallment,
+      totalCapital,
+      totalInterest,
       totalPaid,
       totalPending
     };
@@ -149,10 +153,22 @@ export default function Payments() {
       </CardHeader>
       <CardContent className="space-y-4">
         {/* Totals Section - Moved to top */}
-        <div className="grid grid-cols-3 gap-4 p-4 bg-muted/50 rounded-lg">
+        <div className="grid grid-cols-4 gap-4 p-4 bg-muted/50 rounded-lg">
           <div className="text-center">
             <div className="text-sm text-muted-foreground mb-1">Total Cuota</div>
             <div className="text-2xl font-bold">S/ {calculateTotals().totalInstallment.toFixed(2)}</div>
+          </div>
+          <div className="text-center">
+            <div className="text-sm text-muted-foreground mb-1">Total Capital</div>
+            <div className="text-2xl font-bold text-blue-700 dark:text-blue-400">
+              S/ {calculateTotals().totalCapital.toFixed(2)}
+            </div>
+          </div>
+          <div className="text-center">
+            <div className="text-sm text-muted-foreground mb-1">Total Interés</div>
+            <div className="text-2xl font-bold text-purple-700 dark:text-purple-400">
+              S/ {calculateTotals().totalInterest.toFixed(2)}
+            </div>
           </div>
           <div className="text-center">
             <div className="text-sm text-muted-foreground mb-1">Total Pagado</div>
@@ -160,12 +176,12 @@ export default function Payments() {
               S/ {calculateTotals().totalPaid.toFixed(2)}
             </div>
           </div>
-          <div className="text-center">
+          {/* <div className="text-center">
             <div className="text-sm text-muted-foreground mb-1">Pendiente</div>
             <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
               S/ {calculateTotals().totalPending.toFixed(2)}
             </div>
-          </div>
+          </div> */}
         </div>
 
         <div className="rounded-md border bg-card">

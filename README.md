@@ -107,3 +107,13 @@ prioridad
 
 - [ ] arqueo de caja
 - [ ] eventos.
+
+
+- bugs
+- [ ] en la parte de pagar en la asistencia que no se envie doble ves.
+- [ ] en compra de acciones evitar que se envie dos veces.
+- [ ] traer cantidad de falta al llamar de lista.
+
+
+- FEATURES
+- [] en pagos de capital e interes en los totales, tner suma de capital, suma de interes.
