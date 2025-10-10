@@ -45,10 +45,18 @@ export default function DividendsPage() {
   const startYear = oneYearAgo.getFullYear();
   const startMon = oneYearAgo.getMonth();
   const defaultStartMonth = `${startYear}-${startMon}`;
-  const defaultEndMonth = `${currentYear}-${currentMonth}`;
   const [startMonth, setStartMonth] = useState(defaultStartMonth);
-  const [endMonth, setEndMonth] = useState(defaultEndMonth);
   const monthOptions = generateMonthOptions();
+
+  // Calculate end month automatically (12 months after start)
+  const calculateEndMonth = (start: string) => {
+    const [year, month] = start.split('-').map(Number);
+    const startDate = new Date(year, month, 1);
+    startDate.setMonth(startDate.getMonth() + 12);
+    return `${startDate.getFullYear()}-${startDate.getMonth()}`;
+  };
+
+  const endMonth = calculateEndMonth(startMonth);
 
   const [dividendsData, setDividendsData] = useState<IProfitsResponse>({
     partners: [],
@@ -79,10 +87,6 @@ export default function DividendsPage() {
 
   const handleStartMonthChange = (value: string) => {
     setStartMonth(value);
-  };
-
-  const handleEndMonthChange = (value: string) => {
-    setEndMonth(value);
   };
 
   const [isStepsModalOpen, setIsStepsModalOpen] = useState(false)
@@ -143,18 +147,14 @@ export default function DividendsPage() {
                   ))}
                 </SelectContent>
               </Select>
-              <Select value={endMonth} onValueChange={handleEndMonthChange}>
-                <SelectTrigger className="w-[200px]">
-                  <SelectValue placeholder="Mes fin" />
-                </SelectTrigger>
-                <SelectContent>
-                  {monthOptions.map(option => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <span>Período: 12 meses</span>
+                <span>•</span>
+                <span>Hasta: {(() => {
+                  const [year, month] = endMonth.split('-').map(Number);
+                  return `${months[month]} ${year}`;
+                })()}</span>
+              </div>
             </div>
             <Button onClick={fetchProfits}>Aplicar filtros</Button>
           </div>
