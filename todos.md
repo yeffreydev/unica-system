@@ -26,14 +26,13 @@ agregale un fondo al topheader tanto para light y dark. ponle relacionado ocn el
 
 
 
-- [] clock en llamado de lista.
-- [] mover totalees de acciones en la partes superior
-- [] mover totalees de interese en la partes superior
-- [] cambiar de Pago de interes a pago de prestamos
+- [x] mover totalees de acciones en la partes superior
+- [x] mover totalees de interese en la partes superior
+- [x] cambiar de Pago de interes a pago de prestamos
 
 
 - [x] credit application
-- [] cambir column initalInstallments to initialInstallments
+- [x] cambir column initalInstallments to initialInstallments
 
 
 /*
@@ -71,7 +70,7 @@ qipi 1.0
 
 - [ ] hacer documentacion 
 - [ ] poder hacer el balance de los prestamos en live y el balance de las cuotas. desde el adminsitrador de prestamos correguir eso. y que seiempre te calcule la cuotas
-- [ ] integrar operaciones en la asamblea.
+- [x] integrar operaciones en la asamblea.
 
 
 
@@ -82,12 +81,12 @@ qipi 1.0
 - [ ] hacer bien la documentacion para gestionar las asambleas.
 - [x] ingresos se cruza en la fila de acumulados al mes anterior, hay un error, donde se cruza la suma de fondo social con reserva legal.
 - [x] en el reporte de ingresos en interes obtiene un dato de intereses pagado de egresos.
-- [] sumas totales en pasos de la asamblea
+- [x] sumas totales en pasos de la asamblea
 
 
 #FEATURES
 - [x] pagar faltas y tardanzas al llamar lista.
-- [ ] operaciones 
+- [x] operaciones 
 - [x] disenar logica de utilidades.
 - [ ] en prestamos agregar balance, que es el prestamo vigente por pagar, y a partir de ahi poder generar cuotas. 
 - [ ] hacer dashboard con data real.
@@ -104,8 +103,28 @@ qipi 1.0
 - [ ] subir un nuevo proyecto 
 
 
+# Modulo de prestamos.
+- [ ] calcular cuotas y balance de un prestamo.
 # Modulo Asamblea
-- [ ] agregar que se pueda pagar tardanza o falta. (que se configurable)
-- [ ] agregar el paso de operaciones
+- [x] agregar el paso de operaciones
+- [ ] configuracion y administracion.
+- [ ] que faltas y tardanzas sea configurable.
+- [ ] crear bien la acta anterior y actual.
 
-# Modulo Dashboard
+
+# MOdulo Utilidades
+- [ ] mostrar los pasos. (ver passos)
+
+- bugs
+- [ ] en la parte de pagar en la asistencia que no se envie doble ves.
+- [ ] en compra de acciones evitar que se envie dos veces.
+- [ ] traer cantidad de falta al llamar de lista.
+- [ ] poder llenar bien un usuario, con telefono y email.s,
+
+
+- FEATURES
+- [] en pagos de capital e interes en los totales, tner suma de capital, suma de interes.
+
+
+namig
+- [] recolectar interes cambiar a Pagos de prestamos en el paso de la asamblea.

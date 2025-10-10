@@ -1,6 +1,6 @@
 "use client";
 import { AuthContext } from "@/context/auth/AuthContex";
-import axios from "axios";
+import apiClient from "@/config/apiClient";
 import { useRouter } from "next/navigation";
 import { ChangeEvent, FormEvent, useContext, useState } from "react";
 
@@ -8,6 +8,7 @@ export const LoginForm = () => {
   const { loginUser } = useContext(AuthContext);
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState({
     username: "",
     password: "",
@@ -18,6 +19,7 @@ export const LoginForm = () => {
       ...form,
       [e.target.name]: e.target.value,
     });
+    setError(null);
   };
 
   const postLogin = async (formData: {
@@ -25,17 +27,20 @@ export const LoginForm = () => {
     password: string;
   }) => {
     setIsLoading(true);
+    setError(null);
     try {
-      const res = await axios.post("/api/login", formData);
+      const res = await apiClient.post("/auth/login", formData);
       console.log(res);
       if (res.data) {
         loginUser(res.data.accessToken);
-        // Redirigir a la página de inicio
         router.push("/");
       }
     } catch (error) {
       setIsLoading(false);
-
+      const errorMessage = error instanceof Error
+        ? error.message
+        : "Error al iniciar sesión";
+      setError(errorMessage);
       console.error(error);
     }
   };
@@ -48,51 +53,45 @@ export const LoginForm = () => {
   return (
     <form
       onSubmit={handleSubmit}
-      className="w-full sm:w-2/3 md:w-1/2 lg:w-1/3 flex flex-col p-5 gap-5 border border-gray-200 rounded-lg mx-auto"
+      className="w-full max-w-md flex flex-col gap-6 mx-auto"
     >
       <div className="flex flex-col gap-1">
-        <img
-          className="m-auto"
-          width={100}
-          height={100}
-          src={"/akinace.png"}
-          alt="logo"
-        />
-      </div>
-      <div className="flex flex-col gap-1">
-        <label className="m-auto" htmlFor="">
+        <h2 className="text-xl font-medium text-center text-muted-foreground">
           Iniciar Sesión
-        </label>
+        </h2>
       </div>
       <div className="flex flex-col gap-1">
-        <label className="text-sm">DNI</label>
         <input
           name="username"
           cy-data="username"
           value={form.username}
           onChange={handleChange}
-          className="border py-2 px-3 rounded-lg"
+          placeholder="Ingresa tu DNI"
+          className="border-b-2 border-muted focus:border-primary py-3 px-0 bg-transparent text-foreground placeholder:text-muted-foreground transition-colors"
           type="text"
           disabled={isLoading}
         />
       </div>
       <div className="flex flex-col gap-1">
-        <label className="text-sm" htmlFor="">
-          Contraseña
-        </label>
         <input
           name="password"
           cy-data="password"
           value={form.password}
           onChange={handleChange}
-          className="border py-2 px-3 rounded-lg"
+          placeholder="Ingresa tu contraseña"
+          className="border-b-2 border-muted focus:border-primary py-3 px-0 bg-transparent text-foreground placeholder:text-muted-foreground transition-colors"
           type="password"
           disabled={isLoading}
         />
       </div>
+      {error && (
+        <div className="text-destructive text-sm text-center p-2 bg-destructive/10 rounded">
+          {error}
+        </div>
+      )}
       <div className="flex flex-col gap-2">
         <button
-          className="bg-black mx-auto cursor-pointer rounded-lg text-white py-2 px-7 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="bg-primary hover:bg-primary/90 w-full cursor-pointer rounded-lg text-primary-foreground py-3 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
           type="submit"
           disabled={isLoading}
         >

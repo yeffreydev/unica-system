@@ -4,7 +4,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { formatCurrency } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { useState } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useState, Fragment } from "react";
 
 type MonthColumn = {
   year: number;
@@ -15,10 +16,12 @@ type MonthColumn = {
 export function DividendsTable({
   data,
   startMonth,
-    endMonth
+     endMonth,
+     isLoading = false
 }: {data: IProfits[],
-    startMonth?: string,
-    endMonth?: string
+     startMonth?: string,
+     endMonth?: string,
+     isLoading?: boolean
 }) {
   const [selectedUser, setSelectedUser] = useState<IProfits | null>(null);
   // const monthsAbbr = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
@@ -51,30 +54,63 @@ export function DividendsTable({
         </TableRow>
       </TableHeader>
       <TableBody>
-        {data.map((item, i) => (
-          <>
-            <TableRow key={`${i}-shares`} className="border-0">
-              <TableCell rowSpan={2} className="align-middle">{item.lastname}, {item.name}</TableCell>
-              {monthColumns.map(col => (
-                <TableCell key={col.label}>
-                  {item.shares?.[`${String(col.month + 1).padStart(2, '0')}-${col.year}`]?.[0] || 0}
+        {isLoading ? (
+          Array.from({ length: 4 }).map((_, i) => (
+            <Fragment key={`skeleton-${i}`}>
+              <TableRow className="border-0">
+                <TableCell rowSpan={2} className="align-middle">
+                  <Skeleton className="h-4 w-24" />
                 </TableCell>
-              ))}
-              <TableCell>{monthColumns.reduce((sum, col) => sum + (item.shares?.[`${col.month + 1}-${col.year}`]?.[0] || 0), 0)}</TableCell>
-              <TableCell rowSpan={2} className="align-middle">
-                <Button variant="outline" size="sm" onClick={() => setSelectedUser(item)}>Detalles</Button>
-              </TableCell>
-            </TableRow>
-            <TableRow key={`${i}-profit`} className="bg-muted border-b">
-              {monthColumns.map(col => (
-                <TableCell key={col.label}>{formatCurrency(item.profits?.[col.label] || 0)}</TableCell>
-              ))}
-              <TableCell className="font-semibold">
-                {formatCurrency(monthColumns.reduce((sum, col) => sum + (item.profits?.[col.label] || 0), 0))}
-              </TableCell>
-            </TableRow>
-          </>
-        ))}
+                {monthColumns.map((col, idx) => (
+                  <TableCell key={`shares-${col.label}-${idx}`}>
+                    <Skeleton className="h-4 w-8" />
+                  </TableCell>
+                ))}
+                <TableCell>
+                  <Skeleton className="h-4 w-8" />
+                </TableCell>
+                <TableCell rowSpan={2} className="align-middle">
+                  <Skeleton className="h-8 w-16" />
+                </TableCell>
+              </TableRow>
+              <TableRow className="bg-muted border-b">
+                {monthColumns.map((col, idx) => (
+                  <TableCell key={`profits-${col.label}-${idx}`}>
+                    <Skeleton className="h-4 w-12" />
+                  </TableCell>
+                ))}
+                <TableCell>
+                  <Skeleton className="h-4 w-12" />
+                </TableCell>
+              </TableRow>
+            </Fragment>
+          ))
+        ) : (
+          data.map((item, i) => (
+            <Fragment key={`partner-${item.id || i}`}>
+              <TableRow className="border-0">
+                <TableCell rowSpan={2} className="align-middle">{item.lastname}, {item.name}</TableCell>
+                {monthColumns.map(col => (
+                  <TableCell key={col.label}>
+                    {item.shares?.[`${String(col.month + 1).padStart(2, '0')}-${col.year}`]?.[0] || 0}
+                  </TableCell>
+                ))}
+                <TableCell>{monthColumns.reduce((sum, col) => sum + (item.shares?.[`${col.month + 1}-${col.year}`]?.[0] || 0), 0)}</TableCell>
+                <TableCell rowSpan={2} className="align-middle">
+                  <Button variant="outline" size="sm" onClick={() => setSelectedUser(item)}>Detalles</Button>
+                </TableCell>
+              </TableRow>
+              <TableRow className="bg-muted border-b">
+                {monthColumns.map(col => (
+                  <TableCell key={col.label}>{formatCurrency(item.profits?.[col.label] || 0)}</TableCell>
+                ))}
+                <TableCell className="font-semibold">
+                  {formatCurrency(monthColumns.reduce((sum, col) => sum + (item.profits?.[col.label] || 0), 0))}
+                </TableCell>
+              </TableRow>
+            </Fragment>
+          ))
+        )}
       </TableBody>
     </Table>
     <Dialog open={!!selectedUser} onOpenChange={() => setSelectedUser(null)}>

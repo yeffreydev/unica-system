@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+"use client";
 import localFont from "next/font/local";
 import "./globals.css";
 import { AuthProvider } from "@/context/auth/AuthContex";
@@ -18,11 +18,6 @@ const geistMono = localFont({
   weight: "100 900",
 });
 
-export const metadata: Metadata = {
-  title: "Aqui Nace",
-  description: "Aqui Nace",
-};
-
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -31,10 +26,9 @@ export default function RootLayout({
   return (
     <html lang="es" suppressHydrationWarning={true}>
       <head>
-        <link
-          rel="icon"
-          href={"/akinace.png"}
-        />
+        <title>Aqui Nace</title>
+        <meta name="description" content="Aqui Nace" />
+        <link rel="icon" href="/akinace.png" />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}

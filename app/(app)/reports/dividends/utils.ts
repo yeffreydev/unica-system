@@ -1,9 +1,34 @@
 import { IProfits, IProfitsResponse } from "./types";
 
-export const transformPartnersProfits=(data: IProfitsResponse,startMonth:string,endMonth: string): IProfits[] => {
+export interface DividendsResult {
+  interests: number;
+  othersIncomes: number;
+  totalIncomes: number;
+  totalPayouts: number;
+  otherExpenses: number;
+  totalExpenses: number;
+  profits: number;
+  netProfit: number;
+  socialFunds: number;
+  legalFunds: number;
+}
+
+export interface TransformPartnersProfitsResult {
+  data: IProfits[];
+  dividends: DividendsResult;
+  shareWorks: Record<string, { works: number; totalShares: number; shareWorks: number }>;
+  monthlyProfits: Record<string, { works: number; totalShares: number; shareWorks: number; profit: number }>;
+}
+
+export const transformPartnersProfits=(data: IProfitsResponse,startMonth:string,endMonth: string): TransformPartnersProfitsResult => {
     const monthlyProfits = transformProfitsPerShare(data, startMonth, endMonth);
     console.log({monthlyProfits});
-    return data.partners.map(item => {
+    return {
+      shareWorks: transformProfitPerShare(data, startMonth, endMonth),
+      
+      monthlyProfits,
+      dividends: calculateDividends(data),
+      data: data.partners.map(item => {
         const userShares = data.shares[item.id] ?? {}
         const profits: Record<string, number> = {};
         Object.entries(userShares).forEach(([month, [qty]]) => {
@@ -14,10 +39,10 @@ export const transformPartnersProfits=(data: IProfitsResponse,startMonth:string,
             shares: userShares,
             ...item,
         }
-    })
+    })}
 }
 
-const calculateProfits = (data: IProfitsResponse):number=> {
+const calculateDividends = (data: IProfitsResponse): DividendsResult => {
     const interestsTotal: number = Object.values(data.incomes.interests).reduce((sum, value) => sum + value, 0);
     const totalOthersIncomes: number = Object.values(data.incomes.others).reduce((sum, value) => sum + value, 0);
     const totalIncomes = interestsTotal + totalOthersIncomes;
@@ -27,7 +52,18 @@ const calculateProfits = (data: IProfitsResponse):number=> {
     const netProfit = totalIncomes - totalExpenses;
     const socialFunds = netProfit * 0.1;
     const legalFunds = netProfit * 0.1;
-    return netProfit - socialFunds - legalFunds;
+    return {
+      interests: interestsTotal,
+      othersIncomes: totalOthersIncomes,
+      totalIncomes,
+      totalPayouts,
+      otherExpenses: totalOthersExpenses,
+      netProfit: netProfit,
+      socialFunds,
+      legalFunds,
+      profits: netProfit - socialFunds - legalFunds,
+      totalExpenses,
+    }
 }
 
 const transformProfitPerShare = (
@@ -77,7 +113,7 @@ const transformProfitsPerShare = (
   startMonth: string,
   endMonth: string
 ): Record<string, { works: number; totalShares: number; shareWorks: number; profit: number }> => {
-  const profits = calculateProfits(data);
+  const profits = calculateDividends(data).profits;
   const shareWorks = transformProfitPerShare(data, startMonth, endMonth);
   const totalShareWorks = Object.values(shareWorks).reduce((sum, item) => sum + item.shareWorks, 0);
   const monthlyProfitPerShare = totalShareWorks ? profits / totalShareWorks : 0;

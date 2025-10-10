@@ -103,17 +103,13 @@ artesano
 -- ver todo el historial de prestamos,
 -- documentacion, criterios de aceptacioin, casos de prueba.
 
-prioridad
+PROJECT CAPSTONE.
 
-- [ ] arqueo de caja
-- [ ] eventos.
-
-
-- bugs
-- [ ] en la parte de pagar en la asistencia que no se envie doble ves.
-- [ ] en compra de acciones evitar que se envie dos veces.
-- [ ] traer cantidad de falta al llamar de lista.
-
-
-- FEATURES
-- [] en pagos de capital e interes en los totales, tner suma de capital, suma de interes.
+INSTRUMENTO DEL CUESTIONARIO. anexo 10.
+validacion prueba piloto.k
+diagrams de casos de uso.
+diagrama de clases.
+diagrama de despliegue
+modelo de base de datos (entidad relacion.)
+sistema web, gestion de alquiler y de mantenimiento.
+tablas en formato apa
