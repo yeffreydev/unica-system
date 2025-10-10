@@ -39,7 +39,7 @@ const generateMonthOptions = () => {
 export default function DividendsPage() {
   const currentDate = new Date();
   const currentYear = currentDate.getFullYear();
-  const currentMonth = currentDate.getMonth();
+  // const currentMonth = currentDate.getMonth();
   const oneYearAgo = new Date(currentDate);
   oneYearAgo.setFullYear(currentYear - 1);
   const startYear = oneYearAgo.getFullYear();
