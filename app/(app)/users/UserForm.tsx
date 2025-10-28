@@ -109,22 +109,22 @@ export const UserForm = () => {
         <div
           className={`flex items-center justify-center w-10 h-10 rounded-full ${
             currentStep >= 1
-              ? "bg-[#246854] text-white"
-              : "bg-gray-200 text-gray-600"
+              ? "bg-primary text-primary-foreground"
+              : "bg-muted text-muted-foreground"
           }`}
         >
           {currentStep > 1 ? <CheckCircle size={20} /> : <User size={20} />}
         </div>
         <div
           className={`h-1 w-16 ${
-            currentStep >= 2 ? "bg-[#246854]" : "bg-gray-200"
+            currentStep >= 2 ? "bg-primary" : "bg-muted"
           }`}
         ></div>
         <div
           className={`flex items-center justify-center w-10 h-10 rounded-full ${
             currentStep >= 2
-              ? "bg-blue-600 text-white"
-              : "bg-gray-200 text-gray-600"
+              ? "bg-primary text-primary-foreground"
+              : "bg-muted text-muted-foreground"
           }`}
         >
           <Mail size={20} />
@@ -136,10 +136,10 @@ export const UserForm = () => {
   return (
     <div className="">
       <div className="max-w-2xl mx-auto">
-        <div className="bg-white">
+        <div className="bg-background">
           {/* Header */}
           <div className=" ">
-            <p className="text-[#145750] text-center mt-2">
+            <p className="text-primary text-center mt-2">
               {currentStep === 1
                 ? "Información Personal"
                 : "Información de Contacto"}
@@ -170,7 +170,7 @@ export const UserForm = () => {
                       name="dni"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-sm font-medium text-gray-700">
+                          <FormLabel className="text-sm font-medium text-foreground">
                             DNI
                           </FormLabel>
                           <FormControl>
@@ -178,11 +178,11 @@ export const UserForm = () => {
                               cy-data="user-dni"
                               type="text"
                               placeholder="Ingrese el DNI"
-                              className="h-12 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                              className="h-12 theme-input"
                               {...field}
                             />
                           </FormControl>
-                          <FormDescription className="text-xs text-gray-500">
+                          <FormDescription className="text-xs text-muted-foreground">
                             Documento de identidad del usuario
                           </FormDescription>
                           <FormMessage />
@@ -196,7 +196,7 @@ export const UserForm = () => {
                         name="name"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className="text-sm font-medium text-gray-700">
+                            <FormLabel className="text-sm font-medium text-foreground">
                               Nombres
                             </FormLabel>
                             <FormControl>
@@ -204,7 +204,7 @@ export const UserForm = () => {
                                 type="text"
                                 cy-data="user-name"
                                 placeholder="Nombres"
-                                className="h-12 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                                className="h-12 theme-input"
                                 {...field}
                               />
                             </FormControl>
@@ -218,7 +218,7 @@ export const UserForm = () => {
                         name="lastname"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className="text-sm font-medium text-gray-700">
+                            <FormLabel className="text-sm font-medium text-foreground">
                               Apellidos
                             </FormLabel>
                             <FormControl>
@@ -226,7 +226,7 @@ export const UserForm = () => {
                                 type="text"
                                 cy-data="user-lastname"
                                 placeholder="Apellidos"
-                                className="h-12 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                                className="h-12 theme-input"
                                 {...field}
                               />
                             </FormControl>
@@ -245,7 +245,7 @@ export const UserForm = () => {
                       name="email"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-sm font-medium text-gray-700">
+                          <FormLabel className="text-sm font-medium text-foreground">
                             Email
                           </FormLabel>
                           <FormControl>
@@ -253,11 +253,11 @@ export const UserForm = () => {
                               type="email"
                               cy-data="user-email"
                               placeholder="correo@ejemplo.com"
-                              className="h-12 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                              className="h-12 theme-input"
                               {...field}
                             />
                           </FormControl>
-                          <FormDescription className="text-xs text-gray-500">
+                          <FormDescription className="text-xs text-muted-foreground">
                             Correo electrónico del usuario
                           </FormDescription>
                           <FormMessage />
@@ -270,7 +270,7 @@ export const UserForm = () => {
                       name="phone"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-sm font-medium text-gray-700">
+                          <FormLabel className="text-sm font-medium text-foreground">
                             Teléfono
                           </FormLabel>
                           <FormControl>
@@ -278,11 +278,11 @@ export const UserForm = () => {
                               type="tel"
                               cy-data="user-phone"
                               placeholder="999 999 999"
-                              className="h-12 border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                              className="h-12 theme-input"
                               {...field}
                             />
                           </FormControl>
-                          <FormDescription className="text-xs text-gray-500">
+                          <FormDescription className="text-xs text-muted-foreground">
                             Número de teléfono del usuario
                           </FormDescription>
                           <FormMessage />
@@ -293,32 +293,32 @@ export const UserForm = () => {
                 )}
 
                 {currentStep === 3 && (
-                  <div className="bg-gray-50 rounded-lg p-4 mt-6">
-                    <h3 className="font-medium text-gray-800 mb-3">
+                  <div className="bg-muted rounded-lg p-4 mt-6">
+                    <h3 className="font-medium text-foreground mb-3">
                       Resumen de Información
                     </h3>
                     <div className="grid grid-cols-2 gap-2 text-sm">
                       <div>
-                        <span className="text-gray-600">DNI:</span>{" "}
+                        <span className="text-muted-foreground">DNI:</span>{" "}
                         {form.watch("dni")}
                       </div>
                       <div>
-                        <span className="text-gray-600">Nombres:</span>{" "}
+                        <span className="text-muted-foreground">Nombres:</span>{" "}
                         {form.watch("name")}
                       </div>
                       <div>
-                        <span className="text-gray-600">Apellidos:</span>{" "}
+                        <span className="text-muted-foreground">Apellidos:</span>{" "}
                         {form.watch("lastname")}
                       </div>
                       <div>
-                        <span className="text-gray-600">Email:</span>{" "}
+                        <span className="text-muted-foreground">Email:</span>{" "}
                         {form.watch("email")}
                       </div>
                     </div>
                   </div>
                 )}
                 {/* Navigation Buttons */}
-                <div className="flex justify-between items-center pt-6 border-t border-gray-200">
+                <div className="flex justify-between items-center pt-6 border-t border-border">
                   {currentStep === 1 ? (
                     <div></div>
                   ) : (

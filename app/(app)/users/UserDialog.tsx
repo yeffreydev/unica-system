@@ -41,7 +41,7 @@ export function UserDialog({
           )}
         </DialogTrigger>
       )}
-      <DialogContent className="sm:max-w-[425px] bg-white">
+      <DialogContent className="sm:max-w-[425px] bg-background">
         <DialogHeader>
           <DialogTitle>
             {/* {isEdit ? "Editar Usuario" : "Nuevo Usuario"} */}

@@ -1,7 +1,7 @@
 "use client";
 import { createContext, useState, useEffect, ReactNode } from "react";
 import apiClient from "@/config/apiClient";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 
 interface AuthState {
   token: string | null;
@@ -35,6 +35,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [auth, setAuth] = useState<AuthState>(initialState.auth);
   const router = useRouter();
+  const pathname = usePathname();
 
   const logout = () => {
     localStorage.removeItem("auth");
@@ -89,6 +90,17 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    console.log("Auth state changed:", auth);
+    if (!loading && !auth.authenticated && pathname !== '/login') {
+      router.push('/login');
+    }
+    console.log('path name', pathname);
+    if (!loading && auth.authenticated && pathname.startsWith('/login')) {
+      router.push('/');
+    }
+  }, [loading, auth.authenticated, pathname, router]);
+
   return (
     <AuthContext.Provider
       value={{
@@ -102,3 +114,4 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     </AuthContext.Provider>
   );
 };
+

@@ -128,3 +128,9 @@ qipi 1.0
 
 namig
 - [] recolectar interes cambiar a Pagos de prestamos en el paso de la asamblea.
+
+
+#fix 02
+en usuarios que se adapte al modo oscuro la tabla
+que si esta en / y no esta loegado que rediriga a /login
+poder crear bien el usuario xd

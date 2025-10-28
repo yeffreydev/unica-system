@@ -4,6 +4,7 @@ import { useThemeHook } from "@/hooks/use-theme";
 
 export default function LoginPage() {
   const { theme } = useThemeHook();
+  console.log("Current theme in LoginPage:", theme);
   const logoSrc = theme === 'dark' ? '/aquinace-light.svg' : '/aquinace.svg';
 
   return (
@@ -14,7 +15,6 @@ export default function LoginPage() {
           src={logoSrc}
           alt="Sistema Unica Logo"
           className="w-32 h-32 mb-6"
-          style={{ filter: 'invert(25%) sepia(75%) saturate(500%) hue-rotate(90deg) brightness(90%)' }}
         />
         <h1 className="text-3xl font-bold text-center mb-4 text-primary">
           Bienvenido a la Red Rural 

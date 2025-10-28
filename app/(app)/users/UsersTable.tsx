@@ -226,7 +226,7 @@ export function UsersTable() {
         </UserDialog>
       </div>
       <div className="rounded-md border">
-        <Table className="bg-white">
+        <Table className="bg-background">
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
