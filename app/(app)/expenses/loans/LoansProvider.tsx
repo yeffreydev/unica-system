@@ -16,6 +16,7 @@ interface LoansContextType {
   addLoan?: (Loan: ILoan) => void;
   deleteLoan: (id: string) => void;
   updateLoan?: (Loan: ILoan) => void;
+  refreshLoans?: () => void;
 }
 
 const initialState: LoansContextType = {
@@ -24,6 +25,7 @@ const initialState: LoansContextType = {
   addLoan: () => {},
   deleteLoan: () => {},
   updateLoan: () => {},
+  refreshLoans: () => {},
 };
 
 export const LoansContext = createContext<LoansContextType>(initialState);
@@ -78,6 +80,7 @@ export const LoansProvider: React.FC<LoanProviderProps> = ({ children }) => {
         deleteLoan,
         addLoan,
         setLoans,
+        refreshLoans: fetchLoans,
       }}
     >
       {children}

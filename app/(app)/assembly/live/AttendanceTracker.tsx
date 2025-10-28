@@ -1,14 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Users, CheckCircle, XCircle, DollarSign, UserPlus, Info } from "lucide-react";
+import { Users, CheckCircle, XCircle, DollarSign, UserPlus, Info, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { apiGetAssemblyRun, apiUpdateParticipantStatusInAssemblyRun, apiCreateOtherIncomesTransaction, apiGetOtherIncomesByScheduleRun, apiDeleteOtherIncomesTransactionAssembly } from "../api";
+import { apiGetAssemblyRun, apiUpdateParticipantStatusInAssemblyRun, apiCreateOtherIncomesTransaction, apiGetOtherIncomesByScheduleRun, apiDeleteOtherIncomesTransactionAssembly, apiUpdateParticipantInAssemblyRun } from "../api";
 import { useAssembly } from "../AssemblyContext";
 import { IAssemblyScheduleRun, ParticipantStatusTypes } from "../types";
 import { translateParticipantStatus } from "../utils";
@@ -31,6 +31,7 @@ export function AttendanceTracker() {
   const [selectedUser, setSelectedUser] = useState<IUser | null>(null);
   const [confirmChange, setConfirmChange] = useState<{id: string, status: ParticipantStatusTypes} | null>(null);
   const [confirmDeletePayment, setConfirmDeletePayment] = useState<string | null>(null);
+  const [confirmRemoveParticipant, setConfirmRemoveParticipant] = useState<string | null>(null);
  
   useEffect(() => {
     //get assembly run
@@ -121,6 +122,26 @@ export function AttendanceTracker() {
     }
   };
 
+  const handleRemoveParticipant = async (participantId: string) => {
+    try {
+      const participant = assemblyRun?.participants.find(p => p.id === participantId);
+      if (!participant || !assemblyRun?.id) return;
+
+      await apiUpdateParticipantInAssemblyRun(assemblyRun.id, {
+        userId: participant.user.id,
+        action: 'remove'
+      });
+      // Refresh the assembly run data
+      const updatedData = await apiGetAssemblyRun(assemblyRun.id);
+      setAssemblyRun(updatedData);
+      setConfirmRemoveParticipant(null);
+    } catch (error) {
+      console.error("Error removing participant:", error);
+      // Handle error - participant might have payments
+      alert("No se puede eliminar el participante porque tiene pagos registrados.");
+    }
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'present': return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400';
@@ -141,13 +162,27 @@ export function AttendanceTracker() {
     }
   };
 
-  const handleAddAttendee = () => {
-    if (!selectedUser) return;
-    // TODO: implement add participant API
-    console.log('Add attendee:', selectedUser);
-    setSelectedUser(null);
-    setOpenAddModal(false);
+  const handleAddAttendee = async () => {
+    if (!selectedUser || !assemblyRun?.id) return;
+    try {
+      await apiUpdateParticipantInAssemblyRun(assemblyRun.id, {
+        userId: selectedUser.id,
+        action: 'add'
+      });
+      // Refresh the assembly run data
+      const updatedData = await apiGetAssemblyRun(assemblyRun.id);
+      setAssemblyRun(updatedData);
+      setSelectedUser(null);
+      setOpenAddModal(false);
+    } catch (error) {
+      console.error('Error adding participant:', error);
+    }
   };
+
+  // Filter users to only show those not already registered in the assembly
+  const availableUsers = users.filter(user =>
+    !assemblyRun?.participants.some(participant => participant.user.id === user.id)
+  );
 
   const presentCount = assemblyRun?.participants.filter(a => a.status === ParticipantStatusTypes.ATTENDED).length || 0;
   const absentCount = assemblyRun?.participants.filter(a => a.status === ParticipantStatusTypes.ABSENT).length || 0;
@@ -163,27 +198,48 @@ export function AttendanceTracker() {
             <span>Control de Asistencia</span>
           </CardTitle>
           <Button onClick={() => setOpenAddModal(true)} size="sm" className="flex items-center space-x-1">
-            <UserPlus className="w-4 h-4" />
-            <span>Agregar Participante</span>
+            <span>Participantes </span> <UserPlus className="w-4 h-4" />
           </Button>
         </div>
       </CardHeader>
       <Dialog open={openAddModal} onOpenChange={setOpenAddModal} modal={false}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Agregar Participante</DialogTitle>
+            <DialogTitle>Participantes</DialogTitle>
             <DialogDescription>
-              Selecciona un usuario para agregarlo como participante a la asamblea.
+              Lista de participantes actuales y opción para agregar nuevos.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <ComboBoxUsers
-              users={users}
-              controller={{ userSelected: selectedUser, setUserSelected: setSelectedUser }}
-            />
-            <Button onClick={handleAddAttendee} className="w-full" disabled={!selectedUser}>
-              Confirmar
-            </Button>
+            <div className="max-h-64 overflow-y-auto space-y-2">
+              {assemblyRun?.participants.map((participant) => (
+                <div key={participant.id} className="flex items-center justify-between p-2 border rounded">
+                  <div>
+                    <div className="font-medium">{participant.user.name} {participant.user.lastname}</div>
+                    <div className="text-sm text-muted-foreground">{translateParticipantStatus(participant.status)}</div>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setConfirmRemoveParticipant(participant.id)}
+                    disabled={payments[participant.id]?.amount > 0}
+                    className="text-red-600 hover:text-red-700"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+            <div className="border-t pt-4">
+              <h4 className="font-medium mb-2">Agregar Nuevo Participante</h4>
+              <ComboBoxUsers
+                users={availableUsers}
+                controller={{ userSelected: selectedUser, setUserSelected: setSelectedUser }}
+              />
+              <Button onClick={handleAddAttendee} className="w-full mt-2" disabled={!selectedUser}>
+                Agregar Participante
+              </Button>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
@@ -434,6 +490,35 @@ export function AttendanceTracker() {
                   <Button
                     variant="outline"
                     onClick={() => setConfirmDeletePayment(null)}
+                    className="flex-1"
+                  >
+                    Cancelar
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+            <Dialog open={!!confirmRemoveParticipant} onOpenChange={() => setConfirmRemoveParticipant(null)}>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Eliminar Participante</DialogTitle>
+                  <DialogDescription>
+                    ¿Estás seguro de que deseas eliminar a {assemblyRun?.participants.find(p => p.id === confirmRemoveParticipant)?.user.name || ''} de la asamblea? Esta acción no se puede deshacer.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="flex space-x-2 pt-4">
+                  <Button
+                    onClick={() => {
+                      if (confirmRemoveParticipant) {
+                        handleRemoveParticipant(confirmRemoveParticipant);
+                      }
+                    }}
+                    className="flex-1 bg-red-600 hover:bg-red-700"
+                  >
+                    Sí, eliminar
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => setConfirmRemoveParticipant(null)}
                     className="flex-1"
                   >
                     Cancelar

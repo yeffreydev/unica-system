@@ -16,6 +16,7 @@ export interface ILoan {
   _totalPaid?: number;
   interestRate?: number;
   loanInstallments?: ILoanInstallment[];
+  balance?: number;
 }
 
 export interface ILoanInstallment {

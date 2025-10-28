@@ -1,6 +1,6 @@
 "use client";
 
-import { useContext, useState } from "react";
+import { useContext, useState, useEffect } from "react";
 import {
   ColumnDef,
   SortingState,
@@ -12,10 +12,10 @@ import {
 } from "@tanstack/react-table";
 import {
   ArrowUpDown,
-  Edit,
   MoreHorizontal,
   Trash,
   BookText,
+  CreditCard,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -41,6 +41,15 @@ import apiClient from "@/config/apiClient";
 import { LoansInstallments } from "./LoansInstallments";
 import { DialogForm } from "@/components/dialogs/DialogForm";
 import { LoanForm } from "./LoanForm";
+import { PaymentModal } from "./PaymentModal";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   getLoanStatusColor,
   getLoanStatusText,
@@ -50,29 +59,49 @@ import {
 
 export function LoansTable() {
   const [sorting, setSorting] = useState<SortingState>([]);
-  const { loans, deleteLoan } = useContext(LoansContext);
+  const { loans, deleteLoan, refreshLoans } = useContext(LoansContext);
+  const [currentPageIndex, setCurrentPageIndex] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
   const [openForm, setOpenForm] = useState(false);
-  const [selectedLoanId, setSelectedLoanId] = useState<string | null>(null);
+  const [selectedLoanId] = useState<string | null>(null);
   const [installments, setInstallments] = useState<InstallmentInterface[]>([]);
   const [deletingLoans, setDeletingLoans] = useState<string[]>([]);
   const [isOpenDialog, setIsOpenDialog] = useState(false);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [selectedLoanForPayment, setSelectedLoanForPayment] = useState<ILoan | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [loanToDelete, setLoanToDelete] = useState<ILoan | null>(null);
 
-  const handleDelete = async (loanId: string) => {
-    if (confirm("¿Estás seguro de que deseas eliminar este préstamo?")) {
-      if (deletingLoans.includes(loanId)) return;
+  const handleDeleteClick = (loan: ILoan) => {
+    setLoanToDelete(loan);
+    setIsDeleteDialogOpen(true);
+  };
 
-      setDeletingLoans((prev) => [...prev, loanId]);
-      try {
-        const res = await apiClient.delete(`/loans/${loanId}`);
-        if (res.status === 200) {
-          console.log("Loan deleted successfully");
-          deleteLoan(loanId);
-          setDeletingLoans((prev) => prev.filter((id) => id !== loanId));
-        }
-      } catch (error) {
-        console.error("Error deleting loan:", error);
+  const handleDeleteConfirm = async () => {
+    if (!loanToDelete?.id) return;
+
+    const loanId = loanToDelete.id;
+    if (deletingLoans.includes(loanId)) return;
+
+    // Store current page before deletion
+    const currentPage = table.getState().pagination.pageIndex;
+    setCurrentPageIndex(currentPage);
+
+    setDeletingLoans((prev) => [...prev, loanId]);
+    setIsDeleteDialogOpen(false);
+    setLoanToDelete(null);
+
+    try {
+      const res = await apiClient.delete(`/loans/${loanId}`);
+      if (res.status === 200) {
+        console.log("Loan deleted successfully");
+        handleDeleteSuccess();
+        deleteLoan(loanId);
         setDeletingLoans((prev) => prev.filter((id) => id !== loanId));
       }
+    } catch (error) {
+      console.error("Error deleting loan:", error);
+      setDeletingLoans((prev) => prev.filter((id) => id !== loanId));
     }
   };
 
@@ -84,6 +113,21 @@ export function LoansTable() {
     } catch (error) {
       console.error("Error fetching installments:", error);
     }
+  };
+
+  const handlePaymentSuccess = () => {
+    // Store current page before refresh
+    const currentPage = table.getState().pagination.pageIndex;
+    setCurrentPageIndex(currentPage);
+
+    // Refresh loans data using context
+    refreshLoans?.();
+  };
+
+  const handleDeleteSuccess = () => {
+    // Store current page before refresh
+    const currentPage = table.getState().pagination.pageIndex;
+    setCurrentPageIndex(currentPage);
   };
 
   const columns: ColumnDef<ILoan>[] = [
@@ -119,6 +163,11 @@ export function LoansTable() {
       accessorKey: "amount",
       header: "Monto",
       cell: ({ row }) => <div>S/. {row.original.amount}</div>,
+    },
+    {
+      accessorKey: "balance",
+      header: "Balance",
+      cell: ({ row }) => <div>S/. {row.original.balance || 0}</div>,
     },
     {
       accessorKey: "status",
@@ -158,16 +207,16 @@ export function LoansTable() {
             <DropdownMenuSeparator />
             <DropdownMenuItem
               onClick={() => {
-                setSelectedLoanId(row.original.id || null);
-                setOpenForm(true);
+                setSelectedLoanForPayment(row.original);
+                setIsPaymentModalOpen(true);
               }}
             >
-              <Edit className="mr-2 h-4 w-4" />
-              Editar
+              <CreditCard className="mr-2 h-4 w-4" />
+              Pagar
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
-              onClick={() => row.original.id && handleDelete(row.original.id)}
+              onClick={() => handleDeleteClick(row.original)}
             >
               <Trash className="mr-2 h-4 w-4" />
               Eliminar
@@ -185,8 +234,32 @@ export function LoansTable() {
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
-    state: { sorting },
+    state: {
+      sorting,
+      pagination: {
+        pageIndex: currentPageIndex,
+        pageSize: 10,
+      },
+    },
+    onPaginationChange: (updater) => {
+      const newState = typeof updater === 'function' ? updater(table.getState().pagination) : updater;
+      setCurrentPageIndex(newState.pageIndex);
+      table.setState((prev) => ({ ...prev, pagination: newState }));
+    },
   });
+
+  // Handle loading state and pagination restoration
+  useEffect(() => {
+    if (loans.length > 0) {
+      setIsLoading(false);
+      // Only restore if we're not already on the correct page
+      if (currentPageIndex > 0 && table.getState().pagination.pageIndex !== currentPageIndex) {
+        table.setPageIndex(currentPageIndex);
+      }
+    } else if (loans.length === 0) {
+      setIsLoading(true);
+    }
+  }, [loans, currentPageIndex, table]);
 
   return (
     <>
@@ -196,6 +269,46 @@ export function LoansTable() {
           onOpenChange={() => setInstallments([])}
           isOpen={installments.length > 0}
         />
+        <PaymentModal
+          isOpen={isPaymentModalOpen}
+          onOpenChange={setIsPaymentModalOpen}
+          loan={selectedLoanForPayment}
+          onPaymentSuccess={handlePaymentSuccess}
+        />
+
+        {/* Delete Confirmation Dialog */}
+        <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Eliminar Préstamo</DialogTitle>
+              <DialogDescription>
+                ¿Estás seguro de que deseas eliminar el préstamo de{" "}
+                <strong>
+                  {loanToDelete?.user?.name} {loanToDelete?.user?.lastname}
+                </strong>
+                ? Esta acción no se puede deshacer.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setIsDeleteDialogOpen(false)}
+                disabled={deletingLoans.includes(loanToDelete?.id || "")}
+              >
+                Cancelar
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={handleDeleteConfirm}
+                disabled={deletingLoans.includes(loanToDelete?.id || "")}
+              >
+                {deletingLoans.includes(loanToDelete?.id || "")
+                  ? "Eliminando..."
+                  : "Eliminar"}
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
         <div className="flex items-center py-4 gap-3">
           <Input
             placeholder="Filtrar nombres..."
@@ -225,7 +338,31 @@ export function LoansTable() {
               ))}
             </TableHeader>
             <TableBody cy-data="loans-table-body">
-              {table.getRowModel().rows.length ? (
+              {isLoading ? (
+                // Skeleton loading rows
+                Array.from({ length: 5 }).map((_, index) => (
+                  <TableRow key={`skeleton-${index}`}>
+                    <TableCell>
+                      <Skeleton className="h-4 w-20" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-32" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-16" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-4 w-16" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-6 w-20 rounded-full" />
+                    </TableCell>
+                    <TableCell>
+                      <Skeleton className="h-8 w-8 rounded" />
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : table.getRowModel().rows.length ? (
                 table.getRowModel().rows.map((row) => (
                   <TableRow key={row.id}>
                     {row.getVisibleCells().map((cell) => (

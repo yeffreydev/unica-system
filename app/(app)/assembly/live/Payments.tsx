@@ -15,6 +15,8 @@ import { IAssemblyScheduleRun, ILoanPayment, IPaymentData } from "../types";
 import { apiGetAssemblyRun, apiGetPaymentsData, apiRecordPayment } from "../api";
 import { useAssembly } from "../AssemblyContext";
 import { getPaymentStatusColor, getRowColor } from "./utils";
+import { ILoanInstallment } from "@/types/ILoan";
+import apiClient from "@/config/apiClient";
 
 export default function Payments() {
   const { users } = useContext(AppContext);
@@ -32,6 +34,7 @@ export default function Payments() {
   const [capitalAmount, setCapitalAmount] = useState('');
   const [interestAmount, setInterestAmount] = useState('');
   const [description, setDescription] = useState('');
+  const [currentMonthInstallments, setCurrentMonthInstallments] = useState<ILoanInstallment[]>([]);
 
  useEffect(() => {
      //get assembly run
@@ -62,18 +65,39 @@ export default function Payments() {
     fetchData();
   }, [assemblyRun]);
 
+  useEffect(() => {
+    const fetchCurrentMonthInstallments = async () => {
+      try {
+        const response = await apiClient.get('/schedules/installments/current-month');
+        console.log("Fetched current month installments:", response.data);
+        setCurrentMonthInstallments(response.data);
+      } catch (error) {
+        console.error("Error fetching current month installments:", error);
+      }
+    };
+    fetchCurrentMonthInstallments();
+  }, []);
+
 
  
   const handlePayInterest = (user: IUser) => {
     setSelectedUser(user);
     const existingPayment = paymentsData.payments.find(p => p.userId === user.id);
+    const currentInstallment = currentMonthInstallments.find(inst => inst.user?.id === user.id);
+
     if (existingPayment) {
       setCapitalAmount(existingPayment.amount.toString());
       setInterestAmount((existingPayment.interest ?? 0).toString());
       setDescription(existingPayment.description || '');
     } else {
-      setCapitalAmount('');
-      setInterestAmount('');
+      // Auto-fill with current installment data
+      if (currentInstallment) {
+        setCapitalAmount((currentInstallment.payment - currentInstallment.interest).toString());
+        setInterestAmount(currentInstallment.interest.toString());
+      } else {
+        setCapitalAmount('');
+        setInterestAmount('');
+      }
       setDescription('');
     }
     setModalOpen(true);
@@ -210,7 +234,20 @@ export default function Payments() {
                     <TableCell className="text-sm font-medium">{`${user.name} ${user.lastname}`}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        <span className="font-semibold">S/ {installmentAmount.toFixed(2)}</span>
+                        <div className="text-sm">
+                          <div className="font-semibold">S/ {installmentAmount.toFixed(2)}</div>
+                          {(() => {
+                            const currentInstallment = currentMonthInstallments.find(
+                              inst => inst.user?.id === user.id
+                            );
+                            return currentInstallment ? (
+                              <div className="text-muted-foreground">
+                                <span className="font-medium text-blue-600">Cap: S/ {(currentInstallment.payment).toFixed(2)}</span>
+                                <span className="ml-2 font-medium text-purple-600">Int: S/ {currentInstallment.interest.toFixed(2)}</span>
+                              </div>
+                            ) : null;
+                          })()}
+                        </div>
                         <Button
                           onClick={() => handleShowDetails(user)}
                           size="sm"
@@ -320,6 +357,14 @@ export default function Payments() {
                         step="0.01"
                         placeholder="0.00"
                       />
+                      {selectedUser && (() => {
+                        const currentInstallment = currentMonthInstallments.find(inst => inst.user?.id === selectedUser.id);
+                        return currentInstallment ? (
+                          <p className="text-sm text-purple-600 mt-1">
+                            Interés sugerido: S/ {currentInstallment.interest.toFixed(2)}
+                          </p>
+                        ) : null;
+                      })()}
                     </div>
                   </div>
                   <div className="grid grid-cols-4 items-center gap-4">
@@ -382,48 +427,47 @@ export default function Payments() {
                     </div>
                   </div>
 
-                  {/* Quota Breakdown */}
+                  {/* Payment Summary */}
                   <div className="space-y-3">
-                    <Label className="text-base font-semibold">Desglose de Cuotas</Label>
+                    <Label className="text-base font-semibold">Resumen de Pagos</Label>
                     <div className="space-y-2">
-                      {/* Simulate multiple quota periods */}
-                      {[
-                        { period: "Septiembre 2024", amount: 50, status: "paid" },
-                        { period: "Octubre 2024", amount: 50, status: "paid" },
-                        { period: "Noviembre 2024", amount: 50, status: "partial" },
-                        { period: "Diciembre 2024", amount: 50, status: "pending" },
-                        { period: "Enero 2025", amount: 50, status: "pending" },
-                      ].map((quota, index) => (
-                        <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
-                          <div className="flex items-center gap-3">
-                            <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center">
-                              <span className="text-sm font-semibold text-blue-600 dark:text-blue-400">
-                                {index + 1}
-                              </span>
-                            </div>
-                            <div>
-                              <div className="font-medium">{quota.period}</div>
-                              <div className="text-sm text-gray-600 dark:text-gray-400">
-                                Cuota #{index + 1}
+                      {(() => {
+                        const payment = paymentsData.payments.find(p => p.userId === selectedUser.id);
+                        // const installment = paymentsData.installments.find(i => i.userId === selectedUser.id);
+                        // const installmentAmount = Number(installment?.amount) || 0;
+                        const paidAmount = Number(payment?.amount) || 0;
+                        const paidInterest = Number(payment?.interest) || 0;
+                        const totalPaid = paidAmount + paidInterest;
+
+                        // Find the loan balance for this user from current month installments
+                        const currentInstallment = currentMonthInstallments.find(inst => inst.user?.id === selectedUser.id);
+                        const loanBalance = currentInstallment ? currentInstallment.loan?.balance || 0 : 0;
+
+                        return (
+                          <div className="p-4 bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                            <div className="grid grid-cols-2 gap-4">
+                              <div>
+                                <Label className="text-sm font-medium text-blue-700 dark:text-blue-400">Pagado este Mes</Label>
+                                <div className="text-xl font-bold text-blue-800 dark:text-blue-300">
+                                  S/ {totalPaid.toFixed(2)}
+                                </div>
+                                <div className="text-xs text-blue-600 dark:text-blue-500">
+                                  Capital: S/ {paidAmount.toFixed(2)} | Interés: S/ {paidInterest.toFixed(2)}
+                                </div>
+                              </div>
+                              <div>
+                                <Label className="text-sm font-medium text-orange-700 dark:text-orange-400">Saldo del Préstamo</Label>
+                                <div className="text-xl font-bold text-orange-800 dark:text-orange-300">
+                                  S/ {loanBalance.toFixed(2)}
+                                </div>
+                                <div className="text-xs text-orange-600 dark:text-orange-500">
+                                  Balance pendiente del préstamo
+                                </div>
                               </div>
                             </div>
                           </div>
-                          <div className="text-right">
-                            <div className="font-semibold">S/ {quota.amount.toFixed(2)}</div>
-                            <Badge
-                              variant="outline"
-                              className={`text-xs mt-1 ${
-                                quota.status === 'paid' ? 'border-green-500 text-green-700' :
-                                quota.status === 'partial' ? 'border-blue-500 text-blue-700' :
-                                'border-gray-500 text-gray-700'
-                              }`}
-                            >
-                              {quota.status === 'paid' ? 'Pagado' :
-                               quota.status === 'partial' ? 'Parcial' : 'Pendiente'}
-                            </Badge>
-                          </div>
-                        </div>
-                      ))}
+                        );
+                      })()}
                     </div>
                   </div>
 

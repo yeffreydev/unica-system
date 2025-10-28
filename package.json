@@ -9,7 +9,7 @@
     "lint": "next lint",
     "cy:open": "cypress open",
     "tauri:dev": "tauri dev",
-  "tauri:build": "tauri build"
+    "tauri:build": "tauri build"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.10.0",
@@ -50,6 +50,7 @@
     "react-katex": "^3.1.0",
     "react-latex": "^2.0.0",
     "recharts": "^2.15.1",
+    "sonner": "^2.0.7",
     "tailwind-merge": "^2.6.0",
     "tailwindcss-animate": "^1.0.7",
     "zod": "^3.24.1"

@@ -3,7 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { useContext, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { toast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import {
@@ -40,6 +40,7 @@ import {
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs";
+import apiClient from "@/config/apiClient";
 
 const assemblyFormSchema = z.object({
   frequencyType: z.enum(["simple", "advanced"], {
@@ -97,13 +98,68 @@ export function AssemblyConfigForm() {
     action: "add" | "remove";
   }>({ open: false, user: null, action: "add" });
 
-  const handleConfirm = () => {
-    if (confirmDialog.user && confirmDialog.action === "add") {
-      form.setValue("participants", [...selectedParticipants, confirmDialog.user.id]);
-    } else if (confirmDialog.user && confirmDialog.action === "remove") {
-      form.setValue("participants", selectedParticipants.filter(id => id !== confirmDialog.user!.id));
+  const [currentParticipants, setCurrentParticipants] = useState<string[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [updating, setUpdating] = useState<string | null>(null);
+
+  // Load current participants on mount
+  useEffect(() => {
+    const loadParticipants = async () => {
+      try {
+        setLoading(true);
+        const response = await apiClient.get('/settings/assembly');
+        const participants = response.data.participants.map((p: { userId: string }) => p.userId);
+        setCurrentParticipants(participants);
+        form.setValue("participants", participants);
+      } catch (error) {
+        console.error('Error loading participants:', error);
+        toast({
+          title: "Error",
+          description: "No se pudieron cargar los participantes actuales.",
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadParticipants();
+  }, [form]);
+
+  const handleConfirm = async () => {
+    if (!confirmDialog.user) return;
+
+    try {
+      setUpdating(confirmDialog.user.id);
+      await apiClient.post(`/settings/participants/${confirmDialog.user.id}`, {
+        action: confirmDialog.action,
+      });
+
+      if (confirmDialog.action === "add") {
+        const newParticipants = [...currentParticipants, confirmDialog.user.id];
+        setCurrentParticipants(newParticipants);
+        form.setValue("participants", newParticipants);
+      } else {
+        const newParticipants = currentParticipants.filter(id => id !== confirmDialog.user!.id);
+        setCurrentParticipants(newParticipants);
+        form.setValue("participants", newParticipants);
+      }
+
+      toast({
+        title: "Éxito",
+        description: `Participante ${confirmDialog.action === "add" ? "agregado" : "removido"} exitosamente.`,
+      });
+    } catch (error) {
+      console.error('Error updating participant:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo actualizar el participante.",
+        variant: "destructive",
+      });
+    } finally {
+      setUpdating(null);
+      setConfirmDialog({ open: false, user: null, action: "add" });
     }
-    setConfirmDialog({ open: false, user: null, action: "add" });
   };
 
   const handleCancel = () => {
@@ -302,26 +358,33 @@ export function AssemblyConfigForm() {
     <FormDescription>
       Selecciona los participantes de la asamblea.
     </FormDescription>
-    <div className="space-y-2 max-h-60 overflow-y-auto border rounded-md p-4">
-      {users.map((user: IUser) => (
-        <div key={user.id} className="flex items-center justify-between space-x-2">
-          <label
-            htmlFor={`participant-${user.id}`}
-            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex-1"
-          >
-            {user.name}, {user.lastname}
-          </label>
-          <Switch
-            id={`participant-${user.id}`}
-            checked={selectedParticipants.includes(user.id)}
-            onCheckedChange={() => {
-              const isSelected = selectedParticipants.includes(user.id);
-              openConfirmDialog(user, isSelected ? "remove" : "add");
-            }}
-          />
-        </div>
-      ))}
-    </div>
+    {loading ? (
+      <div className="flex justify-center p-4">
+        <div className="text-sm text-muted-foreground">Cargando participantes...</div>
+      </div>
+    ) : (
+      <div className="space-y-2 max-h-60 overflow-y-auto border rounded-md p-4">
+        {users.map((user: IUser) => (
+          <div key={user.id} className="flex items-center justify-between space-x-2">
+            <label
+              htmlFor={`participant-${user.id}`}
+              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex-1"
+            >
+              {user.name}, {user.lastname}
+            </label>
+            <Switch
+              id={`participant-${user.id}`}
+              checked={selectedParticipants.includes(user.id)}
+              disabled={updating === user.id}
+              onCheckedChange={() => {
+                const isSelected = selectedParticipants.includes(user.id);
+                openConfirmDialog(user, isSelected ? "remove" : "add");
+              }}
+            />
+          </div>
+        ))}
+      </div>
+    )}
   </div>
   <FormMessage>{form.formState.errors.participants?.message}</FormMessage>
 

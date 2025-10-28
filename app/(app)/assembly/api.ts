@@ -95,3 +95,18 @@ export const apiDeleteOtherIncomesTransactionAssembly = async (transactionId: st
   const response = await apiClient.delete(`/incomes/others/${transactionId}`);
   return response.data;
 };
+
+export const apiAddParticipantToAssemblyRun = async (data: { userId: string; scheduleRunId: string }) => {
+  const response = await apiClient.post('/schedules/assembly/run/add-participant', data);
+  return response.data;
+};
+
+export const apiRemoveParticipantFromAssemblyRun = async (participantId: string) => {
+  const response = await apiClient.delete(`/schedules/assembly/run/remove-participant/${participantId}`);
+  return response.data;
+};
+
+export const apiUpdateParticipantInAssemblyRun = async (scheduleRunId: string, data: { userId: string; action: 'add' | 'remove' }) => {
+  const response = await apiClient.patch(`/schedules/assembly/run/${scheduleRunId}/participants`, data);
+  return response.data;
+};
