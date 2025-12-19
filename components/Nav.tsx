@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 
 const mainItems = [
   { title: "Dashboard", href: "/", icon: LayoutDashboard },
-  { title: "Puki Chat", href: "/chat", icon: MessageCircle },
+  // { title: "Puki Chat", href: "/chat", icon: MessageCircle },
   { title: "Asamblea", href: "/assembly", icon: Users },
 ];
 
@@ -30,11 +30,11 @@ const expensesItems =[
 ]
 
 const reportsItems = [
-  { title: "Prestamos Acumulados", href: "/reports/acc-loans", icon: Calculator },
+  // { title: "Prestamos Acumulados", href: "/reports/acc-loans", icon: Calculator },
   { title: "Reporte de Utilidades", href: "/reports/dividends", icon: BarChart3 },
   { title: "reporte de ingresos", href: "/reports/incomes", icon: TrendingUp },
   { title: "reporte de egresos", href: "/reports/expenses", icon: TrendingDown },
-  { title: "Arqueos de Caja", href: "/reports/cash-count", icon: Wallet },
+  // { title: "Arqueos de Caja", href: "/reports/cash-count", icon: Wallet },
 ]
 
 const otherItems = [

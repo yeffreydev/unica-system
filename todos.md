@@ -134,3 +134,5 @@ namig
 en usuarios que se adapte al modo oscuro la tabla
 que si esta en / y no esta loegado que rediriga a /login
 poder crear bien el usuario xd
+
+- mostrar mensaje de error al crear usuario que diga usuario ya existe con dni tal

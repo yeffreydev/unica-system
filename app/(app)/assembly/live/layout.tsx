@@ -3,7 +3,7 @@ import { useAssembly } from "@/app/(app)/assembly/AssemblyContext";
 import { assemblySteps } from "../steps";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { ChevronLeft, ChevronRight, Wallet } from "lucide-react";
 
 export default function StepLayout({ children }: { children: React.ReactNode }) {
     const { 
@@ -66,7 +66,35 @@ export default function StepLayout({ children }: { children: React.ReactNode }) 
     <div className="flex-1 space-y-6">
       {/* Current Step Content */}
       <Card>
-        <CardHeader className="py-3">
+        <CardHeader className="py-4">
+          {/* Balance Display */}
+          <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-emerald-50 via-emerald-25 to-emerald-100 dark:from-emerald-950/50 dark:via-emerald-900/30 dark:to-emerald-800/20 border border-emerald-200/50 dark:border-emerald-800/30 shadow-sm mb-4">
+            <div className="absolute inset-0 bg-gradient-to-r from-emerald-400/10 to-transparent"></div>
+            <div className="relative p-4 flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 rounded-lg bg-emerald-100 dark:bg-emerald-900/50 shadow-sm">
+                  <Wallet className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                </div>
+                <div>
+                  <div className="text-xs font-medium text-emerald-700 dark:text-emerald-300 uppercase tracking-wider">
+                    Balance Actual
+                  </div>
+                  <div className="text-sm text-emerald-600 dark:text-emerald-400">
+                    Estado financiero en tiempo real
+                  </div>
+                </div>
+              </div>
+              <div className="text-right">
+                <div className="text-3xl font-bold text-emerald-800 dark:text-emerald-200 tabular-nums">
+                  S/ 125,450
+                </div>
+                <div className="text-xs text-emerald-600 dark:text-emerald-400 mt-0.5">
+                  Fondos disponibles
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div className="flex items-center gap-2">
             <div className="p-2 rounded-full bg-primary/10 text-primary">
               {currentStepData?.icon && <currentStepData.icon className="w-5 h-5" />}

@@ -8,6 +8,9 @@ import { AssemblyProgressBanner } from "./components/AssemblyProgressBanner";
 import { NextAssemblyCard } from "./components/NextAssemblyCard";
 import { HistoricalSummary } from "./components/HistoricalSummary";
 import { ScheduleRunStatusesTypes } from "./types";
+import { Button } from "@/components/ui/button";
+import { Settings } from "lucide-react";
+import Link from "next/link";
 
 
 export default function Assembly() {
@@ -101,11 +104,6 @@ export default function Assembly() {
     { date: "2024-08-20", attendees: 40, durationMin: 98, approvedItems: 12, savings: 14950, purchases: 3250 }
   ];
 
-  const totalAssemblies = pastAssemblies.length;
-  const avgAttendees = Math.round(pastAssemblies.reduce((a, b) => a + b.attendees, 0) / Math.max(totalAssemblies, 1));
-  const avgDuration = Math.round(pastAssemblies.reduce((a, b) => a + b.durationMin, 0) / Math.max(totalAssemblies, 1));
-  const totalSavings = pastAssemblies.reduce((a, b) => a + b.savings, 0);
-  const totalPurchases = pastAssemblies.reduce((a, b) => a + b.purchases, 0);
 
   // const progress = Math.round((assemblyState.currentStep / 8) * 100);
 
@@ -114,7 +112,36 @@ export default function Assembly() {
   };
 
     return (
-      <div className="px-2 md:px-4 lg:px-6 xl:px-8 2xl:px-10 py-8 flex flex-col gap-4">
+      <div className="px-2 md:px-4 lg:px-6 xl:px-8 2xl:px-10 py-8 flex flex-col gap-6">
+        {/* Page Header */}
+        <div className="flex items-center justify-between">
+          <div className="space-y-1">
+            <h1 className="text-2xl font-bold tracking-tight">Asamblea General</h1>
+            <p className="text-muted-foreground">
+              Gestiona y administra las sesiones de asamblea de la cooperativa
+            </p>
+            <div className="flex items-center gap-3 pt-2">
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <span>Paso guardado:</span>
+                <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-primary text-xs font-semibold">
+                  {assemblyState.currentStep}
+                </span>
+                <span className="font-medium">{currentStepMeta?.title}</span>
+              </div>
+              {assemblyState.isActive && (
+                <div className="text-sm text-muted-foreground">
+                  • Tiempo transcurrido: {elapsed}
+                </div>
+              )}
+            </div>
+          </div>
+          <Button asChild variant="outline" className="gap-2">
+            <Link href="/settings/assembly">
+              <Settings className="w-4 h-4" />
+              Configuración
+            </Link>
+          </Button>
+        </div>
         {/* {
           // if (!assemblyState.isActive && msUntil === 0
           Date.now() > new Date(assembly.nextRun).getTime() && (
@@ -150,13 +177,8 @@ export default function Assembly() {
       />}
       
 
-  {/* Historical Summary */}
-       <HistoricalSummary 
-        totalAssemblies={totalAssemblies}
-        avgAttendees={avgAttendees}
-        avgDuration={avgDuration}
-        totalSavings={totalSavings}
-        totalPurchases={totalPurchases}
+  {/* Últimas Asambleas */}
+       <HistoricalSummary
         pastAssemblies={pastAssemblies}
        />
       </div>

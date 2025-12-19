@@ -40,7 +40,17 @@ const initialState: AssemblyState = {
 };
 
 export function AssemblyProvider({ children }: { children: ReactNode }) {
-  const [assemblyState, setAssemblyState] = useState<AssemblyState>(initialState);
+  const [assemblyState, setAssemblyState] = useState<AssemblyState>(() => {
+    // Load from localStorage
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('assembly-current-step');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        return { ...initialState, currentStep: parsed.currentStep || 1 };
+      }
+    }
+    return initialState;
+  });
   const [assembly, setAssembly] = useState<IAssemblySchedule | null>(null);
   const router = useRouter();
 
@@ -57,16 +67,23 @@ export function AssemblyProvider({ children }: { children: ReactNode }) {
   };
 
   const setCurrentStep = (step: number) => {
-    setAssemblyState(prev => ({
-      ...prev,
-      currentStep: step,
-      stepStartTime: Date.now(),
-      assemblySteps: prev.assemblySteps.map(stepItem => ({
-        ...stepItem,
-        status: stepItem.id < step ? 'completed' : 
-                stepItem.id === step ? 'active' : 'pending'
-      }))
-    }));
+    setAssemblyState(prev => {
+      const newState = {
+        ...prev,
+        currentStep: step,
+        stepStartTime: Date.now(),
+        assemblySteps: prev.assemblySteps.map(stepItem => ({
+          ...stepItem,
+          status: (stepItem.id < step ? 'completed' :
+                  stepItem.id === step ? 'active' : 'pending') as 'completed' | 'active' | 'pending'
+        }))
+      };
+      // Save to localStorage
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('assembly-current-step', JSON.stringify({ currentStep: step }));
+      }
+      return newState;
+    });
   };
 
   const updateTotalTime = (time: number) => {

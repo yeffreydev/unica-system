@@ -8,14 +8,14 @@ export const metadata: Metadata = {
 };
 
 const sidebarNavItems = [
-  {
-    title: "Perfil",
-    href: "/settings",
-  },
-  {
-    title: "Plataforma",
-    href: "/settings/platform",
-  },
+  // {
+  //   title: "Perfil",
+  //   href: "/settings",
+  // },
+  // {
+  //   title: "Plataforma",
+  //   href: "/settings/platform",
+  // },
   {
     title: "Asamblea",
     href: "/settings/assembly",
