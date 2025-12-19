@@ -56,167 +56,169 @@ export function AppSidebar() {
     return pathname.startsWith(path);
   };
 
-  const customNavClass = "px-2 py-1 text-sm font-medium text-muted-foreground rounded-md";
+  const customNavClass = "flex items-center px-4 py-2.5 text-sm font-semibold rounded-xl transition-all duration-200 group mb-1";
+  const activeClass = "bg-primary text-primary-foreground shadow-md shadow-primary/20";
+  const inactiveClass = "text-muted-foreground hover:bg-secondary/10 hover:text-primary";
 
   return (
-    <nav className="flex space-x-2 lg:flex-col lg:space-x-0 lg:space-y-1">
+    <nav className="flex flex-col space-y-1">
       {mainItems.map((item) => (
         <Link
           key={item.href}
           href={item.href}
           className={cn(
             customNavClass,
-            isActive(item.href) ? "bg-primary/80 text-white" : "hover:bg-primary/70",
-            "justify-start"
+            isActive(item.href) ? activeClass : inactiveClass
           )}
         >
-         <div className="flex">
-           <item.icon className="mr-2 h-4 w-4" />
+          <item.icon className={cn("mr-3 h-4.5 w-4.5 transition-transform group-hover:scale-110", isActive(item.href) ? "text-primary-foreground" : "text-muted-foreground/70 group-hover:text-primary")} />
           {item.title}
-         </div>
         </Link>
       ))}
-      <div>
-        <button
-          onClick={() => setIncomesOpen(!incomesOpen)}
-          className={cn(
-            customNavClass,
-            "flex items-center justify-between w-full hover:bg-[#254b9122]"
-          )}
-        >
-          <div className="flex items-center">
-            <TrendingUp className="mr-2 h-4 w-4" />
-            <span>Ingresos</span>
-          </div>
-          <ChevronDown className={cn("w-4 h-4 transition-transform", incomesOpen ? "rotate-180" : "")} />
-        </button>
-        {incomesOpen && (
-          <div className="ml-4 space-y-1 mt-1">
+
+      <div className="py-4">
+        <div className="px-4 mb-2">
+          <p className="text-[10px] font-bold text-muted-foreground/50 uppercase tracking-widest">Finanzas</p>
+        </div>
+        
+        {/* Ingresos Sections */}
+        <div className="mb-2">
+          <button
+            onClick={() => setIncomesOpen(!incomesOpen)}
+            className={cn(
+              customNavClass,
+              "w-full justify-between",
+              incomesOpen ? "text-primary bg-secondary/5" : "text-muted-foreground hover:bg-secondary/10 hover:text-primary"
+            )}
+          >
+            <div className="flex items-center">
+              <TrendingUp className="mr-3 h-4.5 w-4.5" />
+              <span>Ingresos</span>
+            </div>
+            <ChevronDown className={cn("w-4 h-4 transition-transform duration-300", incomesOpen ? "rotate-180" : "")} />
+          </button>
+          
+          <div className={cn(
+            "overflow-hidden transition-all duration-300 ease-in-out pl-4",
+            incomesOpen ? "max-h-[500px] opacity-100 mt-1" : "max-h-0 opacity-0"
+          )}>
             {incomesItems.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  customNavClass,
-                  isActive(item.href) ? "bg-primary/80 text-white" : "hover:bg-primary/70",
-                  "justify-start block"
+                  "flex items-center px-4 py-2 text-xs font-medium rounded-lg transition-all mb-1 border-l-2 border-transparent hover:border-primary/30",
+                  isActive(item.href) ? "text-primary font-bold border-primary bg-primary/5" : "text-muted-foreground hover:text-primary hover:bg-secondary/5"
                 )}
               >
-                <div className="flex">
-                  <item.icon className="mr-2 h-4 w-4" />
-                  {item.title}
-                </div>
+                <item.icon className="mr-3 h-3.5 w-3.5" />
+                {item.title}
               </Link>
             ))}
           </div>
-        )}
-      </div>
-      <div>
-        <button
-          onClick={() => setExpensesOpen(!expensesOpen)}
-          className={cn(
-            customNavClass,
-            "flex items-center justify-between w-full hover:bg-[#254b9122]"
-          )}
-        >
-          <div className="flex items-center">
-            <TrendingDown className="mr-2 h-4 w-4" />
-            <span>Egresos</span>
-          </div>
-          <ChevronDown className={cn("w-4 h-4 transition-transform", expensesOpen ? "rotate-180" : "")} />
-        </button>
-        {expensesOpen && (
-          <div className="ml-4 space-y-1 mt-1">
+        </div>
+
+        {/* Egresos Section */}
+        <div className="mb-2">
+          <button
+            onClick={() => setExpensesOpen(!expensesOpen)}
+            className={cn(
+              customNavClass,
+              "w-full justify-between",
+              expensesOpen ? "text-primary bg-secondary/5" : "text-muted-foreground hover:bg-secondary/10 hover:text-primary"
+            )}
+          >
+            <div className="flex items-center">
+              <TrendingDown className="mr-3 h-4.5 w-4.5" />
+              <span>Egresos</span>
+            </div>
+            <ChevronDown className={cn("w-4 h-4 transition-transform duration-300", expensesOpen ? "rotate-180" : "")} />
+          </button>
+          
+          <div className={cn(
+            "overflow-hidden transition-all duration-300 ease-in-out pl-4",
+            expensesOpen ? "max-h-[500px] opacity-100 mt-1" : "max-h-0 opacity-0"
+          )}>
             {expensesItems.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  customNavClass,
-                  isActive(item.href) ? "bg-primary/80 text-white" : "hover:bg-primary/70",
-                  "justify-start block"
+                  "flex items-center px-4 py-2 text-xs font-medium rounded-lg transition-all mb-1 border-l-2 border-transparent hover:border-primary/30",
+                  isActive(item.href) ? "text-primary font-bold border-primary bg-primary/5" : "text-muted-foreground hover:text-primary hover:bg-secondary/5"
                 )}
               >
-                <div className="flex">
-                  <item.icon className="mr-2 h-4 w-4" />
-                  {item.title}
-                </div>
+                <item.icon className="mr-3 h-3.5 w-3.5" />
+                {item.title}
               </Link>
             ))}
           </div>
-        )}
+        </div>
 
-      </div>
-      <div>
-        <button
-          onClick={() => setReportsOpen(!reportsOpen)}
-          className={cn(
-            customNavClass,
-            "flex items-center justify-between w-full hover:bg-[#254b9122]"
-          )}
-        >
-          <div className="flex items-center">
-            <FileBarChart className="mr-2 h-4 w-4" />
-            <span>Reportes</span>
-          </div>
-          <ChevronDown className={cn("w-4 h-4 transition-transform", reportsOpen ? "rotate-180" : "")} />
-        </button>
-        {reportsOpen && (
-          <div className="ml-4 space-y-1 mt-1">
+        {/* Reportes Section */}
+        <div className="mb-2">
+          <button
+            onClick={() => setReportsOpen(!reportsOpen)}
+            className={cn(
+              customNavClass,
+              "w-full justify-between",
+              reportsOpen ? "text-primary bg-secondary/5" : "text-muted-foreground hover:bg-secondary/10 hover:text-primary"
+            )}
+          >
+            <div className="flex items-center">
+              <FileBarChart className="mr-3 h-4.5 w-4.5" />
+              <span>Reportes</span>
+            </div>
+            <ChevronDown className={cn("w-4 h-4 transition-transform duration-300", reportsOpen ? "rotate-180" : "")} />
+          </button>
+          
+          <div className={cn(
+            "overflow-hidden transition-all duration-300 ease-in-out pl-4",
+            reportsOpen ? "max-h-[500px] opacity-100 mt-1" : "max-h-0 opacity-0"
+          )}>
             {reportsItems.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  customNavClass,
-                  isActive(item.href) ? "bg-primary/80 text-white" : "hover:bg-primary/70",
-                  "justify-start block"
+                  "flex items-center px-4 py-2 text-xs font-medium rounded-lg transition-all mb-1 border-l-2 border-transparent hover:border-primary/30",
+                  isActive(item.href) ? "text-primary font-bold border-primary bg-primary/5" : "text-muted-foreground hover:text-primary hover:bg-secondary/5"
                 )}
               >
-                <div className="flex">
-                  <item.icon className="mr-2 h-4 w-4" />
-                  {item.title}
-                </div>
+                <item.icon className="mr-3 h-3.5 w-3.5" />
+                {item.title}
               </Link>
             ))}
           </div>
-        )}
-
+        </div>
       </div>
-       {otherItems.map((item) => (
-        <Link
-          key={item.href}
-          href={item.href}
-          className={cn(
-            customNavClass,
-            isActive(item.href) ? "bg-primary/80 text-white" : "hover:bg-primary/70",
-            "justify-start"
-          )}
-        >
-         <div className="flex">
-           <item.icon className="mr-2 h-4 w-4" />
-          {item.title}
-         </div>
-        </Link>
-      ))}
+
+      <div className="pt-2 border-t border-border/50">
+        <div className="px-4 mb-2 mt-4">
+          <p className="text-[10px] font-bold text-muted-foreground/50 uppercase tracking-widest">Sistema</p>
+        </div>
+        {otherItems.map((item) => (
+          <Link
+            key={item.href}
+            href={item.href}
+            className={cn(
+              customNavClass,
+              isActive(item.href) ? activeClass : inactiveClass
+            )}
+          >
+            <item.icon className={cn("mr-3 h-4.5 w-4.5", isActive(item.href) ? "text-primary-foreground" : "text-muted-foreground/70")} />
+            {item.title}
+          </Link>
+        ))}
+      </div>
     </nav>
   );
 }
 
 export default function Nav() {
   return (
-    <div>
-      <ul className="pl-5 w-max">
-        <li className="flex justify-center">
-          <Link href={"/"}>
-            <img
-              className="w-[75px]"
-              src="https://img.freepik.com/free-vector/bird-colorful-logo-gradient-vector_343694-1365.jpg"
-              alt=""
-            />
-          </Link>
-        </li>
-      </ul>
+    <div className="flex flex-col h-full">
+      <AppSidebar />
     </div>
   );
 }

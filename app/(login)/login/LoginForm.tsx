@@ -53,77 +53,92 @@ export const LoginForm = () => {
   return (
     <form
       onSubmit={handleSubmit}
-      className="w-full max-w-md flex flex-col gap-6 mx-auto"
+      className="w-full flex flex-col gap-8"
     >
-      <div className="flex flex-col gap-1">
-        <h2 className="text-xl font-medium text-center text-muted-foreground">
+      <div className="flex flex-col gap-2">
+        <h2 className="text-3xl font-bold tracking-tight text-foreground">
           Iniciar Sesión
         </h2>
+        <p className="text-muted-foreground">
+          Ingresa tus credenciales para continuar.
+        </p>
       </div>
-      <div className="flex flex-col gap-1">
-        <input
-          name="username"
-          cy-data="username"
-          value={form.username}
-          onChange={handleChange}
-          placeholder="Ingresa tu DNI"
-          className="border-b-2 border-muted focus:border-primary py-3 px-0 bg-transparent text-foreground placeholder:text-muted-foreground transition-colors"
-          type="text"
-          disabled={isLoading}
-        />
+
+      <div className="space-y-5">
+        <div className="flex flex-col gap-2">
+          <label className="text-sm font-medium text-foreground/80 ml-1">
+            DNI
+          </label>
+          <input
+            name="username"
+            cy-data="username"
+            value={form.username}
+            onChange={handleChange}
+            placeholder="00000000"
+            className="w-full border border-border bg-background hover:border-primary/50 focus:border-primary focus:ring-4 focus:ring-primary/10 rounded-xl py-3 px-4 text-foreground placeholder:text-muted-foreground/50 transition-all outline-none"
+            type="text"
+            disabled={isLoading}
+          />
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <div className="flex justify-between items-center ml-1">
+            <label className="text-sm font-medium text-foreground/80">
+              Contraseña
+            </label>
+          </div>
+          <input
+            name="password"
+            cy-data="password"
+            value={form.password}
+            onChange={handleChange}
+            placeholder="••••••••"
+            className="w-full border border-border bg-background hover:border-primary/50 focus:border-primary focus:ring-4 focus:ring-primary/10 rounded-xl py-3 px-4 text-foreground placeholder:text-muted-foreground/50 transition-all outline-none"
+            type="password"
+            disabled={isLoading}
+          />
+        </div>
       </div>
-      <div className="flex flex-col gap-1">
-        <input
-          name="password"
-          cy-data="password"
-          value={form.password}
-          onChange={handleChange}
-          placeholder="Ingresa tu contraseña"
-          className="border-b-2 border-muted focus:border-primary py-3 px-0 bg-transparent text-foreground placeholder:text-muted-foreground transition-colors"
-          type="password"
-          disabled={isLoading}
-        />
-      </div>
+
       {error && (
-        <div className="text-destructive text-sm text-center p-2 bg-destructive/10 rounded">
+        <div className="text-destructive text-sm font-medium p-3 bg-destructive/10 border border-destructive/20 rounded-xl text-center">
           {error}
         </div>
       )}
-      <div className="flex flex-col gap-2">
-        <button
-          className="bg-primary hover:bg-primary/90 w-full cursor-pointer rounded-lg text-primary-foreground py-3 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-          type="submit"
-          disabled={isLoading}
-        >
-          {isLoading ? (
-            <>
-              <svg
-                className="animate-spin h-4 w-4 text-white"
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-              >
-                <circle
-                  className="opacity-25"
-                  cx="12"
-                  cy="12"
-                  r="10"
-                  stroke="currentColor"
-                  strokeWidth="4"
-                ></circle>
-                <path
-                  className="opacity-75"
-                  fill="currentColor"
-                  d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                ></path>
-              </svg>
-              Iniciando...
-            </>
-          ) : (
-            "Iniciar Sesión"
-          )}
-        </button>
-      </div>
+
+      <button
+        className="bg-primary hover:bg-primary/90 active:scale-[0.98] w-full cursor-pointer rounded-xl text-primary-foreground py-3.5 font-semibold shadow-lg shadow-primary/20 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+        type="submit"
+        disabled={isLoading}
+      >
+        {isLoading ? (
+          <>
+            <svg
+              className="animate-spin h-5 w-5 text-current"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                className="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                strokeWidth="4"
+              ></circle>
+              <path
+                className="opacity-75"
+                fill="currentColor"
+                d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+              ></path>
+            </svg>
+            <span>Autenticando...</span>
+          </>
+        ) : (
+          "Entrar al Sistema"
+        )}
+      </button>
     </form>
   );
 };

@@ -4,29 +4,47 @@ import { useThemeHook } from "@/hooks/use-theme";
 
 export default function LoginPage() {
   const { theme } = useThemeHook();
-  console.log("Current theme in LoginPage:", theme);
-  const logoSrc = theme === 'dark' ? '/aquinace-light.svg' : '/aquinace.svg';
+  const logoSrc = theme === "dark" ? "/qipi-light.svg" : "/qipi.svg";
 
   return (
-    <div className="w-screen h-screen grid grid-cols-1 md:grid-cols-2">
-      {/* Intro Section */}
-      <div className="flex flex-col items-center justify-center p-8 bg-accent">
-        <img
-          src={logoSrc}
-          alt="Sistema Unica Logo"
-          className="w-32 h-32 mb-6"
-        />
-        <h1 className="text-3xl font-bold text-center mb-4 text-primary">
-          Bienvenido a la Red Rural 
-        </h1>
-        <p className="text-center text-accent-foreground">
-          Inicia sesión para acceder a tu cuenta y gestionar tus operaciones.
-        </p>
+    <div className="min-h-screen w-full flex flex-col md:flex-row bg-background overflow-hidden">
+      {/* Intro Section - Minimalist & Elegant */}
+      <div className="flex-1 flex flex-col items-center justify-center p-12 bg-secondary/10 relative overflow-hidden">
+        {/* Subtle background decoration */}
+        <div className="absolute top-0 left-0 w-full h-full opacity-5 pointer-events-none">
+          <div className="absolute top-[-10%] right-[-10%] w-[500px] h-[500px] rounded-full bg-primary blur-[120px]" />
+          <div className="absolute bottom-[-10%] left-[-10%] w-[400px] h-[400px] rounded-full bg-secondary blur-[100px]" />
+        </div>
+
+        <div className="relative z-10 flex flex-col items-center max-w-md text-center">
+          <img
+            src={logoSrc}
+            alt="Qipi Logo"
+            className="w-24 h-24 mb-10 hover:scale-105 transition-transform duration-500"
+          />
+          <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-foreground mb-6">
+            Gestión Inteligente para <span className="text-primary">tu Negocio</span>
+          </h1>
+          <p className="text-lg text-muted-foreground leading-relaxed">
+            Optimiza tus operaciones con la plataforma más elegante y eficiente del mercado.
+          </p>
+        </div>
       </div>
 
-      {/* Form Section */}
-      <div className="flex items-center justify-center p-8 bg-background">
-        <LoginForm />
+      {/* Form Section - Clean & Focused */}
+      <div className="flex-1 flex items-center justify-center p-8 md:p-16 bg-background border-l border-border/50">
+        <div className="w-full max-w-sm flex flex-col">
+          <div className="mb-10 lg:hidden flex justify-center">
+              <img src={logoSrc} alt="Qipi Logo" className="w-16 h-16" />
+          </div>
+          <LoginForm />
+          
+          <div className="mt-12 text-center">
+            <p className="text-sm text-muted-foreground">
+              &copy; {new Date().getFullYear()} Qipi. Todos los derechos reservados.
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   );

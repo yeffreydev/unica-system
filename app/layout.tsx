@@ -26,9 +26,9 @@ export default function RootLayout({
   return (
     <html lang="es" suppressHydrationWarning={true}>
       <head>
-        <title>Aqui Nace</title>
-        <meta name="description" content="Aqui Nace" />
-        <link rel="icon" href="/akinace.png" />
+        <title>Qipi</title>
+        <meta name="description" content="Qipi - Sistema de Gestión" />
+        <link rel="icon" href="/qipi.svg" />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
@@ -37,7 +37,7 @@ export default function RootLayout({
           attribute="class"
           defaultTheme="system"
           enableSystem
-          disableTransitionOnChange={false}
+          disableTransitionOnChange={true}
           storageKey="unica-theme"
         >
           <ThemeContextProvider>

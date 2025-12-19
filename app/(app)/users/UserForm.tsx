@@ -104,30 +104,46 @@ export const UserForm = () => {
   };
 
   const StepIndicator = () => (
-    <div className="flex items-center justify-center mb-8">
-      <div className="flex items-center space-x-4">
-        <div
-          className={`flex items-center justify-center w-10 h-10 rounded-full ${
-            currentStep >= 1
-              ? "bg-primary text-primary-foreground"
-              : "bg-muted text-muted-foreground"
-          }`}
-        >
-          {currentStep > 1 ? <CheckCircle size={20} /> : <User size={20} />}
+    <div className="flex items-center justify-center mb-10 w-full max-w-sm mx-auto">
+      <div className="flex items-center w-full">
+        {/* Step 1 */}
+        <div className="flex flex-col items-center relative flex-1">
+          <div
+            className={`flex items-center justify-center w-12 h-12 rounded-2xl transition-all duration-300 ${
+              currentStep >= 1
+                ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20 scale-110"
+                : "bg-muted text-muted-foreground"
+            }`}
+          >
+            {currentStep > 1 ? <CheckCircle size={22} /> : <User size={22} />}
+          </div>
+          <span className={`absolute -bottom-7 text-xs font-semibold whitespace-nowrap transition-colors ${currentStep >= 1 ? "text-primary" : "text-muted-foreground"}`}>
+            Personal
+          </span>
         </div>
-        <div
-          className={`h-1 w-16 ${
-            currentStep >= 2 ? "bg-primary" : "bg-muted"
-          }`}
-        ></div>
-        <div
-          className={`flex items-center justify-center w-10 h-10 rounded-full ${
-            currentStep >= 2
-              ? "bg-primary text-primary-foreground"
-              : "bg-muted text-muted-foreground"
-          }`}
-        >
-          <Mail size={20} />
+
+        {/* Connector */}
+        <div className="flex-auto h-0.5 bg-muted overflow-hidden mx-2">
+            <div 
+              className="h-full bg-primary transition-all duration-500 ease-in-out" 
+              style={{ width: currentStep >= 2 ? '100%' : '0%' }}
+            />
+        </div>
+
+        {/* Step 2 */}
+        <div className="flex flex-col items-center relative flex-1">
+          <div
+            className={`flex items-center justify-center w-12 h-12 rounded-2xl transition-all duration-300 ${
+              currentStep >= 2
+                ? "bg-primary text-primary-foreground shadow-lg shadow-primary/20 scale-110"
+                : "bg-muted text-muted-foreground"
+            }`}
+          >
+            <Mail size={22} />
+          </div>
+          <span className={`absolute -bottom-7 text-xs font-semibold whitespace-nowrap transition-colors ${currentStep >= 2 ? "text-primary" : "text-muted-foreground"}`}>
+            Contacto
+          </span>
         </div>
       </div>
     </div>
@@ -138,11 +154,14 @@ export const UserForm = () => {
       <div className="max-w-2xl mx-auto">
         <div className="bg-background">
           {/* Header */}
-          <div className=" ">
-            <p className="text-primary text-center mt-2">
+          <div className="px-8 pt-8">
+            <h1 className="text-2xl font-bold text-foreground text-center">
+              {currentStep === 1 ? "Registro de Usuario" : "Información Adicional"}
+            </h1>
+            <p className="text-muted-foreground text-center text-sm mt-1">
               {currentStep === 1
-                ? "Información Personal"
-                : "Información de Contacto"}
+                ? "Completa los datos personales del nuevo miembro."
+                : "Añade medios de contacto para el usuario."}
             </p>
           </div>
 
@@ -177,8 +196,8 @@ export const UserForm = () => {
                             <Input
                               cy-data="user-dni"
                               type="text"
-                              placeholder="Ingrese el DNI"
-                              className="h-12 theme-input"
+                              placeholder="00000000"
+                              className="h-12 rounded-xl border-border bg-background focus:ring-4 focus:ring-primary/10 transition-all"
                               {...field}
                             />
                           </FormControl>
@@ -318,9 +337,9 @@ export const UserForm = () => {
                   </div>
                 )}
                 {/* Navigation Buttons */}
-                <div className="flex justify-between items-center pt-6 border-t border-border">
+                <div className="flex justify-between items-center pt-8 border-t border-border mt-10">
                   {currentStep === 1 ? (
-                    <div></div>
+                    <div />
                   ) : (
                     <Button
                       type="button"
@@ -329,10 +348,10 @@ export const UserForm = () => {
                         e.preventDefault();
                         prevStep();
                       }}
-                      className="flex items-center space-x-2 px-6 py-3"
+                      className="flex items-center space-x-2 px-8 py-6 rounded-xl border-border hover:bg-muted transition-all"
                     >
-                      <ChevronLeft size={16} />
-                      <span>Anterior</span>
+                      <ChevronLeft size={18} />
+                      <span>Volver</span>
                     </Button>
                   )}
 
@@ -344,46 +363,27 @@ export const UserForm = () => {
                         e.preventDefault();
                         nextStep();
                       }}
-                      className="flex items-center space-x-2 px-6 py-3 bg-primary text-primary-foreground hover:bg-primary/90"
+                      className="flex items-center space-x-2 px-10 py-6 rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg shadow-primary/20 transition-all"
                     >
                       <span>Siguiente</span>
-                      <ChevronRight size={16} />
+                      <ChevronRight size={18} />
                     </Button>
                   ) : (
                     <Button
                       type="submit"
                       cy-data="save-btn"
                       disabled={isSubmitting}
-                      className="flex items-center space-x-2 px-6 py-3 bg-green-600 hover:bg-green-700"
+                      className="flex items-center space-x-2 px-10 py-6 rounded-xl bg-primary text-white hover:bg-primary/90 shadow-lg shadow-primary/20 transition-all"
                     >
                       {isSubmitting ? (
                         <>
-                          <svg
-                            className="animate-spin h-4 w-4 text-white"
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                          >
-                            <circle
-                              className="opacity-25"
-                              cx="12"
-                              cy="12"
-                              r="10"
-                              stroke="currentColor"
-                              strokeWidth="4"
-                            ></circle>
-                            <path
-                              className="opacity-75"
-                              fill="currentColor"
-                              d="m4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                            ></path>
-                          </svg>
+                          <div className="animate-spin h-5 w-5 border-2 border-white/30 border-t-white rounded-full" />
                           <span>Guardando...</span>
                         </>
                       ) : (
                         <>
-                          <CheckCircle size={16} />
-                          <span>Guardar Usuario</span>
+                          <CheckCircle size={18} />
+                          <span>Confirmar Registro</span>
                         </>
                       )}
                     </Button>

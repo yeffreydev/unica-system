@@ -6,14 +6,14 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
-/* Smooth transitions for theme changes */
+/* Snappy transitions for theme changes */
 * {
-  transition: 
-    background-color 0.2s ease-in-out,
-    border-color 0.2s ease-in-out,
-    color 0.2s ease-in-out,
-    fill 0.2s ease-in-out,
-    stroke 0.2s ease-in-out;
+  transition:
+    background-color 0.1s ease-in-out,
+    border-color 0.1s ease-in-out,
+    color 0.1s ease-in-out,
+    fill 0.1s ease-in-out,
+    stroke 0.1s ease-in-out;
 }
 
 /* Disable transitions during theme change to prevent flashing */
@@ -22,15 +22,16 @@ body {
 }
 
 @layer utilities {
+
   /* Additional dark mode utilities */
   .dark-shadow {
     @apply shadow-lg shadow-black/10 dark:shadow-black/30;
   }
-  
+
   .theme-border {
     @apply border-border;
   }
-  
+
   .theme-input {
     @apply bg-background border-input focus:ring-ring;
   }
@@ -39,123 +40,140 @@ body {
 
 @layer base {
   :root {
-    /* Main surfaces - clean and modern */
-    --background: 0 0% 100%; /* pure white */
-    --foreground: 216 15% 15%; /* #242b33 - sophisticated dark text */
-    
+    /* Main surfaces - Elegant White-2 */
+    --background: 197 100% 99%;
+    /* #F8FDFF */
+    --foreground: 205 48% 9%;
+    /* #0C1922 - Ink Black */
+
     /* Cards and elevated surfaces */
     --card: 0 0% 100%;
-    --card-foreground: 216 15% 15%;
+    /* Pure White */
+    --card-foreground: 205 48% 9%;
     --popover: 0 0% 100%;
-    --popover-foreground: 216 15% 15%;
-    
-    /* Brand colors - beautiful teal */
-    --primary: 174 63% 21%; /* #145750 - main brand color */
-    --primary-foreground: 0 0% 100%;
-    --main: 174 63% 21%;
-    --main-foreground: 0 0% 100%;
-    
-    /* Secondary surfaces */
-    --secondary: 210 20% 97%; /* #f5f6f8 - subtle light gray */
-    --secondary-foreground: 216 15% 20%;
-    
+    --popover-foreground: 205 48% 9%;
+
+    /* Brand colors - Blue Slate and Light Blue */
+    --primary: 217 24% 43%;
+    /* #526687 - Blue Slate */
+    --primary-foreground: 240 100% 100%;
+    --main: 217 24% 43%;
+    --main-foreground: 240 100% 100%;
+
+    /* Secondary surfaces - Light Blue */
+    --secondary: 186 28% 79%;
+    /* #BCD6D9 - Light Blue */
+    --secondary-foreground: 205 48% 9%;
+
     /* Muted elements */
-    --muted: 210 20% 95%; /* #eef1f4 - muted backgrounds */
-    --muted-foreground: 216 12% 45%; /* #6b7685 - muted text */
-    
-    /* Accent - subtle teal accent */
-    --accent: 174 45% 96%; /* #f0f9f7 - very light teal */
-    --accent-foreground: 174 63% 18%; /* #0f4a42 - darker teal text */
-    
+    --muted: 186 28% 92%;
+    /* Desaturated Light Blue */
+    --muted-foreground: 217 24% 43%;
+    /* Blue Slate for text */
+
+    /* Accent */
+    --accent: 186 28% 88%;
+    --accent-foreground: 205 48% 9%;
+
     /* Destructive */
-    --destructive: 0 72% 51%; /* #e53e3e - red for errors */
-    --destructive-foreground: 0 0% 98%;
-    
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 240 100% 100%;
+
     /* Borders and inputs */
-    --border: 210 20% 88%; /* #d4dae0 - subtle borders */
-    --input: 210 20% 88%;
-    --ring: 174 63% 21%; /* focus ring matches brand */
-    
-    /* Chart colors - harmonious palette */
-    --chart-1: 12 76% 61%; /* #e67e22 - orange */
-    --chart-2: 174 58% 39%; /* #2c8577 - teal variant */
-    --chart-3: 197 37% 24%; /* #27495c - dark blue */
-    --chart-4: 43 74% 66%; /* #e6c84a - yellow */
-    --chart-5: 27 87% 67%; /* #e67e22 - warm orange */
-    
-    --radius: 0.5rem;
-    
-    /* Sidebar - cohesive with main theme */
-    --sidebar-background: 210 25% 98%; /* #fafbfc - very light background */
-    --sidebar-foreground: 216 15% 20%;
-    --sidebar-primary: 174 63% 21%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 210 20% 95%;
-    --sidebar-accent-foreground: 216 15% 20%;
-    --sidebar-border: 210 20% 90%; /* #dde4ea - sidebar border */
-    --sidebar-ring: 174 63% 21%;
+    --border: 186 28% 85%;
+    --input: 186 28% 85%;
+    --ring: 217 24% 43%;
+
+    /* Chart colors - Harmonious with the new palette */
+    --chart-1: 217 24% 43%;
+    --chart-2: 186 28% 79%;
+    --chart-3: 205 48% 15%;
+    --chart-4: 217 24% 60%;
+    --chart-5: 186 28% 65%;
+
+    --radius: 0.75rem;
+    /* Slightly more rounded for elegance */
+
+    /* Sidebar */
+    --sidebar-background: 205 48% 9%;
+    /* Ink Black */
+    --sidebar-foreground: 240 100% 100%;
+    /* White */
+    --sidebar-primary: 186 28% 79%;
+    /* Light Blue */
+    --sidebar-primary-foreground: 205 48% 9%;
+    --sidebar-accent: 217 24% 43%;
+    /* Blue Slate */
+    --sidebar-accent-foreground: 240 100% 100%;
+    --sidebar-border: 205 48% 15%;
+    --sidebar-ring: 186 28% 79%;
 
     /* Top header */
     --top-header-background: 0 0% 100%;
-    --top-header-foreground: 216 15% 15%;
+    --top-header-foreground: 205 48% 9%;
   }
+
   .dark {
-    /* Main surfaces with sophisticated gray-blue palette */
-    --background: 216 18% 8%; /* #0f1419 - deep navy background */
-    --foreground: 210 12% 95%; /* #f1f3f5 - clean white-gray text */
-    
+    /* Dark Mode - Ink Black background */
+    --background: 205 48% 9%;
+    /* #0C1922 */
+    --foreground: 240 100% 100%;
+    /* #FEFEFF - White */
+
     /* Cards and elevated surfaces */
-    --card: 216 16% 11%; /* #1a1f26 - elevated surfaces */
-    --card-foreground: 210 12% 95%;
-    --popover: 216 16% 11%;
-    --popover-foreground: 210 12% 95%;
-    
-    /* Brand colors - keeping the beautiful teal */
-    --primary: 174 55% 32%; /* #2a7a6b - lighter teal for better contrast */
-    --primary-foreground: 0 0% 100%;
-    --main: 174 55% 32%;
-    --main-foreground: 0 0% 100%;
-    
-    /* Secondary surfaces */
-    --secondary: 216 14% 14%; /* #212933 - secondary surfaces */
-    --secondary-foreground: 210 12% 88%;
-    
+    --card: 205 48% 12%;
+    --card-foreground: 240 100% 100%;
+    --popover: 205 48% 12%;
+    --popover-foreground: 240 100% 100%;
+
+    /* Brand colors - Light Blue for better contrast in dark mode */
+    --primary: 186 28% 79%;
+    /* #BCD6D9 */
+    --primary-foreground: 205 48% 9%;
+    --main: 186 28% 79%;
+    --main-foreground: 205 48% 9%;
+
+    /* Secondary - Blue Slate */
+    --secondary: 217 24% 43%;
+    /* #526687 */
+    --secondary-foreground: 240 100% 100%;
+
     /* Muted elements */
-    --muted: 216 12% 16%; /* #252e39 - muted backgrounds */
-    --muted-foreground: 216 8% 62%; /* #8a939f - muted text */
-    
-    /* Accent - subtle teal accent */
-    --accent: 174 40% 18%; /* #1d5c52 - darker teal accent */
-    --accent-foreground: 174 30% 85%; /* #b8d4d0 - light teal text */
-    
+    --muted: 205 48% 18%;
+    --muted-foreground: 186 28% 70%;
+
+    /* Accent */
+    --accent: 217 24% 30%;
+    --accent-foreground: 240 100% 100%;
+
     /* Destructive */
-    --destructive: 0 65% 45%; /* #cc3333 - red for errors */
-    --destructive-foreground: 0 0% 98%;
-    
+    --destructive: 0 62% 30%;
+    --destructive-foreground: 240 100% 100%;
+
     /* Borders and inputs */
-    --border: 216 14% 22%; /* #313c47 - subtle borders */
-    --input: 216 14% 22%;
-    --ring: 174 55% 42%; /* #36967f - focus ring matches brand */
-    
-    /* Chart colors - modern palette */
-    --chart-1: 174 45% 50%; /* #40a68c - teal variant */
-    --chart-2: 200 60% 55%; /* #3398cc - blue */
-    --chart-3: 45 75% 58%; /* #d4a33a - amber */
-    --chart-4: 280 50% 60%; /* #a366cc - purple */
-    --chart-5: 15 70% 58%; /* #cc6640 - orange */
-    
-    /* Sidebar - harmonious with main theme */
-    --sidebar-background: 216 16% 9%; /* #141a21 - slightly different from main bg */
-    --sidebar-foreground: 210 12% 88%;
-    --sidebar-primary: 174 55% 32%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 216 14% 14%;
-    --sidebar-accent-foreground: 210 12% 88%;
-    --sidebar-border: 216 14% 18%; /* #29343f - subtle sidebar border */
-    --sidebar-ring: 174 55% 42%;
+    --border: 205 48% 20%;
+    --input: 205 48% 20%;
+    --ring: 186 28% 79%;
+
+    /* Chart colors */
+    --chart-1: 186 28% 79%;
+    --chart-2: 217 24% 43%;
+    --chart-3: 186 28% 90%;
+    --chart-4: 205 48% 40%;
+    --chart-5: 217 24% 60%;
+
+    /* Sidebar */
+    --sidebar-background: 205 48% 7%;
+    --sidebar-foreground: 240 100% 100%;
+    --sidebar-primary: 186 28% 79%;
+    --sidebar-primary-foreground: 205 48% 9%;
+    --sidebar-accent: 217 24% 43%;
+    --sidebar-accent-foreground: 240 100% 100%;
+    --sidebar-border: 205 48% 15%;
+    --sidebar-ring: 186 28% 79%;
 
     /* Top header */
-    --top-header-background: 216 18% 8%;
-    --top-header-foreground: 210 12% 95%;
+    --top-header-background: 205 48% 9%;
+    --top-header-foreground: 240 100% 100%;
   }
 }

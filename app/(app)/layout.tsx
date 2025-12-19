@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useContext } from "react";
 import { AuthContext } from "@/context/auth/AuthContex";
+import { useThemeHook } from "@/hooks/use-theme";
 
 
 export default function AppLayout({
@@ -22,7 +23,8 @@ export default function AppLayout({
 }>) {
 
 
-  const{logout} = useContext(AuthContext)
+  const { logout } = useContext(AuthContext);
+  const { theme } = useThemeHook();
 
 
 
@@ -31,55 +33,66 @@ export default function AppLayout({
 
 
   return (
-    <div className="flex flex-col w-screen h-screen">
+    <div className="flex flex-col w-screen h-screen bg-background overflow-hidden">
       {/* top bar */}
-      <div className="flex w-full items-center gap-2">
-        <div className="w-full bg-primary y dark:bg-background backdrop-blur flex items-center justify-between px-4 md:px-6 py-3">
-          <div className="flex items-center">
-            <Link href="/">
-              <img src="/aquinace-light.svg" alt="Aquinace" className="h-8 w-8" />
+      <header className="z-20 w-full border-b border-border/50 bg-background/80 backdrop-blur-md">
+        <div className="flex w-full items-center justify-between px-6 py-3">
+          <div className="flex items-center gap-6">
+            <Link href="/" className="hover:opacity-80 transition-opacity">
+              <img src={theme === 'dark' ? "/qipi-light.svg" : "/qipi.svg"} alt="Qipi" className="h-9 w-9" />
             </Link>
-            <div className="h-8 w-[2px] bg-gray-400 mx-4"></div>
-            <div className="flex items-center gap-2">
-              <div className="px-3 py-1 rounded-full bg-white/10 text-white font-medium text-sm border border-white/20 hover:bg-white/15 transition-colors">
+            
+            <div className="h-6 w-[1px] bg-border mx-2"></div>
+            
+            <div className="flex items-center gap-3">
+              <div className="px-4 py-1.5 rounded-full bg-secondary/10 text-primary font-semibold text-sm border border-primary/20">
                 Montes y Vegas
               </div>
-              <div className="px-2 py-0.5 rounded bg-white/10 text-white/90 text-xs font-medium">
-                32 miembros
+              <div className="px-2.5 py-1 rounded-md bg-muted text-muted-foreground text-[10px] uppercase font-bold tracking-wider">
+                32 MIEMBROS
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-1.5">
-            <div className="text-white">
-              <ThemeToggle />
-            </div>
+
+          <div className="flex items-center gap-3">
+            <ThemeToggle />
+            
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="relative text-white">
-                  <User className="h-4 w-4" />
+                <Button variant="ghost" className="relative h-10 w-10 rounded-full p-0 overflow-hidden bg-muted hover:bg-muted/80">
+                  <div className="flex items-center justify-center w-full h-full text-primary">
+                    <User className="h-5 w-5" />
+                  </div>
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem>Perfil</DropdownMenuItem>
-                <DropdownMenuItem onClick={logout}>
+              <DropdownMenuContent align="end" className="w-56 mt-2 rounded-xl">
+                <div className="px-4 py-2 border-b border-border/50 mb-1">
+                  <p className="text-sm font-medium">Mi Cuenta</p>
+                </div>
+                <DropdownMenuItem className="cursor-pointer py-2.5 rounded-lg mx-1">
+                  <User className="mr-2 h-4 w-4" />
+                  <span>Perfil</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={logout} className="cursor-pointer py-2.5 rounded-lg mx-1 text-destructive focus:text-destructive">
                   <LogOut className="mr-2 h-4 w-4" />
-                  Cerrar Sesión
+                  <span>Cerrar Sesión</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
         </div>
-      </div>
+      </header>
 
-      <div className="flex flex-1 flex-col lg:flex-row overflow-y-auto">
-        <aside className="w-1/5 px-4 pt-4 border-r dark:border-gray-700">
+      <div className="flex flex-1 overflow-hidden">
+        <aside className="hidden lg:flex flex-col w-[280px] border-r border-border/50 bg-card/30 backdrop-blur-sm pt-6 px-4">
           <AppSidebar />
         </aside>
-        <div className="w-4/5">
-          <div className="overflow-auto h-full w-full flex-1 px-2 md:px-4">
+        
+        <main className="flex-1 overflow-y-auto bg-background/50">
+          <div className="container mx-auto py-8 px-6 max-w-7xl">
             {children}
           </div>
-        </div>
+        </main>
       </div>
     </div>
   );
