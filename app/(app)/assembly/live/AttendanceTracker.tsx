@@ -57,6 +57,7 @@ export function AttendanceTracker() {
           });
           const newPayments: Record<string, {amount: number; transactionIds: string[]}> = {};
             data.participants.forEach((attendee) => {
+            if (!attendee.user?.id) return;
             const userDataEntry = userData[attendee.user.id];
             if (userDataEntry) {
               newPayments[attendee.id] = userDataEntry;
@@ -94,13 +95,13 @@ export function AttendanceTracker() {
       throw new Error('No se pudo actualizar el estado del participante');
     }
 
-    const updatedAttendees = assemblyRun?.participants.map(attendee =>
+    const updatedAttendees = assemblyRun?.participants?.map(attendee =>
 
       attendee.id === participantId
         ? { ...attendee, status, time: status === ParticipantStatusTypes.ATTENDED || status === ParticipantStatusTypes.LATE ? new Date().toLocaleTimeString() : undefined }
         : attendee
-    );
-    setAssemblyRun(prev => prev ? { ...prev, participants: updatedAttendees || [] } : prev);
+    ) || [];
+    setAssemblyRun(prev => prev ? { ...prev, participants: updatedAttendees } : prev);
     setPayments(prev => ({ ...prev, [participantId]: {amount: 0, transactionIds: []} }));
     } catch (error) {
       console.error("Error updating status:", error);
@@ -125,7 +126,7 @@ export function AttendanceTracker() {
   const handleRemoveParticipant = async (participantId: string) => {
     try {
       const participant = assemblyRun?.participants.find(p => p.id === participantId);
-      if (!participant || !assemblyRun?.id) return;
+      if (!participant || !assemblyRun?.id || !participant.user?.id) return;
 
       await apiUpdateParticipantInAssemblyRun(assemblyRun.id, {
         userId: participant.user.id,
@@ -180,14 +181,14 @@ export function AttendanceTracker() {
   };
 
   // Filter users to only show those not already registered in the assembly
-  const availableUsers = users.filter(user =>
-    !assemblyRun?.participants.some(participant => participant.user.id === user.id)
-  );
+   const availableUsers = users?.filter(user =>
+     !assemblyRun?.participants?.some(participant => participant.user?.id === user.id)
+   ) || [];
 
-  const presentCount = assemblyRun?.participants.filter(a => a.status === ParticipantStatusTypes.ATTENDED).length || 0;
-  const absentCount = assemblyRun?.participants.filter(a => a.status === ParticipantStatusTypes.ABSENT).length || 0;
-  const lateCount = assemblyRun?.participants.filter(a => a.status === ParticipantStatusTypes.LATE).length || 0;
-  const totalCount = assemblyRun?.participants.length || 0;
+  const presentCount = assemblyRun?.participants?.filter(a => a.status === ParticipantStatusTypes.ATTENDED).length || 0;
+  const absentCount = assemblyRun?.participants?.filter(a => a.status === ParticipantStatusTypes.ABSENT).length || 0;
+  const lateCount = assemblyRun?.participants?.filter(a => a.status === ParticipantStatusTypes.LATE).length || 0;
+  const totalCount = assemblyRun?.participants?.length || 0;
 
   return (
     <Card className="w-full">
@@ -212,12 +213,12 @@ export function AttendanceTracker() {
           </DialogHeader>
           <div className="space-y-4">
             <div className="max-h-64 overflow-y-auto space-y-2">
-              {assemblyRun?.participants.map((participant) => (
-                <div key={participant.id} className="flex items-center justify-between p-2 border rounded">
-                  <div>
-                    <div className="font-medium">{participant.user.name} {participant.user.lastname}</div>
-                    <div className="text-sm text-muted-foreground">{translateParticipantStatus(participant.status)}</div>
-                  </div>
+              {assemblyRun?.participants?.map((participant) => (
+                 <div key={participant.id} className="flex items-center justify-between p-2 border rounded">
+                   <div>
+                     <div className="font-medium">{participant.user?.name} {participant.user?.lastname}</div>
+                     <div className="text-sm text-muted-foreground">{translateParticipantStatus(participant.status)}</div>
+                   </div>
                   <Button
                     variant="outline"
                     size="sm"
@@ -310,15 +311,15 @@ export function AttendanceTracker() {
 
             {/* Attendees list */}
             <div className="space-y-2 max-h-128 overflow-y-auto">
-              {assemblyRun?.participants.map((attendee) => (
+              {assemblyRun?.participants?.map((attendee) => (
                 <div key={attendee.id} className={`flex items-center justify-between p-2 border rounded ${(attendee.status === ParticipantStatusTypes.LATE || attendee.status === ParticipantStatusTypes.ABSENT) && (payments[attendee.id]?.amount == null || payments[attendee.id]?.amount === 0) ? 'bg-red-100 dark:bg-red-900/20' : ''}`}>
                   <div className="flex-1">
-                    <div className="font-medium text-foreground">{attendee.user.name}</div>
+                    <div className="font-medium text-foreground">{attendee.user?.name}</div>
                     {/* {attendee.time && (
                       <div className="text-xs text-muted-foreground">Hora: {attendee.time}</div>
                     )} */}
 
-                      <div className="text-xs text-muted-foreground">{attendee.user.lastname}</div>
+                      <div className="text-xs text-muted-foreground">{attendee.user?.lastname}</div>
 
 
                   </div>
@@ -355,8 +356,9 @@ export function AttendanceTracker() {
                               <label htmlFor="amount" className="block text-sm font-medium">Monto</label>
                               <Input id="amount" type="number" value={amount} onChange={(e) => setAmount(Number(e.target.value))} />
                             </div>
-                            <p>¿Confirmar pago para {attendee.user.name} {attendee.user.lastname}?</p>
+                            <p>¿Confirmar pago para {attendee.user?.name} {attendee.user?.lastname}?</p>
                             <Button onClick={async () => {
+                              if (!attendee.user?.id) return;
                               try {
                                 const description = attendee.status === ParticipantStatusTypes.LATE ? 'Pago por tardanza en asamblea' : 'Pago por falta en asamblea';
                                 const data = await apiCreateOtherIncomesTransaction({
@@ -442,7 +444,7 @@ export function AttendanceTracker() {
                 <DialogHeader>
                   <DialogTitle>Confirmar cambio de estado</DialogTitle>
                   <DialogDescription>
-                    El participante {assemblyRun?.participants.find(p => p.id === confirmChange?.id)?.user.name || ''} tiene un pago de ${payments[confirmChange?.id || '']?.amount || 0}. ¿Estás seguro de que deseas cambiar el estado a {translateParticipantStatus(confirmChange?.status || ParticipantStatusTypes.ATTENDED)}? Esto eliminará el pago.
+                    El participante {assemblyRun?.participants.find(p => p.id === confirmChange?.id)?.user?.name || ''} tiene un pago de ${payments[confirmChange?.id || '']?.amount || 0}. ¿Estás seguro de que deseas cambiar el estado a {translateParticipantStatus(confirmChange?.status || ParticipantStatusTypes.ATTENDED)}? Esto eliminará el pago.
                   </DialogDescription>
                 </DialogHeader>
                 <div className="flex space-x-2 pt-4">
@@ -472,7 +474,7 @@ export function AttendanceTracker() {
                 <DialogHeader>
                   <DialogTitle>Eliminar Pago</DialogTitle>
                   <DialogDescription>
-                    ¿Estás seguro de que deseas eliminar el pago de {assemblyRun?.participants.find(p => p.id === confirmDeletePayment)?.user.name || ''}?
+                    ¿Estás seguro de que deseas eliminar el pago de {assemblyRun?.participants.find(p => p.id === confirmDeletePayment)?.user?.name || ''}?
                   </DialogDescription>
                 </DialogHeader>
                 <div className="flex space-x-2 pt-4">
@@ -502,7 +504,7 @@ export function AttendanceTracker() {
                 <DialogHeader>
                   <DialogTitle>Eliminar Participante</DialogTitle>
                   <DialogDescription>
-                    ¿Estás seguro de que deseas eliminar a {assemblyRun?.participants.find(p => p.id === confirmRemoveParticipant)?.user.name || ''} de la asamblea? Esta acción no se puede deshacer.
+                    ¿Estás seguro de que deseas eliminar a {assemblyRun?.participants.find(p => p.id === confirmRemoveParticipant)?.user?.name || ''} de la asamblea? Esta acción no se puede deshacer.
                   </DialogDescription>
                 </DialogHeader>
                 <div className="flex space-x-2 pt-4">

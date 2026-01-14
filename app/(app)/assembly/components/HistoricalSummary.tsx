@@ -29,11 +29,6 @@ interface HistoricalSummaryProps {
 }
 
 export function HistoricalSummary({
-  totalAssemblies,
-  avgAttendees,
-  avgDuration,
-  totalSavings,
-  totalPurchases,
   pastAssemblies,
 }: HistoricalSummaryProps) {
   return (

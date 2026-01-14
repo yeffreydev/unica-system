@@ -103,7 +103,7 @@ export default function DividendsPage() {
           <div className="flex items-start justify-between gap-4">
             <div className="space-y-1.5">
               <CardTitle className="text-2xl font-bold tracking-tight">
-                Distribución de utilidades &quot;Aki Nace&quot;
+                Distribución de utilidades
               </CardTitle>
               <p className="text-sm text-muted-foreground">
                 Visualiza y gestiona la distribución de dividendos entre socios según el período seleccionado

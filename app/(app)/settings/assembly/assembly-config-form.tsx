@@ -15,7 +15,6 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -46,23 +45,14 @@ const assemblyFormSchema = z.object({
   frequencyType: z.enum(["simple", "advanced"], {
     required_error: "Selecciona un tipo de frecuencia.",
   }),
-  dayOfMonth: z.coerce.number().min(1).max(31).optional(),
-  weekOccurrence: z.string().optional(),
-  weekDay: z.string().optional(),
+  dayOfMonth: z.coerce.number().min(1).max(31).optional().nullable(),
+  weekOccurrence: z.string().optional().nullable(),
+  weekDay: z.string().optional().nullable(),
   hour: z.coerce.number().min(0).max(23),
   minute: z.coerce.number().min(0).max(59),
-  participants: z.array(z.string()).optional(),
 });
 
 type AssemblyFormValues = z.infer<typeof assemblyFormSchema>;
-
-const defaultValues: Partial<AssemblyFormValues> = {
-  frequencyType: "simple",
-  dayOfMonth: 15,
-  hour: 10,
-  minute: 0,
-  participants: [],
-};
 
 const weekOccurrences = [
   { value: "first", label: "Primero" },
@@ -84,11 +74,18 @@ const weekDays = [
   { value: "sunday", label: "Domingo" },
 ];
 
-export function AssemblyConfigForm() {
+export function AssemblyConfigForm({ onConfigSaved }: { onConfigSaved?: () => void }) {
   const { users } = useContext(AppContext);
   const form = useForm<AssemblyFormValues>({
     resolver: zodResolver(assemblyFormSchema),
-    defaultValues,
+    defaultValues: {
+      frequencyType: "simple",
+      dayOfMonth: 15,
+      hour: 10,
+      minute: 0,
+      weekOccurrence: undefined,
+      weekDay: undefined,
+    },
     mode: "onChange",
   });
 
@@ -101,32 +98,43 @@ export function AssemblyConfigForm() {
   const [currentParticipants, setCurrentParticipants] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [updating, setUpdating] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [successDialog, setSuccessDialog] = useState(false);
 
-  // Load current participants on mount
-  useEffect(() => {
-    const loadParticipants = async () => {
-      try {
-        setLoading(true);
-        const response = await apiClient.get('/settings/assembly');
-        const participants = response.data.participants.map((p: { userId: string }) => p.userId);
-        setCurrentParticipants(participants);
-        form.setValue("participants", participants);
-      } catch (error) {
-        console.error('Error loading participants:', error);
-        toast({
-          title: "Error",
-          description: "No se pudieron cargar los participantes actuales.",
-          variant: "destructive",
-        });
-      } finally {
-        setLoading(false);
+  const loadConfig = async () => {
+    try {
+      const configResponse = await apiClient.get('/settings/assembly/config');
+      if (configResponse.data) {
+        form.reset(configResponse.data);
       }
+    } catch (error) {
+      console.error('Error loading config:', error);
+    }
+  };
+
+  const loadParticipants = async () => {
+    try {
+      const participantsResponse = await apiClient.get('/settings/assembly');
+      const participants = participantsResponse.data.participants.map((p: { userId: string }) => p.userId);
+      setCurrentParticipants(participants);
+    } catch (error) {
+      console.error('Error loading participants:', error);
+    }
+  };
+
+  // Load data on mount
+  useEffect(() => {
+    const loadData = async () => {
+      setLoading(true);
+      await Promise.all([loadConfig(), loadParticipants()]);
+      setLoading(false);
     };
 
-    loadParticipants();
-  }, [form]);
+    loadData();
+  }, []);
 
   const handleConfirm = async () => {
+    console.log('Confirming action:', confirmDialog);
     if (!confirmDialog.user) return;
 
     try {
@@ -136,13 +144,9 @@ export function AssemblyConfigForm() {
       });
 
       if (confirmDialog.action === "add") {
-        const newParticipants = [...currentParticipants, confirmDialog.user.id];
-        setCurrentParticipants(newParticipants);
-        form.setValue("participants", newParticipants);
+        setCurrentParticipants([...currentParticipants, confirmDialog.user.id]);
       } else {
-        const newParticipants = currentParticipants.filter(id => id !== confirmDialog.user!.id);
-        setCurrentParticipants(newParticipants);
-        form.setValue("participants", newParticipants);
+        setCurrentParticipants(currentParticipants.filter(id => id !== confirmDialog.user!.id));
       }
 
       toast({
@@ -170,26 +174,36 @@ export function AssemblyConfigForm() {
     setConfirmDialog({ open: true, user, action });
   };
 
-  function onSubmit(data: AssemblyFormValues) {
-    // Here you would send the data to your backend API
-    console.log("Assembly config submitted:", data);
-    toast({
-      title: "Configuración guardada",
-      description: "La configuración de la asamblea ha sido actualizada exitosamente.",
-    });
+  async function onSubmit(data: AssemblyFormValues) {
+    console.log('Form submitted with data:', data);
+    setSaving(true);
+    try {
+      console.log('Submitting config data:', data);
+      await apiClient.post('/settings/assembly/config', data);
+      await loadConfig(); // Reload config to reflect changes
+      setSuccessDialog(true);
+      onConfigSaved?.();
+    } catch (error) {
+      console.error('Error saving config:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo guardar la configuración.",
+        variant: "destructive",
+      });
+    } finally {
+      setSaving(false);
+    }
   }
 
-  const selectedParticipants = form.watch("participants") || [];
-
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        <Tabs defaultValue="frequency" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="frequency">Frecuencia</TabsTrigger>
-            <TabsTrigger value="participants">Participantes</TabsTrigger>
-          </TabsList>
-          <TabsContent value="frequency" className="mt-6 space-y-8">
+    <Tabs defaultValue="frequency" className="w-full">
+      <TabsList className="grid w-full grid-cols-2">
+        <TabsTrigger value="frequency">Frecuencia</TabsTrigger>
+        <TabsTrigger value="participants">Participantes</TabsTrigger>
+      </TabsList>
+      <TabsContent value="frequency" className="mt-6 space-y-8">
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             {/* Frequency Type */}
             <FormField
               control={form.control}
@@ -198,7 +212,7 @@ export function AssemblyConfigForm() {
                 <FormItem className="space-y-3">
                   <FormLabel>Tipo de Frecuencia</FormLabel>
                   <FormControl>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <Select onValueChange={field.onChange} value={field.value}>
                       <SelectTrigger>
                         <SelectValue placeholder="Selecciona el tipo de frecuencia" />
                       </SelectTrigger>
@@ -224,20 +238,23 @@ export function AssemblyConfigForm() {
                 render={({ field }) => (
                   <FormItem className="space-y-3">
                     <FormLabel>Día del Mes</FormLabel>
-                    <FormControl>
-                      <Input
-                        type="number"
-                        placeholder="1-31"
-                        min={1}
-                        max={31}
-                        {...field}
-                        value={field.value ? field.value.toString() : ""}
-                        onChange={(e) => {
-                          const val = e.target.value ? parseInt(e.target.value) : undefined;
-                          field.onChange(val);
-                        }}
-                      />
-                    </FormControl>
+                    <Select 
+                      onValueChange={(value) => field.onChange(parseInt(value))} 
+                      value={field.value?.toString() || ""}
+                    >
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecciona el día" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        {Array.from({ length: 31 }, (_, i) => i + 1).map((day) => (
+                          <SelectItem key={day} value={day.toString()}>
+                            {day}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <FormDescription>Selecciona el día del mes para las asambleas mensuales.</FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -254,7 +271,7 @@ export function AssemblyConfigForm() {
               render={({ field }) => (
                 <FormItem className="space-y-3">
                   <FormLabel>Ocurrencia Semanal</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
+                  <Select onValueChange={field.onChange} value={field.value || ""}>
                     <SelectTrigger>
                       <SelectValue placeholder="Ej: Primero, Último" />
                     </SelectTrigger>
@@ -277,7 +294,7 @@ export function AssemblyConfigForm() {
               render={({ field }) => (
                 <FormItem className="space-y-3">
                   <FormLabel>Día de la Semana</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value}>
+                  <Select onValueChange={field.onChange} value={field.value || ""}>
                     <SelectTrigger>
                       <SelectValue placeholder="Ej: Sábado, Domingo" />
                     </SelectTrigger>
@@ -305,7 +322,7 @@ export function AssemblyConfigForm() {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Hora</FormLabel>
-                <Select onValueChange={(value) => field.onChange(parseInt(value))} defaultValue={field.value?.toString()}>
+                <Select onValueChange={(value) => field.onChange(parseInt(value))} value={field.value?.toString() || ""}>
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="HH" />
@@ -330,7 +347,7 @@ export function AssemblyConfigForm() {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Minutos</FormLabel>
-                <Select onValueChange={(value) => field.onChange(parseInt(value))} defaultValue={field.value?.toString()}>
+                <Select onValueChange={(value) => field.onChange(parseInt(value))} value={field.value?.toString() || ""}>
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="MM" />
@@ -349,73 +366,91 @@ export function AssemblyConfigForm() {
             )}
           />
         </div>
-</TabsContent>
 
-<TabsContent value="participants" className="mt-6 space-y-4">
-  {/* Participants List */}
-  <div className="space-y-4">
-    <FormLabel>Participantes de la Asamblea</FormLabel>
-    <FormDescription>
-      Selecciona los participantes de la asamblea.
-    </FormDescription>
-    {loading ? (
-      <div className="flex justify-center p-4">
-        <div className="text-sm text-muted-foreground">Cargando participantes...</div>
-      </div>
-    ) : (
-      <div className="space-y-2 max-h-60 overflow-y-auto border rounded-md p-4">
-        {users.map((user: IUser) => (
-          <div key={user.id} className="flex items-center justify-between space-x-2">
-            <label
-              htmlFor={`participant-${user.id}`}
-              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex-1"
-            >
-              {user.name}, {user.lastname}
-            </label>
-            <Switch
-              id={`participant-${user.id}`}
-              checked={selectedParticipants.includes(user.id)}
-              disabled={updating === user.id}
-              onCheckedChange={() => {
-                const isSelected = selectedParticipants.includes(user.id);
-                openConfirmDialog(user, isSelected ? "remove" : "add");
-              }}
-            />
+        <Button type="submit" disabled={saving}>
+          {saving ? "Guardando..." : "Guardar Configuración"}
+        </Button>
+          </form>
+        </Form>
+      </TabsContent>
+
+      <TabsContent value="participants" className="mt-6 space-y-4">
+        {/* Participants List */}
+        <div className="space-y-4">
+          <div className="text-sm font-medium">Participantes de la Asamblea</div>
+          <div className="text-sm text-muted-foreground">
+            Selecciona los participantes de la asamblea.
           </div>
-        ))}
-      </div>
-    )}
-  </div>
-  <FormMessage>{form.formState.errors.participants?.message}</FormMessage>
+          {loading ? (
+            <div className="flex justify-center p-4">
+              <div className="text-sm text-muted-foreground">Cargando participantes...</div>
+            </div>
+          ) : (
+            <div className="space-y-2 max-h-60 overflow-y-auto border rounded-md p-4">
+              {users.map((user: IUser) => (
+                <div key={user.id} className="flex items-center justify-between space-x-2">
+                  <label
+                    htmlFor={`participant-${user.id}`}
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 flex-1"
+                  >
+                    {user.name}, {user.lastname}
+                  </label>
+                  <Switch
+                    id={`participant-${user.id}`}
+                    checked={currentParticipants.includes(user.id)}
+                    disabled={updating === user.id}
+                    onCheckedChange={() => {
+                      const isSelected = currentParticipants.includes(user.id);
+                      openConfirmDialog(user, isSelected ? "remove" : "add");
+                    }}
+                  />
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
 
-  {/* Confirmation Dialog */}
-  <Dialog open={confirmDialog.open} onOpenChange={() => setConfirmDialog({ open: false, user: null, action: "add" })}>
-    <DialogContent>
-      <DialogHeader>
-        <DialogTitle>Confirmar Acción</DialogTitle>
-        <DialogDescription>
-          {confirmDialog.user && confirmDialog.action === "add"
-            ? `¿Estás seguro de que quieres agregar a ${confirmDialog.user.name} (${confirmDialog.user.lastname}) como participante de la asamblea?`
-            : confirmDialog.user && confirmDialog.action === "remove"
-            ? `¿Estás seguro de que quieres remover a ${confirmDialog.user.name} (${confirmDialog.user.lastname}) de los participantes de la asamblea?`
-            : ""}
-        </DialogDescription>
-      </DialogHeader>
-      <DialogFooter>
-        <Button type="button" variant="outline" onClick={handleCancel}>
-          Cancelar
-        </Button>
-        <Button type="button" onClick={handleConfirm}>
-          Confirmar
-        </Button>
-      </DialogFooter>
-    </DialogContent>
-  </Dialog>
-</TabsContent>
-</Tabs>
+        {/* Confirmation Dialog */}
+        <Dialog open={confirmDialog.open} onOpenChange={() => setConfirmDialog({ open: false, user: null, action: "add" })}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Confirmar Acción</DialogTitle>
+              <DialogDescription>
+                {confirmDialog.user && confirmDialog.action === "add"
+                  ? `¿Estás seguro de que quieres agregar a ${confirmDialog.user.name} (${confirmDialog.user.lastname}) como participante de la asamblea?`
+                  : confirmDialog.user && confirmDialog.action === "remove"
+                  ? `¿Estás seguro de que quieres remover a ${confirmDialog.user.name} (${confirmDialog.user.lastname}) de los participantes de la asamblea?`
+                  : ""}
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={handleCancel}>
+                Cancelar
+              </Button>
+              <Button type="button" onClick={handleConfirm}>
+                Confirmar
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </TabsContent>
 
-<Button type="submit">Guardar Configuración</Button>
-    </form>
-    </Form>
+      {/* Success Dialog */}
+      <Dialog open={successDialog} onOpenChange={setSuccessDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Configuración Guardada</DialogTitle>
+            <DialogDescription>
+              La configuración de la asamblea ha sido actualizada exitosamente.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button onClick={() => setSuccessDialog(false)}>
+              Aceptar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </Tabs>
   );
 }

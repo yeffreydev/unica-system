@@ -3,7 +3,7 @@
 import { assemblySteps, IAssemblyStep } from "@/app/(app)/assembly/steps";
 import { IAssemblySchedule } from "@/app/(app)/assembly/types";
 import { createContext, useContext, useState, ReactNode, useEffect } from "react";
-import { apiGetAssemblySchedule, apiStartAssemblySchedule } from "./api";
+import { apiGetAssemblySchedule, apiStartAssemblySchedule, apiFinishAssembly } from "./api";
 import { useRouter } from "next/navigation";
 
 interface AssemblyState {
@@ -20,7 +20,7 @@ interface AssemblyContextType {
   assemblyState: AssemblyState;
   assembly: IAssemblySchedule | null;
   startAssembly: () => void;
-  endAssembly: () => void;
+  endAssembly: (scheduleRunId: string) => Promise<void>;
   setCurrentStep: (step: number) => void;
   updateTotalTime: (time: number) => void;
   getStepStatus: (stepId: number) => 'pending' | 'active' | 'completed';
@@ -62,8 +62,18 @@ export function AssemblyProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  const endAssembly = () => {
-    setAssemblyState(initialState);
+  const endAssembly = async (scheduleRunId: string) => {
+    try {
+      await apiFinishAssembly(scheduleRunId);
+      setAssemblyState(initialState);
+      // Clear localStorage
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('assembly-current-step');
+      }
+    } catch (error) {
+      console.error('Error finishing assembly:', error);
+      throw error;
+    }
   };
 
   const setCurrentStep = (step: number) => {

@@ -11,8 +11,8 @@ export interface IAssemblyStep {
 export const assemblySteps: IAssemblyStep[] = [
   {
     id: 1,
-    title: "Llamado de Lista",
-    description: "Verificar la asistencia de los miembros",
+    title: "Lista",
+    description: "",
     icon: Users,
     details: [
       "Verificar quórum mínimo",
@@ -22,8 +22,8 @@ export const assemblySteps: IAssemblyStep[] = [
   },
   {
     id: 2,
-    title: "Revisar Agenda y Lectura del Acta Anterior",
-    description: "Presentar agenda actual y revisar acta de la reunión anterior",
+    title: "Agenda y Acta",
+    description: "",
     icon: FileText,
     details: [
       "Presentar agenda del día",
@@ -33,8 +33,8 @@ export const assemblySteps: IAssemblyStep[] = [
   },
   {
     id: 3,
-    title: "Aporte de Compra de Acciones",
-    description: "Procesar compras de acciones por parte de los miembros",
+    title: "Acciones",
+    description: "",
     icon: TrendingUp,
     details: [
       "Registrar compras de acciones",
@@ -44,8 +44,8 @@ export const assemblySteps: IAssemblyStep[] = [
   },
   {
     id: 4,
-    title: "Recolectar Intereses",
-    description: "Recibir pagos de intereses de los miembros",
+    title: "Intereses",
+    description: "",
     icon: PiggyBank,
     details: [
       "Recibir pagos de intereses",
@@ -56,7 +56,7 @@ export const assemblySteps: IAssemblyStep[] = [
   {
     id: 5,
     title: "Operaciones",
-    description: "Registrar operaciones de ingresos y egresos",
+    description: "",
     icon: TrendingUp,
     details: [
       "Registrar ingresos (depósitos, fondos, otros)",
@@ -66,8 +66,8 @@ export const assemblySteps: IAssemblyStep[] = [
   },
   {
     id: 6,
-    title: "Aplicación a Créditos y Evaluación",
-    description: "Procesar solicitudes de crédito y evaluar candidatos",
+    title: "Créditos",
+    description: "",
     icon: ClipboardCheck,
     details: [
       "Revisar solicitudes",
@@ -87,8 +87,8 @@ export const assemblySteps: IAssemblyStep[] = [
 
   {
     id: 7,
-    title: "Decisiones y Proceso de Documentación",
-    description: "Documentar decisiones tomadas y acuerdos alcanzados",
+    title: "Resumen",
+    description: "",
     icon: FileCheck,
     details: [
       "Documentar acuerdos",

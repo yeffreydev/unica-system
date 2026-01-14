@@ -1,17 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useEffect, useState, useMemo } from "react";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { TrendingUp, TrendingDown, MoreVertical, Trash2, DollarSign, FileText } from "lucide-react";
-import { formatCurrency } from "@/lib/utils";
-import { DepositsDialog } from "../../incomes/deposits/DepositsDialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent } from "@/components/ui/dropdown-menu";
+import { MoreVertical, Trash2, Filter, Plus, ArrowUpRight, ArrowDownLeft } from "lucide-react";
+import { cn, formatCurrency } from "@/lib/utils";
+
 import { IDeposit } from "../../incomes/deposits/types";
 import { DepositForm } from "../../incomes/deposits/DepositForm";
 import { useAssembly } from "../AssemblyContext";
@@ -19,43 +16,44 @@ import { IAssemblyScheduleRun } from "../types";
 import { apiGetAssemblyRun } from "../api";
 import apiClient from "@/config/apiClient";
 import { ISocialFundsTransaction } from "@/types/ISocialFunds";
-import { LegalsDialog } from "../../incomes/social/LegalsDialog";
+
 import { SocialLegalFundsForm } from "../../incomes/social/SocialLegalFundsForm";
 import { IOtherIncome } from "../../incomes/others/types";
-import { OthersDialog } from "../../incomes/others/OthersDialog";
+
 import { OtherIncomeForm } from "../../incomes/others/OtherIncomeForm";
 import { socialFundsData } from "@/constants";
 import { IWithdrawal } from "../../expenses/withdrawls/types";
-import { WithdrawalsDialog } from "../../expenses/withdrawls/WithdrawalsDialog";
+
 import { WithdrawForm } from "../../expenses/withdrawls/WithdrawForm";
 import { IAdministrativeExpense } from "../../expenses/administrative/types";
-import { AdministrativeDialog } from "../../expenses/administrative/AdministrativeDialog";
+
 import { AdminExpenseForm } from "../../expenses/administrative/AdminExpenseForm";
 import { IPayout } from "../../expenses/payouts/types";
-import { PayoutsDialog } from "../../expenses/payouts/PayoutsDialog";
+
 import { InterestPaymentForm } from "../../expenses/payouts/InterestPaymentForm";
 import { ISocialFundsExpenseTransaction } from "../../expenses/social/types";
-import { SocialDialog } from "../../expenses/social/SocialDialog";
+
 import { SocialLegalFundsExpenseForm } from "../../expenses/social/SocialLegalFundsExpenseForm";
 import { IOtherExpense } from "../../expenses/others/types";
-import { OthersExpenseDialog } from "../../expenses/others/OthersExpenseDialog";
+
 import { OtherExpenseForm } from "../../expenses/others/OtherExpenseForm";
 import { ISocialFunds } from "@/types/ISocialFunds";
 
-type OperationType = 'deposits' | 'funds' | 'others' | 'withdrawals' | 'administrative' | 'payouts' | 'social' | 'expense-others';
+type OperationCategory = 'ingreso' | 'egreso';
+type OperationType = 'deposit' | 'fund' | 'other-income' | 'withdrawal' | 'administrative' | 'payout' | 'social-expense' | 'other-expense';
 
-interface OperationData {
+interface UnifiedOperation {
   id: string;
-  user?: string;
+  category: OperationCategory;
+  type: OperationType;
+  date: Date;
   amount: number;
-  date: string;
-  description?: string;
+  user?: string;
+  description: string;
+  raw: IDeposit | ISocialFundsTransaction | IOtherIncome | IWithdrawal | IAdministrativeExpense | IPayout | ISocialFundsExpenseTransaction | IOtherExpense;
 }
 
 export default function Operations() {
-  const [selectedIngresoType, setSelectedIngresoType] = useState<OperationType | null>(null);
-  const [selectedEgresoType, setSelectedEgresoType] = useState<OperationType | null>(null);
-  const [editDeposit, setEditDeposit] = useState<IDeposit | null>(null);
   const [deposits, setDeposits] = useState<IDeposit[]>([]);
   const [funds, setFunds] = useState<ISocialFundsTransaction[]>([]);
   const [otherIncomes, setOtherIncomes] = useState<IOtherIncome[]>([]);
@@ -64,800 +62,499 @@ export default function Operations() {
   const [payouts, setPayouts] = useState<IPayout[]>([]);
   const [socialFundsExpenses, setSocialFundsExpenses] = useState<ISocialFundsExpenseTransaction[]>([]);
   const [otherExpenses, setOtherExpenses] = useState<IOtherExpense[]>([]);
-  const [socialFunds, setSocialFunds] = useState<ISocialFunds[]>([]);
+  
   const { assembly } = useAssembly();
   const [assemblyRun, setAssemblyRun] = useState<IAssemblyScheduleRun | null>(null);
-  const [openDialog, setOpenDialog] = useState(false);
-  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-  const [depositToDelete, setDepositToDelete] = useState<string | null>(null);
-  const [fundToDelete, setFundToDelete] = useState<string | null>(null);
-  const [otherIncomeToDelete, setOtherIncomeToDelete] = useState<string | null>(null);
-  const [withdrawalToDelete, setWithdrawalToDelete] = useState<string | null>(null);
-  const [administrativeToDelete, setAdministrativeToDelete] = useState<string | null>(null);
-  const [payoutToDelete, setPayoutToDelete] = useState<string | null>(null);
-  const [socialFundExpenseToDelete, setSocialFundExpenseToDelete] = useState<string | null>(null);
-  const [otherExpenseToDelete, setOtherExpenseToDelete] = useState<string | null>(null);
-
+  const [socialFunds, setSocialFunds] = useState<ISocialFunds[]>([]);
   
+  const [openDialog, setOpenDialog] = useState(false);
+  const [activeDialog, setActiveDialog] = useState<OperationType | null>(null);
+  const [editDeposit, setEditDeposit] = useState<IDeposit | null>(null);
 
-   useEffect(() => {
-       //get assembly run
-       (async () => {
-         if (!assembly?.lastRun) return;
-         const data = await apiGetAssemblyRun(assembly.lastRun.id);
-         console.log({ data });
-         setAssemblyRun(data);
-       })();
-     }, [assembly?.lastRun]);
+  const closeDialog = () => {
+    setOpenDialog(false);
+    setActiveDialog(null);
+  };
+  
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [itemToDelete, setItemToDelete] = useState<{id: string, type: OperationType} | null>(null);
+  
+  const [filterCategory, setFilterCategory] = useState<'all' | 'ingreso' | 'egreso'>('all');
 
-     useEffect(() => {
-        //fetch deposits for this assembly run
-        (async () => {
-          if (!assemblyRun?.id) {
-            console.log("No assembly run ID available yet");
-            return;
-          }
-          try {
-            const res = await apiClient.get(`/deposits/schedule-run/${assemblyRun.id}`);
-            if (!res.data) {
-              throw new Error(`HTTP error! status: ${res.status}`);
-            }
-            const data = res.data as IDeposit[];
-            console.log("Fetched deposits:", data);
-            setDeposits(data);
-          } catch (error) {
-            console.error("Error fetching deposits for assembly run:", error);
-            setDeposits([]);
-          }
-        })();
-     }, [assemblyRun?.id]);
+  useEffect(() => {
+    (async () => {
+      if (!assembly?.lastRun) return;
+      const data = await apiGetAssemblyRun(assembly.lastRun.id);
+      setAssemblyRun(data);
+    })();
+  }, [assembly?.lastRun]);
 
-
-      useEffect(() => {
-        //fetch deposits for this assembly run
-        (async () => {
-          if (!assemblyRun?.id) {
-            console.log("No assembly run ID available yet");
-            return;
-          }
-          try {
-            const res = await apiClient.get(`/incomes/social-funds/schedule-run/${assemblyRun.id}`);
-            if (!res.data) {
-              throw new Error(`HTTP error! status: ${res.status}`);
-            }
-            const data = res.data as ISocialFundsTransaction[];
-            console.log("Fetched funds:", data);
-            setFunds(data);
-          } catch (error) {
-            console.error("Error fetching funds for assembly run:", error);
-            setFunds([]);
-          }
-        })();
-     }, [assemblyRun?.id]);
-
-     useEffect(() => {
-       //fetch other incomes for this assembly run
-       (async () => {
-         if (!assemblyRun?.id) {
-           console.log("No assembly run ID available yet");
-           return;
-         }
-         try {
-           const res = await apiClient.get(`/incomes/others/schedule-run/${assemblyRun.id}`);
-           if (!res.data) {
-             throw new Error(`HTTP error! status: ${res.status}`);
-           }
-           const data = res.data as IOtherIncome[];
-           console.log("Fetched other incomes:", data);
-           setOtherIncomes(data);
-         } catch (error) {
-           console.error("Error fetching other incomes for assembly run:", error);
-           setOtherIncomes([]);
-         }
-       })();
-    }, [assemblyRun?.id]);
-
-     useEffect(() => {
-       //fetch withdrawals for this assembly run
-       (async () => {
-         if (!assemblyRun?.id) return;
-         try {
-           const res = await apiClient.get(`/withdrawals/schedule-run/${assemblyRun.id}`);
-           if (!res.data) throw new Error(`HTTP error! status: ${res.status}`);
-           setWithdrawals(res.data as IWithdrawal[]);
-         } catch (error) {
-           console.error("Error fetching withdrawals:", error);
-           setWithdrawals([]);
-         }
-       })();
-    }, [assemblyRun?.id]);
-
-    useEffect(() => {
-      //fetch administrative expenses
-      (async () => {
-        if (!assemblyRun?.id) return;
-        try {
-          const res = await apiClient.get(`/expenses/administrative/schedule-run/${assemblyRun.id}`);
-          if (!res.data) throw new Error(`HTTP error! status: ${res.status}`);
-          setAdministrativeExpenses(res.data as IAdministrativeExpense[]);
-        } catch (error) {
-          console.error("Error fetching administrative expenses:", error);
-          setAdministrativeExpenses([]);
-        }
-      })();
-   }, [assemblyRun?.id]);
-
-   useEffect(() => {
-     //fetch payouts
-     (async () => {
-       if (!assemblyRun?.id) return;
+  useEffect(() => {
+    if (!assemblyRun?.id) return;
+    
+    const fetchAll = async () => {
        try {
-         const res = await apiClient.get(`/payouts/schedule-run/${assemblyRun.id}`);
-         if (!res.data) throw new Error(`HTTP error! status: ${res.status}`);
-         setPayouts(res.data as IPayout[]);
-       } catch (error) {
-         console.error("Error fetching payouts:", error);
-         setPayouts([]);
+        const [depRes, fundsRes, otherIncRes, withdrawRes, adminRes, payoutRes, socialExpRes, otherExpRes] = await Promise.all([
+          apiClient.get(`/deposits/schedule-run/${assemblyRun.id}`),
+          apiClient.get(`/incomes/social-funds/schedule-run/${assemblyRun.id}`),
+          apiClient.get(`/incomes/others/schedule-run/${assemblyRun.id}`),
+          apiClient.get(`/withdrawals/schedule-run/${assemblyRun.id}`),
+          apiClient.get(`/expenses/administrative/schedule-run/${assemblyRun.id}`),
+          apiClient.get(`/payouts/schedule-run/${assemblyRun.id}`),
+          apiClient.get(`/expenses/social-funds/schedule-run/${assemblyRun.id}`),
+          apiClient.get(`/expenses/others/schedule-run/${assemblyRun.id}`),
+        ]);
+
+        setDeposits(depRes.data || []);
+        setFunds(fundsRes.data || []);
+        setOtherIncomes(otherIncRes.data || []);
+        setWithdrawals(withdrawRes.data || []);
+        setAdministrativeExpenses(adminRes.data || []);
+        setPayouts(payoutRes.data || []);
+        setSocialFundsExpenses(socialExpRes.data || []);
+        setOtherExpenses(otherExpRes.data || []);
+       } catch(e) {
+         console.error("Error fetching operations", e);
        }
-     })();
+    };
+    
+    fetchAll();
   }, [assemblyRun?.id]);
 
   useEffect(() => {
-    //fetch social funds expenses
     (async () => {
-      if (!assemblyRun?.id) return;
       try {
-        const res = await apiClient.get(`/expenses/social-funds/schedule-run/${assemblyRun.id}`);
-        if (!res.data) throw new Error(`HTTP error! status: ${res.status}`);
-        setSocialFundsExpenses(res.data as ISocialFundsExpenseTransaction[]);
+        const res = await apiClient.get("/banks/social-funds-types");
+        setSocialFunds(res.data || []);
       } catch (error) {
-        console.error("Error fetching social funds expenses:", error);
-        setSocialFundsExpenses([]);
+        console.error("Error fetching social funds types:", error);
       }
     })();
- }, [assemblyRun?.id]);
-
- useEffect(() => {
-   //fetch other expenses
-   (async () => {
-     if (!assemblyRun?.id) return;
-     try {
-       const res = await apiClient.get(`/expenses/others/schedule-run/${assemblyRun.id}`);
-       if (!res.data) throw new Error(`HTTP error! status: ${res.status}`);
-       setOtherExpenses(res.data as IOtherExpense[]);
-     } catch (error) {
-       console.error("Error fetching other expenses:", error);
-       setOtherExpenses([]);
-     }
-   })();
-}, [assemblyRun?.id]);
-
-useEffect(() => {
-  //fetch social funds types
-  (async () => {
-    try {
-      const res = await apiClient.get("/banks/social-funds-types");
-      if (!res.data) throw new Error(`HTTP error! status: ${res.status}`);
-      setSocialFunds(res.data as ISocialFunds[]);
-    } catch (error) {
-      console.error("Error fetching social funds types:", error);
-      setSocialFunds([]);
-    }
-  })();
-}, []);
+  }, []);
 
   const addDeposit = (deposit: IDeposit) => {
     setDeposits((prev) => [deposit, ...prev]);
   }
 
-  const handleDeleteDeposit = async () => {
-    if (!depositToDelete) return;
+  const handleDelete = async () => {
+    if (!itemToDelete) return;
+    const { id, type } = itemToDelete;
     
-    // Close dialog first to prevent overlay issues
-    setDeleteConfirmOpen(false);
-    
-    try {
-      await apiClient.delete(`/deposits/${depositToDelete}`);
-      setDeposits((prev) => prev.filter(d => d.id !== depositToDelete));
-      console.log("Deposit deleted successfully");
-    } catch (error) {
-      console.error("Error deleting deposit:", error);
-    } finally {
-      setDepositToDelete(null);
-    }
-  }
-
-  const handleDeleteFund = async () => {
-    if (!fundToDelete) return;
-    
-    // Close dialog first to prevent overlay issues
     setDeleteConfirmOpen(false);
     
     try {
-      await apiClient.delete(`/incomes/social-funds/${fundToDelete}`);
-      setFunds((prev) => prev.filter(f => f.id !== fundToDelete));
-      console.log("Fund deleted successfully");
+        switch(type) {
+            case 'deposit':
+                await apiClient.delete(`/deposits/${id}`);
+                setDeposits(prev => prev.filter(i => i.id !== id));
+                break;
+            case 'fund':
+                await apiClient.delete(`/incomes/social-funds/${id}`);
+                setFunds(prev => prev.filter(i => i.id !== id));
+                break;
+            case 'other-income':
+                await apiClient.delete(`/incomes/others/${id}`);
+                setOtherIncomes(prev => prev.filter(i => i.id.toString() !== id));
+                break;
+            case 'withdrawal':
+                await apiClient.delete(`/withdrawals/${id}`);
+                setWithdrawals(prev => prev.filter(i => i.id.toString() !== id));
+                break;
+            case 'administrative':
+                await apiClient.delete(`/expenses/administrative/${id}`);
+                setAdministrativeExpenses(prev => prev.filter(i => i.id !== id));
+                break;
+            case 'payout':
+                await apiClient.delete(`/payouts/${id}`);
+                setPayouts(prev => prev.filter(i => i.id.toString() !== id));
+                break;
+            case 'social-expense':
+                await apiClient.delete(`/expenses/social-funds/${id}`);
+                setSocialFundsExpenses(prev => prev.filter(i => i.id.toString() !== id));
+                break;
+            case 'other-expense':
+                await apiClient.delete(`/expenses/others/${id}`);
+                setOtherExpenses(prev => prev.filter(i => i.id.toString() !== id));
+                break;
+        }
     } catch (error) {
-      console.error("Error deleting fund:", error);
+        console.error(`Error deleting ${type}:`, error);
     } finally {
-      setFundToDelete(null);
+        setItemToDelete(null);
     }
-  }
-
-  const handleDeleteOtherIncome = async () => {
-    if (!otherIncomeToDelete) return;
-    
-    // Close dialog first to prevent overlay issues
-    setDeleteConfirmOpen(false);
-    
-    try {
-      await apiClient.delete(`/incomes/others/${otherIncomeToDelete}`);
-      setOtherIncomes((prev) => prev.filter(o => o.id.toString() !== otherIncomeToDelete));
-      console.log("Other income deleted successfully");
-    } catch (error) {
-      console.error("Error deleting other income:", error);
-    } finally {
-      setOtherIncomeToDelete(null);
-    }
-  }
-
-  const handleDeleteWithdrawal = async () => {
-    if (!withdrawalToDelete) return;
-    setDeleteConfirmOpen(false);
-    try {
-      await apiClient.delete(`/withdrawals/${withdrawalToDelete}`);
-      setWithdrawals((prev) => prev.filter(w => w.id.toString() !== withdrawalToDelete));
-      console.log("Withdrawal deleted successfully");
-    } catch (error) {
-      console.error("Error deleting withdrawal:", error);
-    } finally {
-      setWithdrawalToDelete(null);
-    }
-  }
-
-  const handleDeleteAdministrative = async () => {
-    if (!administrativeToDelete) return;
-    setDeleteConfirmOpen(false);
-    try {
-      await apiClient.delete(`/expenses/administrative/${administrativeToDelete}`);
-      setAdministrativeExpenses((prev) => prev.filter(a => a.id !== administrativeToDelete));
-      console.log("Administrative expense deleted successfully");
-    } catch (error) {
-      console.error("Error deleting administrative expense:", error);
-    } finally {
-      setAdministrativeToDelete(null);
-    }
-  }
-
-  const handleDeletePayout = async () => {
-    if (!payoutToDelete) return;
-    setDeleteConfirmOpen(false);
-    try {
-      await apiClient.delete(`/payouts/${payoutToDelete}`);
-      setPayouts((prev) => prev.filter(p => p.id.toString() !== payoutToDelete));
-      console.log("Payout deleted successfully");
-    } catch (error) {
-      console.error("Error deleting payout:", error);
-    } finally {
-      setPayoutToDelete(null);
-    }
-  }
-
-  const handleDeleteSocialFundExpense = async () => {
-    if (!socialFundExpenseToDelete) return;
-    setDeleteConfirmOpen(false);
-    try {
-      await apiClient.delete(`/expenses/social-funds/${socialFundExpenseToDelete}`);
-      setSocialFundsExpenses((prev) => prev.filter(s => s.id.toString() !== socialFundExpenseToDelete));
-      console.log("Social fund expense deleted successfully");
-    } catch (error) {
-      console.error("Error deleting social fund expense:", error);
-    } finally {
-      setSocialFundExpenseToDelete(null);
-    }
-  }
-
-  const handleDeleteOtherExpense = async () => {
-    if (!otherExpenseToDelete) return;
-    setDeleteConfirmOpen(false);
-    try {
-      await apiClient.delete(`/expenses/others/${otherExpenseToDelete}`);
-      setOtherExpenses((prev) => prev.filter(o => o.id.toString() !== otherExpenseToDelete));
-      console.log("Other expense deleted successfully");
-    } catch (error) {
-      console.error("Error deleting other expense:", error);
-    } finally {
-      setOtherExpenseToDelete(null);
-    }
-  }
-
-  const confirmDelete = (itemId: string, type: 'deposit' | 'fund' | 'other' | 'withdrawal' | 'administrative' | 'payout' | 'social-expense' | 'other-expense') => {
-    if (type === 'deposit') {
-      setDepositToDelete(itemId);
-    } else if (type === 'fund') {
-      setFundToDelete(itemId);
-    } else if (type === 'other') {
-      setOtherIncomeToDelete(itemId);
-    } else if (type === 'withdrawal') {
-      setWithdrawalToDelete(itemId);
-    } else if (type === 'administrative') {
-      setAdministrativeToDelete(itemId);
-    } else if (type === 'payout') {
-      setPayoutToDelete(itemId);
-    } else if (type === 'social-expense') {
-      setSocialFundExpenseToDelete(itemId);
-    } else if (type === 'other-expense') {
-      setOtherExpenseToDelete(itemId);
-    }
-    setDeleteConfirmOpen(true);
-  }
-  // Placeholder data - in real implementation, fetch from API
-  const mockData: Record<OperationType, OperationData[]> = {
-    deposits: [
-    ],
-    funds: [],
-    others: [],
-    withdrawals: [],
-    administrative: [],
-    payouts: [],
-    social: [],
-    'expense-others': []
   };
 
-  const ingresoTypes = [
-    { value: 'deposits', label: 'Depósitos', description: 'Ver depósitos realizados por los socios' },
-    { value: 'funds', label: 'Fondos', description: 'Ver aportes a fondos sociales' },
-    { value: 'others', label: 'Otros', description: 'Ver otros ingresos registrados' }
-  ];
+  const confirmDelete = (id: string, type: OperationType) => {
+    setItemToDelete({ id, type });
+    setDeleteConfirmOpen(true);
+  };
 
-  const egresoTypes = [
-    { value: 'withdrawals', label: 'Retiros', description: 'Ver retiros realizados por los socios' },
-    { value: 'administrative', label: 'Gastos Administrativos', description: 'Ver gastos administrativos' },
-    { value: 'payouts', label: 'Pagos a los ahorristas', description: 'Ver pagos a los ahorristas' },
-    { value: 'social', label: 'Fondos Social', description: 'Ver gastos en fondos sociales' },
-    { value: 'expense-others', label: 'Otros', description: 'Ver otros egresos registrados' }
-  ];
 
-  const renderTable = (data: OperationData[], type: string) => {
-    if (data.length === 0) {
-      return (
-        <div className="text-center py-8 text-muted-foreground">
-          No hay operaciones registradas para este tipo
-        </div>
-      );
+  const allOperations = useMemo<UnifiedOperation[]>(() => {
+    const list: UnifiedOperation[] = [];
+
+    deposits.forEach(d => list.push({
+      id: d.id || '', category: 'ingreso', type: 'deposit',
+      date: new Date(d.date), amount: d.amount,
+      user: d.user?.name || d.user?.lastname || 'Desconocido',
+      description: 'Depósito', raw: d
+    }));
+    funds.forEach(f => list.push({
+      id: f.id || '', category: 'ingreso', type: 'fund',
+      date: new Date(f.date), amount: f.amount,
+      user: f.user?.name || f.user?.lastname || 'Desconocido',
+      description: `Fondo Social (${f.socialFunds?.name ? (socialFundsData[f.socialFunds.name as keyof typeof socialFundsData] || f.socialFunds.name) : 'General'})`,
+      raw: f
+    }));
+    otherIncomes.forEach(o => list.push({
+      id: o.id.toString(), category: 'ingreso', type: 'other-income',
+      date: new Date(o.date), amount: o.amount,
+      user: o.user?.name || o.user?.lastname || 'Desconocido',
+      description: o.description || 'Otro Ingreso', raw: o
+    }));
+    
+    withdrawals.forEach(w => list.push({
+      id: w.id.toString(), category: 'egreso', type: 'withdrawal',
+      date: new Date(w.date), amount: w.amount,
+      user: w.user?.name || w.user?.lastname || 'Desconocido',
+      description: 'Retiro', raw: w
+    }));
+    administrativeExpenses.forEach(a => list.push({
+      id: a.id || '', category: 'egreso', type: 'administrative',
+      date: new Date(a.date), amount: a.amount,
+      user: '-',
+      description: a.description || 'Gasto Administrativo', raw: a
+    }));
+    payouts.forEach(p => list.push({
+      id: p.id.toString(), category: 'egreso', type: 'payout',
+      date: new Date(p.date), amount: p.amount,
+      user: p.user?.name || p.user?.lastname || 'Desconocido',
+      description: 'Pago a Ahorrista', raw: p
+    }));
+    socialFundsExpenses.forEach(s => list.push({
+      id: s.id.toString(), category: 'egreso', type: 'social-expense',
+      date: new Date(s.date), amount: s.amount,
+      user: '-',
+      description: s.description || 'Gasto Fondo Social', raw: s
+    }));
+    otherExpenses.forEach(o => list.push({
+      id: o.id.toString(), category: 'egreso', type: 'other-expense',
+      date: new Date(o.date), amount: o.amount,
+      user: '-',
+      description: o.description || 'Otro Gasto', raw: o
+    }));
+
+    return list.sort((a, b) => b.date.getTime() - a.date.getTime());
+  }, [deposits, funds, otherIncomes, withdrawals, administrativeExpenses, payouts, socialFundsExpenses, otherExpenses]);
+
+  const filteredOperations = useMemo(() => {
+    if (filterCategory === 'all') return allOperations;
+    return allOperations.filter(op => op.category === filterCategory);
+  }, [allOperations, filterCategory]);
+
+  const totalIncome = allOperations.filter(op => op.category === 'ingreso').reduce((sum, op) => sum + op.amount, 0);
+  const totalExpense = allOperations.filter(op => op.category === 'egreso').reduce((sum, op) => sum + op.amount, 0);
+
+  const getTypeBadge = (type: OperationType) => {
+    switch (type) {
+      case 'deposit': return <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 border-emerald-200">Depósito</Badge>;
+      case 'fund': return <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100 border-blue-200">Fondo</Badge>;
+      case 'other-income': return <Badge className="bg-cyan-100 text-cyan-700 hover:bg-cyan-100 border-cyan-200">Otros Ingresos</Badge>;
+      case 'withdrawal': return <Badge className="bg-orange-100 text-orange-700 hover:bg-orange-100 border-orange-200">Retiro</Badge>;
+      case 'administrative': return <Badge className="bg-slate-100 text-slate-700 hover:bg-slate-100 border-slate-200">Gasto Admin</Badge>;
+      case 'payout': return <Badge className="bg-purple-100 text-purple-700 hover:bg-purple-100 border-purple-200">Pago Interés</Badge>;
+      case 'social-expense': return <Badge className="bg-indigo-100 text-indigo-700 hover:bg-indigo-100 border-indigo-200">Gasto Social</Badge>;
+      case 'other-expense': return <Badge className="bg-rose-100 text-rose-700 hover:bg-rose-100 border-rose-200">Otro Gasto</Badge>;
+      default: return <Badge variant="outline">Operación</Badge>;
     }
-
-    return (
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead>Usuario</TableHead>
-            <TableHead>Monto</TableHead>
-            <TableHead>Fecha</TableHead>
-            <TableHead>Descripción</TableHead>
-            <TableHead>Acciones</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {data.map((item) => (
-            <TableRow key={item.id}>
-              <TableCell>{item.user || '-'}</TableCell>
-              <TableCell className="font-semibold text-green-600">
-                {formatCurrency(item.amount)}
-              </TableCell>
-              <TableCell>{item.date}</TableCell>
-              <TableCell>{item.description || '-'}</TableCell>
-              <TableCell>
-                <DropdownMenu modal={false}>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                      <MoreVertical className="w-4 h-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    {/* <DropdownMenuItem className="cursor-pointer">
-                      <Edit className="w-4 h-4 mr-2" />
-                      Editar
-                    </DropdownMenuItem> */}
-                    <DropdownMenuItem
-                      className="cursor-pointer text-red-600"
-                      onSelect={(e) => {
-                        e.preventDefault();
-                        if (item.id) {
-                          if (type === 'deposits') {
-                            confirmDelete(item.id, 'deposit');
-                          } else if (type === 'funds') {
-                            confirmDelete(item.id, 'fund');
-                          } else if (type === 'others') {
-                            confirmDelete(item.id, 'other');
-                          } else if (type === 'withdrawals') {
-                            confirmDelete(item.id, 'withdrawal');
-                          } else if (type === 'administrative') {
-                            confirmDelete(item.id, 'administrative');
-                          } else if (type === 'payouts') {
-                            confirmDelete(item.id, 'payout');
-                          } else if (type === 'social') {
-                            confirmDelete(item.id, 'social-expense');
-                          } else if (type === 'expense-others') {
-                            confirmDelete(item.id, 'other-expense');
-                          }
-                        }
-                      }}
-                    >
-                      <Trash2 className="w-4 h-4 mr-2" />
-                      Eliminar
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    );
   };
 
   return (
     <>
-      <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>¿Confirmar eliminación?</DialogTitle>
-            <DialogDescription>
-              Esta acción no se puede deshacer. La operación será eliminada permanentemente.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setDeleteConfirmOpen(false);
-                setDepositToDelete(null);
-                setFundToDelete(null);
-                setOtherIncomeToDelete(null);
-                setWithdrawalToDelete(null);
-                setAdministrativeToDelete(null);
-                setPayoutToDelete(null);
-                setSocialFundExpenseToDelete(null);
-                setOtherExpenseToDelete(null);
-              }}
-            >
-              Cancelar
-            </Button>
-            <Button
-              variant="destructive"
-              onClick={
-                depositToDelete ? handleDeleteDeposit :
-                fundToDelete ? handleDeleteFund :
-                otherIncomeToDelete ? handleDeleteOtherIncome :
-                withdrawalToDelete ? handleDeleteWithdrawal :
-                administrativeToDelete ? handleDeleteAdministrative :
-                payoutToDelete ? handleDeletePayout :
-                socialFundExpenseToDelete ? handleDeleteSocialFundExpense :
-                handleDeleteOtherExpense
-              }
-            >
-              Eliminar
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
       <div className="space-y-6">
-        <Card>
-        <CardHeader className="pb-3">
-          <div className="flex items-center gap-2">
-            <Badge variant="secondary" className="uppercase tracking-wide text-[10px]">Paso 5</Badge>
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
-              <CardTitle className="text-base">Operaciones</CardTitle>
-              <CardDescription>Registro de ingresos y egresos de la sesión</CardDescription>
+                 <div className="flex items-center gap-2 mb-1">
+                    <Badge variant="secondary" className="uppercase tracking-wide text-[10px]">Paso 5</Badge>
+                 </div>
+                <h2 className="text-2xl font-bold tracking-tight">Operaciones del Día</h2>
+                <p className="text-muted-foreground">Gestiona todos los movimientos de caja de la asamblea actual.</p>
             </div>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <Tabs defaultValue="ingresos" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="ingresos" className="flex items-center gap-2">
-                <TrendingUp className="w-4 h-4" />
-                Ingresos
-              </TabsTrigger>
-              <TabsTrigger value="egresos" className="flex items-center gap-2">
-                <TrendingDown className="w-4 h-4" />
-                Egresos
-              </TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="ingresos" className="space-y-4">
-              <TooltipProvider>
-                <div className="flex flex-wrap gap-2">
-                  {ingresoTypes.map((type) => (
-                    <Tooltip key={type.value}>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant={selectedIngresoType === type.value ? "default" : "outline"}
-                          onClick={() => setSelectedIngresoType(type.value as OperationType)}
-                          className="flex items-center gap-2"
-                        >
-                          <DollarSign className="w-4 h-4" />
-                          {type.label}
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>{type.description}</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  ))}
-                </div>
-              </TooltipProvider>
-
-              {selectedIngresoType ? (
-                <div className="rounded-md border bg-card">
-                  <div className="p-3 border-b flex justify-between items-center">
-                    <div>
-                      <div className="text-sm font-medium text-foreground">
-                        {ingresoTypes.find(t => t.value === selectedIngresoType)?.label}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        Operaciones registradas
-                      </div>
+            
+            <div className="flex items-center gap-3">
+                 <div className="bg-card border rounded-lg px-4 py-2 flex items-center gap-4 shadow-sm">
+                    <div className="flex flex-col">
+                        <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">Ingresos</span>
+                        <span className="text-sm font-semibold text-emerald-600">{formatCurrency(totalIncome)}</span>
                     </div>
-                    {/* <Button size="sm" className="gap-2">
-                      <Plus className="w-4 h-4" />
-                      Agregar
-                    </Button> */}
+                    <div className="h-8 w-[1px] bg-border mx-1 my-[-8px]"></div>
+                    <div className="flex flex-col">
+                        <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">Egresos</span>
+                        <span className="text-sm font-semibold text-rose-600">{formatCurrency(totalExpense)}</span>
+                    </div>
+                 </div>
+
+                <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                        <Button className="gap-2 shadow-md">
+                            <Plus className="w-4 h-4" />
+                            Nueva Operación
+                        </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-56">
+                        <DropdownMenuLabel>Seleccionar Tipo</DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        
+                        <DropdownMenuSub>
+                            <DropdownMenuSubTrigger className="gap-2 text-emerald-700">
+                                <ArrowUpRight className="w-4 h-4" />
+                                Ingresos
+                            </DropdownMenuSubTrigger>
+                            <DropdownMenuSubContent>
+                                <DropdownMenuItem onClick={() => { setActiveDialog('deposit'); setOpenDialog(true); }}>
+                                    Depósito
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => { setActiveDialog('fund'); setOpenDialog(true); }}>
+                                    Fondo Social
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => { setActiveDialog('other-income'); setOpenDialog(true); }}>
+                                    Otros
+                                </DropdownMenuItem>
+                            </DropdownMenuSubContent>
+                        </DropdownMenuSub>
+
+                        <DropdownMenuSub>
+                            <DropdownMenuSubTrigger className="gap-2 text-rose-700">
+                                <ArrowDownLeft className="w-4 h-4" />
+                                Egresos
+                            </DropdownMenuSubTrigger>
+                            <DropdownMenuSubContent>
+                                <DropdownMenuItem onClick={() => { setActiveDialog('withdrawal'); setOpenDialog(true); }}>
+                                    Retiro
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => { setActiveDialog('administrative'); setOpenDialog(true); }}>
+                                    Gasto Administrativo
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => { setActiveDialog('payout'); setOpenDialog(true); }}>
+                                    Pago a Ahorrista
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => { setActiveDialog('social-expense'); setOpenDialog(true); }}>
+                                    Gasto Social
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => { setActiveDialog('other-expense'); setOpenDialog(true); }}>
+                                    Otros
+                                </DropdownMenuItem>
+                            </DropdownMenuSubContent>
+                        </DropdownMenuSub>
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            </div>
+        </div>
+
+        <Card className="shadow-sm border-muted/60">
+            <CardHeader className="pb-2 border-b bg-muted/20">
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                        <Button 
+                            variant={filterCategory === 'all' ? 'secondary' : 'ghost'} 
+                            size="sm" 
+                            onClick={() => setFilterCategory('all')}
+                            className="h-8"
+                        >
+                            Todas
+                        </Button>
+                        <Button 
+                            variant={filterCategory === 'ingreso' ? 'secondary' : 'ghost'} 
+                            size="sm" 
+                            onClick={() => setFilterCategory('ingreso')}
+                            className="h-8 text-emerald-700"
+                        >
+                            Ingresos
+                        </Button>
+                        <Button 
+                            variant={filterCategory === 'egreso' ? 'secondary' : 'ghost'} 
+                            size="sm" 
+                            onClick={() => setFilterCategory('egreso')}
+                            className="h-8 text-rose-700"
+                        >
+                            Egresos
+                        </Button>
+                    </div>
                     
-                    {
-                      ingresoTypes.find(t => t.value === selectedIngresoType)?.label === 'Depósitos' && (
-                        <DepositsDialog open={openDialog} onOpenChange={setOpenDialog}>
-                              <DepositForm defaultDate={new Date(assemblyRun?.startAt ?? Date.now())} scheduleRunId={assemblyRun?.id} addDeposit={addDeposit} setOpenDialog={setOpenDialog} editDeposit={editDeposit} setEditDeposit={setEditDeposit} />
-                            </DepositsDialog>
-                      )
-                    }
-                    {
-                      ingresoTypes.find(t => t.value === selectedIngresoType)?.label === 'Fondos' && (
-                       <LegalsDialog open={openDialog} onOpenChange={setOpenDialog}>
-                                 <SocialLegalFundsForm
-                                   defaultDate={new Date(assemblyRun?.startAt ?? Date.now())}
-                                   setOpenDialog={setOpenDialog}
-                                   socialFundsTransactions={funds}
-                                   setSocialFundsTransactions={setFunds}
-                                   scheduleRunId={assemblyRun?.id}
-                                 />
-                               </LegalsDialog>
-                      )
-                    }
-                    {
-                      ingresoTypes.find(t => t.value === selectedIngresoType)?.label === 'Otros' && (
-                        <OthersDialog open={openDialog} onOpenChange={setOpenDialog}>
-                          <OtherIncomeForm
-                            setOpenDialog={setOpenDialog}
-                            otherIncomes={otherIncomes}
-                            setOtherIncomes={setOtherIncomes}
-                            defaultDate={new Date(assemblyRun?.startAt ?? Date.now())}
-                            scheduleRunId={assemblyRun?.id}
-                          />
-                        </OthersDialog>
-                      )
-                    }
-                  </div>
-                  <div className="p-3">
-                    { selectedIngresoType === 'deposits'
-                      ? renderTable(
-                          deposits.map(d => ({
-                            id: d.id || '',
-                            user: d.user?.name || d.user?.lastname || '-',
-                            amount: d.amount,
-                            date: new Date(d.date).toLocaleDateString("es-PE", { timeZone: "UTC" }),
-                            description: 'Depósito'
-                          })),
-                          selectedIngresoType
-                        )
-                      :  selectedIngresoType === 'funds' ? renderTable(
-                          funds.map(f => ({
-                            id: f.id || '',
-                            user: f.user?.name || f.user?.lastname || '-',
-                            amount: f.amount,
-                            date: new Date(f.date).toLocaleDateString("es-PE", { timeZone: "UTC" }),
-                            description: f.description ? f.description  +  " '"+ socialFundsData[
-                                                      f.socialFunds.name as keyof typeof socialFundsData
-                                                    ] + "'": 'Fondo social'
-                          })),
-                          selectedIngresoType
-                        )
-                      : selectedIngresoType === 'others' ? renderTable(
-                          otherIncomes.map(o => ({
-                            id: o.id.toString(),
-                            user: o.user?.name || o.user?.lastname || '-',
-                            amount: o.amount,
-                            date: new Date(o.date).toLocaleDateString("es-PE", { timeZone: "UTC" }),
-                            description: o.description || 'Otro ingreso'
-                          })),
-                          selectedIngresoType
-                        )
-                      : renderTable(mockData[selectedIngresoType], selectedIngresoType)
-                    }
-                   
-    
-                  </div>
-                </div>
-              ) : (
-                <div className="text-center py-8 text-muted-foreground">
-                  <FileText className="w-12 h-12 mx-auto mb-4 text-muted-foreground/50" />
-                  <p className="text-lg font-medium">Selecciona un tipo de operación</p>
-                  <p className="text-sm">Haz clic en uno de los botones arriba para ver las transacciones registradas</p>
-                </div>
-              )}
-            </TabsContent>
-
-            <TabsContent value="egresos" className="space-y-4">
-              <TooltipProvider>
-                <div className="flex flex-wrap gap-2">
-                  {egresoTypes.map((type) => (
-                    <Tooltip key={type.value}>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant={selectedEgresoType === type.value ? "default" : "outline"}
-                          onClick={() => setSelectedEgresoType(type.value as OperationType)}
-                          className="flex items-center gap-2"
-                        >
-                          <DollarSign className="w-4 h-4" />
-                          {type.label}
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>{type.description}</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  ))}
-                </div>
-              </TooltipProvider>
-
-              {selectedEgresoType ? (
-                <div className="rounded-md border bg-card">
-                  <div className="p-3 border-b flex justify-between items-center">
-                    <div>
-                      <div className="text-sm font-medium text-foreground">
-                        {egresoTypes.find(t => t.value === selectedEgresoType)?.label}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        Operaciones registradas
-                      </div>
+                    <div className="text-xs text-muted-foreground flex items-center gap-1">
+                        <Filter className="w-3 h-3" />
+                        <span>Mostrando {filteredOperations.length} operaciones</span>
                     </div>
-                    {
-                      egresoTypes.find(t => t.value === selectedEgresoType)?.label === 'Retiros' && (
-                        <WithdrawalsDialog open={openDialog} onOpenChange={setOpenDialog}>
-                          <WithdrawForm
-                            setOpenDialog={setOpenDialog}
-                            withdrawals={withdrawals}
-                            setWithdrawals={setWithdrawals}
-                            defaultDate={new Date(assemblyRun?.startAt ?? Date.now())}
-                            scheduleRunId={assemblyRun?.id}
-                          />
-                        </WithdrawalsDialog>
-                      )
-                    }
-                    {
-                      egresoTypes.find(t => t.value === selectedEgresoType)?.label === 'Gastos Administrativos' && (
-                        <AdministrativeDialog open={openDialog} onOpenChange={setOpenDialog}>
-                          <AdminExpenseForm
-                            setOpenDialog={setOpenDialog}
-                            administrativeExpenses={administrativeExpenses}
-                            setAdministrativeExpenses={setAdministrativeExpenses}
-                            defaultDate={new Date(assemblyRun?.startAt ?? Date.now())}
-                            scheduleRunId={assemblyRun?.id}
-                          />
-                        </AdministrativeDialog>
-                      )
-                    }
-                    {
-                      egresoTypes.find(t => t.value === selectedEgresoType)?.label === 'Pagos a los ahorristas' && (
-                        <PayoutsDialog open={openDialog} onOpenChange={setOpenDialog}>
-                          <InterestPaymentForm
-                            setOpenDialog={setOpenDialog}
-                            payouts={payouts}
-                            setPayouts={setPayouts}
-                            defaultDate={new Date(assemblyRun?.startAt ?? Date.now())}
-                            scheduleRunId={assemblyRun?.id}
-                          />
-                        </PayoutsDialog>
-                      )
-                    }
-                    {
-                      egresoTypes.find(t => t.value === selectedEgresoType)?.label === 'Fondos Social' && (
-                        <SocialDialog open={openDialog} onOpenChange={setOpenDialog}>
-                          <SocialLegalFundsExpenseForm
-                            socialFunds={socialFunds}
-                            setOpenDialog={setOpenDialog}
-                            socialFundsTransactions={socialFundsExpenses}
-                            setSocialFundsTransactions={setSocialFundsExpenses}
-                            defaultDate={new Date(assemblyRun?.startAt ?? Date.now())}
-                            scheduleRunId={assemblyRun?.id}
-                          />
-                        </SocialDialog>
-                      )
-                    }
-                    {
-                      egresoTypes.find(t => t.value === selectedEgresoType)?.label === 'Otros' && (
-                        <OthersExpenseDialog open={openDialog} onOpenChange={setOpenDialog}>
-                          <OtherExpenseForm
-                            setOpenDialog={setOpenDialog}
-                            otherExpenses={otherExpenses}
-                            setOtherExpenses={setOtherExpenses}
-                            defaultDate={new Date(assemblyRun?.startAt ?? Date.now())}
-                            scheduleRunId={assemblyRun?.id}
-                          />
-                        </OthersExpenseDialog>
-                      )
-                    }
-                  </div>
-                  <div className="p-3">
-                    { selectedEgresoType === 'withdrawals'
-                      ? renderTable(
-                          withdrawals.map(w => ({
-                            id: w.id.toString(),
-                            user: w.user?.name || w.user?.lastname || '-',
-                            amount: w.amount,
-                            date: new Date(w.date).toLocaleDateString("es-PE", { timeZone: "UTC" }),
-                            description: w.description || 'Retiro'
-                          })),
-                          selectedEgresoType
-                        )
-                      : selectedEgresoType === 'administrative' ? renderTable(
-                          administrativeExpenses.map(a => ({
-                            id: a.id,
-                            user: a.user?.name || a.user?.lastname || '-',
-                            amount: a.amount,
-                            date: new Date(a.date).toLocaleDateString("es-PE", { timeZone: "UTC" }),
-                            description: a.description || 'Gasto administrativo'
-                          })),
-                          selectedEgresoType
-                        )
-                      : selectedEgresoType === 'payouts' ? renderTable(
-                          payouts.map(p => ({
-                            id: p.id.toString(),
-                            user: p.user?.name || p.user?.lastname || '-',
-                            amount: p.amount,
-                            date: new Date(p.date).toLocaleDateString("es-PE", { timeZone: "UTC" }),
-                            description: p.description || 'Pago de intereses'
-                          })),
-                          selectedEgresoType
-                        )
-                      : selectedEgresoType === 'social' ? renderTable(
-                          socialFundsExpenses.map(s => ({
-                            id: s.id.toString(),
-                            user: s.user?.name || s.user?.lastname || '-',
-                            amount: s.amount,
-                            date: new Date(s.date).toLocaleDateString("es-PE", { timeZone: "UTC" }),
-                            description: s.description ? s.description + " '" + socialFundsData[s.socialFunds.name as keyof typeof socialFundsData] + "'" : 'Egreso de fondos'
-                          })),
-                          selectedEgresoType
-                        )
-                      : selectedEgresoType === 'expense-others' ? renderTable(
-                          otherExpenses.map(o => ({
-                            id: o.id.toString(),
-                            user: o.user?.name || o.user?.lastname || '-',
-                            amount: o.amount,
-                            date: new Date(o.date).toLocaleDateString("es-PE", { timeZone: "UTC" }),
-                            description: o.description || 'Otro egreso'
-                          })),
-                          selectedEgresoType
-                        )
-                      : renderTable(mockData[selectedEgresoType], selectedEgresoType)
-                    }
-                  </div>
                 </div>
-              ) : (
-                <div className="text-center py-8 text-muted-foreground">
-                  <FileText className="w-12 h-12 mx-auto mb-4 text-muted-foreground/50" />
-                  <p className="text-lg font-medium">Selecciona un tipo de operación</p>
-                  <p className="text-sm">Haz clic en uno de los botones arriba para ver las transacciones registradas</p>
-                </div>
-              )}
-            </TabsContent>
-          </Tabs>
-        </CardContent>
+            </CardHeader>
+            <CardContent className="p-0">
+                <Table>
+                    <TableHeader>
+                        <TableRow className="hover:bg-transparent">
+                            <TableHead className="w-[120px]">Fecha</TableHead>
+                            <TableHead className="w-[100px]">Tipo</TableHead>
+                            <TableHead>Descripción</TableHead>
+                            <TableHead>Usuario / Beneficiario</TableHead>
+                            <TableHead className="text-right">Monto</TableHead>
+                            <TableHead className="w-[50px]"></TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {filteredOperations.length === 0 ? (
+                            <TableRow>
+                                <TableCell colSpan={6} className="h-32 text-center text-muted-foreground">
+                                    No hay operaciones registradas en esta categoría.
+                                </TableCell>
+                            </TableRow>
+                        ) : (
+                            filteredOperations.map((op) => (
+                                <TableRow key={`${op.type}-${op.id}`} className="hover:bg-muted/30">
+                                    <TableCell className="text-xs text-muted-foreground font-medium">
+                                        {op.date.toLocaleDateString("es-PE", { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: "UTC" })}
+                                    </TableCell>
+                                    <TableCell>
+                                        {getTypeBadge(op.type)}
+                                    </TableCell>
+                                    <TableCell className="font-medium text-sm text-foreground/80">
+                                        {op.description}
+                                    </TableCell>
+                                    <TableCell className="text-sm">
+                                        {op.user}
+                                    </TableCell>
+                                    <TableCell className={cn(
+                                        "text-right font-semibold",
+                                        op.category === 'ingreso' ? "text-emerald-600" : "text-rose-600"
+                                    )}>
+                                        {op.category === 'ingreso' ? '+' : '-'}{formatCurrency(op.amount)}
+                                    </TableCell>
+                                    <TableCell>
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button variant="ghost" className="h-8 w-8 p-0">
+                                                    <MoreVertical className="h-4 w-4" />
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end">
+                                                <DropdownMenuItem 
+                                                    className="text-red-600 cursor-pointer"
+                                                    onClick={() => confirmDelete(op.id, op.type)}
+                                                >
+                                                    <Trash2 className="w-4 h-4 mr-2" />
+                                                    Eliminar
+                                                </DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
+                                    </TableCell>
+                                </TableRow>
+                            ))
+                        )}
+                    </TableBody>
+                </Table>
+            </CardContent>
         </Card>
       </div>
+
+      {deleteConfirmOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="fixed inset-0 bg-black/50" onClick={() => setDeleteConfirmOpen(false)}></div>
+          <div className="bg-card p-6 rounded-lg shadow-lg max-w-md w-full mx-4 relative z-10 border">
+            <div className="mb-4">
+              <h2 className="text-lg font-semibold">¿Estás completamente seguro?</h2>
+              <p className="text-sm text-muted-foreground">
+                Esta acción no se puede deshacer. Esto eliminará permanentemente la operación y ajustará el balance de caja.
+              </p>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setDeleteConfirmOpen(false)}>Cancelar</Button>
+              <Button variant="destructive" onClick={handleDelete} className="gap-2">
+                <Trash2 className="w-4 h-4" />
+                Eliminar
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Dialogs usando Dialog directamente como en Payments.tsx */}
+      {openDialog && activeDialog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="fixed inset-0 bg-black/50" onClick={closeDialog}></div>
+          <div className="bg-card p-6 rounded-lg shadow-lg max-w-md w-full mx-4 relative z-10 border">
+            {activeDialog === 'deposit' && (
+              <>
+                <div className="mb-4">
+                  <h2 className="text-lg font-semibold">Depósito a cuenta de ahorros</h2>
+                  <p className="text-sm text-muted-foreground">Ingresa los detalles del depósito.</p>
+                </div>
+                <DepositForm defaultDate={new Date(assemblyRun?.startAt ?? Date.now())} scheduleRunId={assemblyRun?.id} addDeposit={addDeposit} setOpenDialog={closeDialog} editDeposit={editDeposit} setEditDeposit={setEditDeposit} />
+              </>
+            )}
+            {activeDialog === 'fund' && (
+              <>
+                <div className="mb-4">
+                  <h2 className="text-lg font-semibold">Fondo Social</h2>
+                  <p className="text-sm text-muted-foreground">Ingresa los detalles del fondo social.</p>
+                </div>
+                <SocialLegalFundsForm defaultDate={new Date(assemblyRun?.startAt ?? Date.now())} setOpenDialog={closeDialog} socialFundsTransactions={funds} setSocialFundsTransactions={setFunds} scheduleRunId={assemblyRun?.id} />
+              </>
+            )}
+            {activeDialog === 'other-income' && (
+              <>
+                <div className="mb-4">
+                  <h2 className="text-lg font-semibold">Otro Ingreso</h2>
+                  <p className="text-sm text-muted-foreground">Ingresa los detalles del ingreso.</p>
+                </div>
+                <OtherIncomeForm setOpenDialog={closeDialog} otherIncomes={otherIncomes} setOtherIncomes={setOtherIncomes} defaultDate={new Date(assemblyRun?.startAt ?? Date.now())} scheduleRunId={assemblyRun?.id} />
+              </>
+            )}
+            {activeDialog === 'withdrawal' && (
+              <>
+                <div className="mb-4">
+                  <h2 className="text-lg font-semibold">Retiro</h2>
+                  <p className="text-sm text-muted-foreground">Ingresa los detalles del retiro.</p>
+                </div>
+                <WithdrawForm setOpenDialog={closeDialog} withdrawals={withdrawals} setWithdrawals={setWithdrawals} defaultDate={new Date(assemblyRun?.startAt ?? Date.now())} scheduleRunId={assemblyRun?.id} />
+              </>
+            )}
+            {activeDialog === 'administrative' && (
+              <>
+                <div className="mb-4">
+                  <h2 className="text-lg font-semibold">Gasto Administrativo</h2>
+                  <p className="text-sm text-muted-foreground">Ingresa los detalles del gasto.</p>
+                </div>
+                <AdminExpenseForm setOpenDialog={closeDialog} administrativeExpenses={administrativeExpenses} setAdministrativeExpenses={setAdministrativeExpenses} defaultDate={new Date(assemblyRun?.startAt ?? Date.now())} scheduleRunId={assemblyRun?.id} />
+              </>
+            )}
+            {activeDialog === 'payout' && (
+              <>
+                <div className="mb-4">
+                  <h2 className="text-lg font-semibold">Pago a Ahorrista</h2>
+                  <p className="text-sm text-muted-foreground">Ingresa los detalles del pago.</p>
+                </div>
+                <InterestPaymentForm setOpenDialog={closeDialog} payouts={payouts} setPayouts={setPayouts} defaultDate={new Date(assemblyRun?.startAt ?? Date.now())} scheduleRunId={assemblyRun?.id} />
+              </>
+            )}
+            {activeDialog === 'social-expense' && (
+              <>
+                <div className="mb-4">
+                  <h2 className="text-lg font-semibold">Gasto Fondo Social</h2>
+                  <p className="text-sm text-muted-foreground">Ingresa los detalles del gasto.</p>
+                </div>
+                <SocialLegalFundsExpenseForm socialFunds={socialFunds} setOpenDialog={closeDialog} socialFundsTransactions={socialFundsExpenses} setSocialFundsTransactions={setSocialFundsExpenses} defaultDate={new Date(assemblyRun?.startAt ?? Date.now())} scheduleRunId={assemblyRun?.id} />
+              </>
+            )}
+            {activeDialog === 'other-expense' && (
+              <>
+                <div className="mb-4">
+                  <h2 className="text-lg font-semibold">Otro Gasto</h2>
+                  <p className="text-sm text-muted-foreground">Ingresa los detalles del gasto.</p>
+                </div>
+                <OtherExpenseForm setOpenDialog={closeDialog} otherExpenses={otherExpenses} setOtherExpenses={setOtherExpenses} defaultDate={new Date(assemblyRun?.startAt ?? Date.now())} scheduleRunId={assemblyRun?.id} />
+              </>
+            )}
+          </div>
+        </div>
+      )}
     </>
   );
 }

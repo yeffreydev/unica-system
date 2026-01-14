@@ -3,15 +3,57 @@ import { useAssembly } from "@/app/(app)/assembly/AssemblyContext";
 import { assemblySteps } from "../steps";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight, Wallet } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { ChevronLeft, ChevronRight, Wallet, CheckCircle, Loader2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { toast } from "@/hooks/use-toast";
 
 export default function StepLayout({ children }: { children: React.ReactNode }) {
-    const { 
-        assemblyState, 
-        // startAssembly, 
-        endAssembly, 
-        setCurrentStep, 
+    const {
+        assemblyState,
+        assembly,
+        endAssembly,
+        setCurrentStep,
       } = useAssembly();
+
+    const router = useRouter();
+    const [confirmModalOpen, setConfirmModalOpen] = useState(false);
+    const [isFinishing, setIsFinishing] = useState(false);
+
+    const handleFinalizeAssembly = () => {
+      setConfirmModalOpen(true);
+    };
+
+    const confirmFinalizeAssembly = async () => {
+      if (!assembly?.lastRun?.id) {
+        toast({
+          title: "Error",
+          description: "No se encontró la asamblea activa.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      setIsFinishing(true);
+      try {
+        await endAssembly(assembly.lastRun.id);
+        setConfirmModalOpen(false);
+        
+        // Show success modal briefly before redirecting
+        setTimeout(() => {
+          router.push('/assembly');
+        }, 1500);
+      } catch (error) {
+        console.error('Error finishing assembly:', error);
+        toast({
+          title: "Error",
+          description: "No se pudo finalizar la asamblea. Intenta de nuevo.",
+          variant: "destructive",
+        });
+        setIsFinishing(false);
+      }
+    };
 
 
   const handleNextStep = () => {
@@ -68,28 +110,31 @@ export default function StepLayout({ children }: { children: React.ReactNode }) 
       <Card>
         <CardHeader className="py-4">
           {/* Balance Display */}
-          <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-emerald-50 via-emerald-25 to-emerald-100 dark:from-emerald-950/50 dark:via-emerald-900/30 dark:to-emerald-800/20 border border-emerald-200/50 dark:border-emerald-800/30 shadow-sm mb-4">
-            <div className="absolute inset-0 bg-gradient-to-r from-emerald-400/10 to-transparent"></div>
-            <div className="relative p-4 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="p-2 rounded-lg bg-emerald-100 dark:bg-emerald-900/50 shadow-sm">
-                  <Wallet className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-                </div>
-                <div>
-                  <div className="text-xs font-medium text-emerald-700 dark:text-emerald-300 uppercase tracking-wider">
-                    Balance Actual
+          <div className="relative border rounded-xl mb-4 overflow-hidden bg-gradient-to-br from-background to-muted/30 shadow-sm">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+            <div className="relative px-6 py-5">
+              <div className="flex items-start justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-lg bg-primary/10 ring-1 ring-primary/20">
+                    <Wallet className="h-5 w-5 text-primary" />
                   </div>
-                  <div className="text-sm text-emerald-600 dark:text-emerald-400">
-                    Estado financiero en tiempo real
+                  <div>
+                    <div className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">
+                      Balance Actual
+                    </div>
+                    <div className="text-xs text-muted-foreground/80">
+                      Fondos disponibles
+                    </div>
                   </div>
                 </div>
-              </div>
-              <div className="text-right">
-                <div className="text-3xl font-bold text-emerald-800 dark:text-emerald-200 tabular-nums">
-                  S/ 125,450
-                </div>
-                <div className="text-xs text-emerald-600 dark:text-emerald-400 mt-0.5">
-                  Fondos disponibles
+                <div className="text-right">
+                  <div className="text-4xl tabular-nums tracking-tight mb-1 bg-gradient-to-br from-foreground to-foreground/70 bg-clip-text text-transparent">
+                    S/ 125,450
+                  </div>
+                  <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-primary/10 text-primary">
+                    <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
+                    <span className="text-[10px] font-medium">En vivo</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -138,18 +183,15 @@ export default function StepLayout({ children }: { children: React.ReactNode }) 
 
             <div className="flex space-x-2">
               {assemblyState.currentStep === assemblySteps.length ? (
-                <Button 
+                <Button
                   variant="default"
                   className="bg-green-600 hover:bg-green-700 text-white"
-                  onClick={() => {
-                    alert('¡Asamblea completada exitosamente!');
-                    endAssembly();
-                  }}
+                  onClick={handleFinalizeAssembly}
                 >
                   Finalizar Asamblea
                 </Button>
               ) : (
-                <Button 
+                <Button
                   onClick={handleNextStep}
                   className="flex items-center space-x-2"
                 >
@@ -166,6 +208,55 @@ export default function StepLayout({ children }: { children: React.ReactNode }) 
       <div>
         {children}
       </div>
+
+      {/* Confirmation Dialog */}
+      <Dialog open={confirmModalOpen} onOpenChange={setConfirmModalOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader className="space-y-4">
+            <div className="mx-auto w-16 h-16 rounded-full bg-gradient-to-br from-green-500/20 to-green-600/20 flex items-center justify-center ring-4 ring-green-500/10">
+              <CheckCircle className="w-8 h-8 text-green-600" />
+            </div>
+            <DialogTitle className="text-center text-2xl font-bold">
+              ¿Finalizar Asamblea?
+            </DialogTitle>
+            <DialogDescription className="text-center text-base">
+              Estás a punto de finalizar la asamblea. Esta acción marcará la asamblea como completada y no podrás realizar más cambios.
+            </DialogDescription>
+            <div className="mt-4 p-4 bg-muted rounded-lg">
+              <p className="text-sm font-medium text-foreground">
+                ¿Estás seguro de continuar?
+              </p>
+            </div>
+          </DialogHeader>
+          <DialogFooter className="flex-col sm:flex-row gap-2 sm:gap-0">
+            <Button 
+              variant="outline" 
+              onClick={() => setConfirmModalOpen(false)}
+              disabled={isFinishing}
+              className="w-full sm:w-auto"
+            >
+              Cancelar
+            </Button>
+            <Button 
+              onClick={confirmFinalizeAssembly}
+              disabled={isFinishing}
+              className="w-full sm:w-auto bg-green-600 hover:bg-green-700"
+            >
+              {isFinishing ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Finalizando...
+                </>
+              ) : (
+                <>
+                  <CheckCircle className="mr-2 h-4 w-4" />
+                  Finalizar Asamblea
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   </div>
 }

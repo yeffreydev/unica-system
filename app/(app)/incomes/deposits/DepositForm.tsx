@@ -34,7 +34,7 @@ export const DepositForm = ({
   scheduleRunId?: string;
   defaultDate?: Date;
 }) => {
-  const { users, formCloseModalRef } = useContext(AppContext);
+  const { users } = useContext(AppContext);
   const [userSelected, setUserSelected] = useState<IUser | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const isEdit = !!editDeposit?.id;
@@ -73,7 +73,6 @@ export const DepositForm = ({
       if (res.data) {
         addDeposit(res.data);
         form.reset();
-        formCloseModalRef?.current?.click();
         setOpenDialog?.(false);
       }
     } catch (e) {

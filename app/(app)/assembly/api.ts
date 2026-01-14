@@ -13,6 +13,11 @@ export const apiStartAssemblySchedule = async () => {
     return response;
 }
 
+export const apiFinishAssembly = async (scheduleRunId: string) => {
+    const response = await apiClient.post(`/schedules/assembly/run/${scheduleRunId}/finish`);
+    return response.data;
+}
+
 export const apiGetAssemblyRun = async (id: string) => {
   const response = await apiClient.get<IAssemblyScheduleRun>(`/schedules/assembly/run/${id}`);
   return response.data;

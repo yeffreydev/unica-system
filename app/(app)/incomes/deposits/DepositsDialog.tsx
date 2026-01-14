@@ -26,7 +26,7 @@ export function DepositsDialog({
   onOpenChange?: (open: boolean) => void;
 }) {
   return (
-    <Dialog open={open} onOpenChange={onOpenChange} modal={false}>
+    <Dialog open={open} onOpenChange={onOpenChange}>
       {!disabledTrigger && (
         <DialogTrigger asChild>
           {isEdit ? (
