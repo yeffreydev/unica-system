@@ -42,14 +42,12 @@ import {
 import apiClient from "@/config/apiClient";
 
 const assemblyFormSchema = z.object({
-  frequencyType: z.enum(["simple", "advanced"], {
-    required_error: "Selecciona un tipo de frecuencia.",
-  }),
-  dayOfMonth: z.coerce.number().min(1).max(31).optional().nullable(),
+  frequencyType: z.enum(["simple", "advanced"]),
+  dayOfMonth: z.number().min(1).max(31).optional().nullable(),
   weekOccurrence: z.string().optional().nullable(),
   weekDay: z.string().optional().nullable(),
-  hour: z.coerce.number().min(0).max(23),
-  minute: z.coerce.number().min(0).max(59),
+  hour: z.number().min(0).max(23),
+  minute: z.number().min(0).max(59),
 });
 
 type AssemblyFormValues = z.infer<typeof assemblyFormSchema>;

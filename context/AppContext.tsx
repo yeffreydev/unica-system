@@ -15,7 +15,7 @@ import { AuthContext } from "./auth/AuthContex";
 
 interface AppContextType {
   users: IUser[];
-  formCloseModalRef: RefObject<HTMLButtonElement> | null;
+  formCloseModalRef: RefObject<HTMLButtonElement | null>;
   setUsers?: (users: IUser[]) => void;
   addUser?: (user: IUser) => void;
   deleteUser?: (id: string) => void;
@@ -24,7 +24,7 @@ interface AppContextType {
 }
 
 const initialState: AppContextType = {
-  formCloseModalRef: null,
+  formCloseModalRef: { current: null },
   users: [],
   setUsers: () => {},
   addUser: () => {},
