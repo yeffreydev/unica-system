@@ -136,13 +136,17 @@ export default function Shares() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {partnerShares.map((user: IPartnerShares) => {
+              {[...partnerShares].sort((a, b) => {
+                const lastNameCompare = (a.lastname || '').localeCompare(b.lastname || '', 'es');
+                if (lastNameCompare !== 0) return lastNameCompare;
+                return (a.name || '').localeCompare(b.name || '', 'es');
+              }).map((user: IPartnerShares) => {
   const shares = user.shares.reduce((sum, share) => sum + share.quantity, 0);
   const totalForUser = user.shares.reduce((sum, share) => sum + (share.quantity * share.price), 0);
                 return (
                   <TableRow key={user.id}>
                     {/* <TableCell className="text-sm">{user.dni}</TableCell> */}
-                    <TableCell className="text-sm font-medium">{`${user.name} ${user.lastname}`}</TableCell>
+                    <TableCell className="text-sm font-medium">{`${user.lastname}, ${user.name}`}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <Badge

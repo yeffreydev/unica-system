@@ -7,6 +7,7 @@ import { useEffect, useMemo, useState } from "react";
 import { AssemblyProgressBanner } from "./components/AssemblyProgressBanner";
 import { NextAssemblyCard } from "./components/NextAssemblyCard";
 import { HistoricalSummary } from "./components/HistoricalSummary";
+import { EmptyAssemblyState } from "./components/EmptyAssemblyState";
 import { ScheduleRunStatusesTypes } from "./types";
 import { Button } from "@/components/ui/button";
 import { Settings } from "lucide-react";
@@ -17,6 +18,7 @@ export default function Assembly() {
    const {
      assemblyState,
      assembly,
+     isAssemblyNotFound,
      startAssembly,
    } = useAssembly();
 
@@ -77,6 +79,11 @@ export default function Assembly() {
      const id = setInterval(tick, 1000);
      return () => clearInterval(id);
    }, [assemblyState.isActive, upcomingDate]);
+
+   // Show empty state if assembly is not found (404)
+   if (isAssemblyNotFound) {
+     return <EmptyAssemblyState />;
+   }
 
    if (!assembly) {
     return null;
@@ -177,10 +184,10 @@ export default function Assembly() {
       />}
       
 
-  {/* Últimas Asambleas */}
+  {/* Últimas Asambleas 
        <HistoricalSummary
         pastAssemblies={pastAssemblies}
-       />
+       />*/}
       </div>
     );
   

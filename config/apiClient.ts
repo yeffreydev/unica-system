@@ -5,6 +5,7 @@ const apiClient = axios.create({
   baseURL: `${appConfig.apiHost}`,
   headers: {
     "Content-Type": "application/json",
+    "X-Tenant-ID": appConfig.tenantId || "",
   },
 });
 

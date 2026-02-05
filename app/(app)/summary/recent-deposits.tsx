@@ -1,4 +1,4 @@
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 interface RecentDeposit {
   id: string;
@@ -48,7 +48,6 @@ export function RecentDeposits({ deposits }: RecentDepositsProps) {
       {deposits.map((deposit) => (
         <div key={deposit.id} className="flex items-center">
           <Avatar className="h-9 w-9">
-            <AvatarImage src={`/avatars/${deposit.user.id}.png`} alt="Avatar" />
             <AvatarFallback className="bg-green-500/10 text-green-600">
               {getInitials(deposit.user.name, deposit.user.lastname)}
             </AvatarFallback>

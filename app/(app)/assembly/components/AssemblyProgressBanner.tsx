@@ -37,15 +37,6 @@ export function AssemblyProgressBanner({
               <span className="text-xs text-muted-foreground">Asamblea</span>
             </div>
             <div className="flex items-center gap-6">
-              <div className="flex items-center gap-3 p-3 rounded-lg bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200/50 dark:border-emerald-800/30">
-                <div className="p-1.5 rounded-md bg-emerald-100 dark:bg-emerald-900/50">
-                  <Wallet className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                </div>
-                <div className="text-right">
-                  <div className="text-xs font-medium text-emerald-700 dark:text-emerald-300 uppercase tracking-wider">Balance</div>
-                  <div className="text-lg font-bold text-emerald-800 dark:text-emerald-200 tabular-nums">S/ 125,450</div>
-                </div>
-              </div>
               <div className="text-right">
                 <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Tiempo transcurrido</div>
                 <div className="text-xl font-bold text-foreground tabular-nums">{elapsed}</div>

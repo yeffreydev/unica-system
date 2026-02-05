@@ -37,7 +37,7 @@ type LoanReq = { id: string; dni: string; name: string; amount: number; months: 
 export default function Loans() {
   const { users } = useContext(AppContext);
   const [creditApplications, setCreditApplications] = useState<ICreditApplication[]>([]);
-  const { assembly } = useAssembly();
+  const { assembly, updateCashBalance } = useAssembly();
   const [lastMonthBalance, setLastMonthBalance] = useState<{
      incomes: {
         deposits: IDeposit[],
@@ -339,6 +339,18 @@ export default function Loans() {
   const currentApplicationsSum  = creditApplications.filter(item => item.status==='pending').reduce((acc,item) => acc + item.amount,0);
   const expenseKeys: (keyof typeof expensesSum)[] = Object.keys(expensesSum) as (keyof typeof expensesSum)[];
   const expensesAmount = expenseKeys.reduce((acc, it) => acc + expensesSum[it], 0) + currentApplicationsSum;
+
+  // Update context balance whenever it changes
+  useEffect(() => {
+    const availableBalance = currentBalance - expensesAmount;
+    updateCashBalance({
+      currentBalance,
+      totalExpenses: expensesAmount,
+      availableBalance,
+      lastUpdated: new Date()
+    });
+  }, [currentBalance, expensesAmount, updateCashBalance]);
+
   return (
    <div className="flex flex-col gap-4">
     <Card>

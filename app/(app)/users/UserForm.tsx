@@ -2,7 +2,7 @@
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 import {
   ChevronLeft,
@@ -24,10 +24,17 @@ import {
 import { Input } from "../../../components/ui/input";
 import { Button } from "../../../components/ui/button";
 import apiClient from "@/config/apiClient";
+import { IUser } from "@/types/IUser";
 
-export const UserForm = () => {
+interface UserFormProps {
+  user?: IUser;
+  onSuccess?: () => void;
+}
+
+export const UserForm = ({ user, onSuccess }: UserFormProps) => {
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const isEditMode = !!user;
 
   const formSchema = z.object({
     dni: z.string().min(8, {
@@ -58,13 +65,26 @@ export const UserForm = () => {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      dni: "",
-      name: "",
-      lastname: "",
-      email: "",
-      phone: "",
+      dni: user?.dni || "",
+      name: user?.name || "",
+      lastname: user?.lastname || "",
+      email: user?.email || "",
+      phone: user?.phone || "",
     },
   });
+
+  // Reset form when user changes (for edit mode)
+  useEffect(() => {
+    if (user) {
+      form.reset({
+        dni: user.dni || "",
+        name: user.name || "",
+        lastname: user.lastname || "",
+        email: user.email || "",
+        phone: user.phone || "",
+      });
+    }
+  }, [user, form]);
 
   async function createPostUser(data: z.infer<typeof formSchema>) {
     setIsSubmitting(true);
@@ -72,7 +92,7 @@ export const UserForm = () => {
       const res = await apiClient.post("/users", data);
       console.log("Respuesta del servidor:", res);
       if (res.status === 201) {
-        if (window) window.location.reload();
+        onSuccess ? onSuccess() : window?.location.reload();
       } else {
         alert("Error al crear usuario");
       }
@@ -84,9 +104,32 @@ export const UserForm = () => {
     }
   }
 
+  async function updateUser(data: z.infer<typeof formSchema>) {
+    if (!user?.id) return;
+    setIsSubmitting(true);
+    try {
+      const res = await apiClient.put(`/users/${user.id}`, data);
+      console.log("Respuesta del servidor:", res);
+      if (res.status === 200) {
+        onSuccess ? onSuccess() : window?.location.reload();
+      } else {
+        alert("Error al actualizar usuario");
+      }
+    } catch (error) {
+      console.error("Error al actualizar usuario:", error);
+      alert("Error al actualizar usuario");
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
   function onSubmit(values: z.infer<typeof formSchema>) {
     console.log(values);
-    createPostUser(values);
+    if (isEditMode) {
+      updateUser(values);
+    } else {
+      createPostUser(values);
+    }
   }
 
   const nextStep = async () => {
@@ -156,12 +199,18 @@ export const UserForm = () => {
           {/* Header */}
           <div className="px-8 pt-8">
             <h1 className="text-2xl font-bold text-foreground text-center">
-              {currentStep === 1 ? "Registro de Usuario" : "Información Adicional"}
+              {isEditMode 
+                ? "Editar Usuario" 
+                : currentStep === 1 
+                  ? "Registro de Usuario" 
+                  : "Información Adicional"}
             </h1>
             <p className="text-muted-foreground text-center text-sm mt-1">
-              {currentStep === 1
-                ? "Completa los datos personales del nuevo miembro."
-                : "Añade medios de contacto para el usuario."}
+              {isEditMode
+                ? "Modifica los datos del usuario."
+                : currentStep === 1
+                  ? "Completa los datos personales del nuevo miembro."
+                  : "Añade medios de contacto para el usuario."}
             </p>
           </div>
 
@@ -383,7 +432,7 @@ export const UserForm = () => {
                       ) : (
                         <>
                           <CheckCircle size={18} />
-                          <span>Confirmar Registro</span>
+                          <span>{isEditMode ? "Actualizar Usuario" : "Confirmar Registro"}</span>
                         </>
                       )}
                     </Button>

@@ -50,6 +50,28 @@ export function UsersTable() {
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [rowSelection, setRowSelection] = useState({});
+  
+  // Estados para edición
+  const [selectedUser, setSelectedUser] = useState<IUser | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+
+  const handleEdit = (user: IUser) => {
+    setSelectedUser(user);
+    setIsEditDialogOpen(true);
+  };
+
+  const handleEditSuccess = () => {
+    setIsEditDialogOpen(false);
+    setSelectedUser(null);
+    apiGetUsers();
+  };
+
+  const handleCreateSuccess = () => {
+    setIsCreateDialogOpen(false);
+    apiGetUsers();
+  };
+
   const columns: ColumnDef<IUser>[] = [
     {
       accessorKey: "dni",
@@ -123,7 +145,7 @@ export function UsersTable() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent cy-data="options-menu" align="end">
-              <DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleEdit(user)}>
                 <Edit />
                 Editar
               </DropdownMenuItem>
@@ -221,10 +243,31 @@ export function UsersTable() {
               })}
           </DropdownMenuContent>
         </DropdownMenu>
-        <UserDialog>
-          <UserForm />
+        
+        {/* Dialog para crear usuario */}
+        <UserDialog 
+          open={isCreateDialogOpen} 
+          onOpenChange={setIsCreateDialogOpen}
+        >
+          <UserForm onSuccess={handleCreateSuccess} />
         </UserDialog>
       </div>
+
+      {/* Dialog para editar usuario */}
+      <UserDialog 
+        isEdit={true}
+        disabledTrigger={true}
+        open={isEditDialogOpen} 
+        onOpenChange={(open) => {
+          setIsEditDialogOpen(open);
+          if (!open) setSelectedUser(null);
+        }}
+      >
+        {selectedUser && (
+          <UserForm user={selectedUser} onSuccess={handleEditSuccess} />
+        )}
+      </UserDialog>
+
       <div className="rounded-md border">
         <Table className="bg-background">
           <TableHeader>

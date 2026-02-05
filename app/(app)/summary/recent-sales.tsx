@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import apiClient from "@/config/apiClient";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 interface RecentLoan {
   id: string;
@@ -84,7 +84,6 @@ export function RecentSales() {
       {recentLoans.map((loan) => (
         <div key={loan.id} className="flex items-center">
           <Avatar className="h-9 w-9">
-            <AvatarImage src={`/avatars/${loan.user.id}.png`} alt="Avatar" />
             <AvatarFallback>{getInitials(loan.user.name, loan.user.lastname)}</AvatarFallback>
           </Avatar>
           <div className="ml-4 space-y-1">

@@ -4,7 +4,7 @@ import { assemblySteps } from "../steps";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { ChevronLeft, ChevronRight, Wallet, CheckCircle, Loader2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Wallet, CheckCircle, Loader2, TrendingDown, TrendingUp } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "@/hooks/use-toast";
@@ -13,6 +13,7 @@ export default function StepLayout({ children }: { children: React.ReactNode }) 
     const {
         assemblyState,
         assembly,
+        cashBalance,
         endAssembly,
         setCurrentStep,
       } = useAssembly();
@@ -109,36 +110,7 @@ export default function StepLayout({ children }: { children: React.ReactNode }) 
       {/* Current Step Content */}
       <Card>
         <CardHeader className="py-4">
-          {/* Balance Display */}
-          <div className="relative border rounded-xl mb-4 overflow-hidden bg-gradient-to-br from-background to-muted/30 shadow-sm">
-            <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
-            <div className="relative px-6 py-5">
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <div className="p-2.5 rounded-lg bg-primary/10 ring-1 ring-primary/20">
-                    <Wallet className="h-5 w-5 text-primary" />
-                  </div>
-                  <div>
-                    <div className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-1">
-                      Balance Actual
-                    </div>
-                    <div className="text-xs text-muted-foreground/80">
-                      Fondos disponibles
-                    </div>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className="text-4xl tabular-nums tracking-tight mb-1 bg-gradient-to-br from-foreground to-foreground/70 bg-clip-text text-transparent">
-                    S/ 125,450
-                  </div>
-                  <div className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-primary/10 text-primary">
-                    <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-                    <span className="text-[10px] font-medium">En vivo</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+       
 
           <div className="flex items-center gap-2">
             <div className="p-2 rounded-full bg-primary/10 text-primary">

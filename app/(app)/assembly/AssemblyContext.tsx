@@ -2,7 +2,7 @@
 
 import { assemblySteps, IAssemblyStep } from "@/app/(app)/assembly/steps";
 import { IAssemblySchedule } from "@/app/(app)/assembly/types";
-import { createContext, useContext, useState, ReactNode, useEffect } from "react";
+import { createContext, useContext, useState, ReactNode, useEffect, useCallback, useRef } from "react";
 import { apiGetAssemblySchedule, apiStartAssemblySchedule, apiFinishAssembly } from "./api";
 import { useRouter } from "next/navigation";
 
@@ -15,10 +15,19 @@ interface AssemblyState {
   assemblySteps: IAssemblyStep[];
 }
 
+interface CashBalance {
+  currentBalance: number;
+  totalExpenses: number;
+  availableBalance: number;
+  lastUpdated: Date;
+}
 
 interface AssemblyContextType {
   assemblyState: AssemblyState;
   assembly: IAssemblySchedule | null;
+  isAssemblyNotFound: boolean;
+  cashBalance: CashBalance;
+  updateCashBalance: (balance: CashBalance) => void;
   startAssembly: () => void;
   endAssembly: (scheduleRunId: string) => Promise<void>;
   setCurrentStep: (step: number) => void;
@@ -52,7 +61,28 @@ export function AssemblyProvider({ children }: { children: ReactNode }) {
     return initialState;
   });
   const [assembly, setAssembly] = useState<IAssemblySchedule | null>(null);
+  const [isAssemblyNotFound, setIsAssemblyNotFound] = useState<boolean>(false);
+  const [cashBalance, setCashBalance] = useState<CashBalance>({
+    currentBalance: 0,
+    totalExpenses: 0,
+    availableBalance: 0,
+    lastUpdated: new Date()
+  });
   const router = useRouter();
+  const prevBalanceRef = useRef<CashBalance | null>(null);
+
+  const updateCashBalance = useCallback((balance: CashBalance) => {
+    // Only update if values actually changed
+    if (
+      !prevBalanceRef.current ||
+      prevBalanceRef.current.currentBalance !== balance.currentBalance ||
+      prevBalanceRef.current.totalExpenses !== balance.totalExpenses ||
+      prevBalanceRef.current.availableBalance !== balance.availableBalance
+    ) {
+      prevBalanceRef.current = balance;
+      setCashBalance(balance);
+    }
+  }, []);
 
   const startAssembly = async() => {
    const res = await apiStartAssemblySchedule();
@@ -116,6 +146,9 @@ export function AssemblyProvider({ children }: { children: ReactNode }) {
   const value: AssemblyContextType = {
     assembly, // Aquí podrías cargar datos reales desde un backend si es necesario
     assemblyState,
+    isAssemblyNotFound,
+    cashBalance,
+    updateCashBalance,
     startAssembly,
     endAssembly,
     setCurrentStep,
@@ -127,9 +160,20 @@ export function AssemblyProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     // Aquí podrías cargar datos reales desde un backend si es necesario
     const fetchAssemblyData = async () => {
-      const data = await apiGetAssemblySchedule();
-      console.log(data);
-      setAssembly(data);
+      try {
+        const data = await apiGetAssemblySchedule();
+        console.log(data);
+        setAssembly(data);
+        setIsAssemblyNotFound(false);
+      } catch (error: any) {
+        // Handle 404 - assembly not configured
+        if (error?.response?.status === 404) {
+          setIsAssemblyNotFound(true);
+          setAssembly(null);
+        } else {
+          console.error('Error fetching assembly:', error);
+        }
+      }
     };
 
     fetchAssemblyData();

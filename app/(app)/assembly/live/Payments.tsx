@@ -241,7 +241,11 @@ export default function Payments() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {paymentsData.partners.map((user) => {
+              {[...paymentsData.partners].sort((a, b) => {
+                const lastNameCompare = (a.lastname || '').localeCompare(b.lastname || '', 'es');
+                if (lastNameCompare !== 0) return lastNameCompare;
+                return (a.name || '').localeCompare(b.name || '', 'es');
+              }).map((user) => {
                 const payment = paymentsData.payments.find(p => p.userId === user.id);
                 const paymentAmount = Number(payment?.amount || 0) + Number(payment?.interest || 0);
 
@@ -253,7 +257,7 @@ export default function Payments() {
                 //payment
                 return (
                   <TableRow key={user.id} className={getRowColor(hasPaid, installmentAmount)}>
-                    <TableCell className="text-sm font-medium">{`${user.name} ${user.lastname}`}</TableCell>
+                    <TableCell className="text-sm font-medium">{`${user.lastname}, ${user.name}`}</TableCell>
                     <TableCell>
                       <div className="flex items-center gap-2">
                         <div className="text-sm">
@@ -333,7 +337,7 @@ export default function Payments() {
             <DialogHeader>
               <DialogTitle>Registrar Pago de Cuotas</DialogTitle>
               <DialogDescription>
-                {selectedUser && `Selecciona las cuotas a pagar para ${selectedUser.name} ${selectedUser.lastname}`}
+                {selectedUser && `Selecciona las cuotas a pagar para ${selectedUser.lastname}, ${selectedUser.name}`}
               </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4 max-h-[60vh] overflow-y-auto">
@@ -514,7 +518,7 @@ export default function Payments() {
             <DialogHeader>
               <DialogTitle>Detalles de Pago</DialogTitle>
               <DialogDescription>
-                {selectedUser && `Información detallada de pagos para ${selectedUser.name} ${selectedUser.lastname}`}
+                {selectedUser && `Información detallada de pagos para ${selectedUser.lastname}, ${selectedUser.name}`}
               </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4 max-h-[70vh] overflow-y-auto">

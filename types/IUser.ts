@@ -3,6 +3,7 @@ export interface IUser {
   name: string;
   lastname: string;
   email: string;
+  phone?: string;
   // Add other user properties as needed
   dni?: string;
   role?: string;
