@@ -16,7 +16,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { useContext, useEffect } from "react";
+import { useContext, useEffect, useState } from "react";
 import { AppContext } from "@/context/AppContext";
 import apiClient from "@/config/apiClient";
 
@@ -29,7 +29,6 @@ const PlatformFormSchema = z.object({
     .max(50, {
       message: "nombre no debe tener más de 50 caracteres.",
     }),
-  avatar: z.instanceof(File).nullable().optional(),
 });
 
 type PlatformFormValues = z.infer<typeof PlatformFormSchema>;
@@ -37,13 +36,15 @@ type PlatformFormValues = z.infer<typeof PlatformFormSchema>;
 // This can come from your database or API.
 const defaultValues: Partial<PlatformFormValues> = {
   name: "",
-  avatar: null,
 };
 
 export function PlatformForm() {
   const {
-    bank: { bank },
+    bank,
+    setBank,
   } = useContext(AppContext);
+
+  const [loading, setLoading] = useState(false);
 
   const form = useForm<PlatformFormValues>({
     resolver: zodResolver(PlatformFormSchema),
@@ -52,44 +53,20 @@ export function PlatformForm() {
   });
 
   const updatePlatform = async () => {
-    const formData = new FormData();
-    const avatar = form.getValues("avatar");
-
-    let avatarFilename = bank.avatar; // Default to the current avatar
-
-    if (avatar) {
-      formData.append("file", avatar);
-
-      try {
-        const resFile = await apiClient.post("/upload/image", formData, {
-          headers: {
-            "Content-Type": "multipart/form-data",
-          },
-        });
-        console.log("File uploaded successfully:", resFile.data);
-        if (resFile.data && resFile.data.url) {
-          avatarFilename = resFile.data.url; // Update avatar filename if upload succeeds
-        }
-      } catch (error) {
-        console.error("Error uploading avatar:", error);
-        toast({
-          title: "Error",
-          description: "No se pudo subir la imagen. Inténtalo de nuevo.",
-          variant: "destructive",
-        });
-        return;
-      }
-    }
-
+    setLoading(true);
     try {
       const res = await apiClient.put("/banks", {
         name: form.getValues("name"),
-        avatar: avatarFilename,
       });
 
       if (res.data) {
-        localStorage.removeItem("bank");
-        if (window) window.location.reload();
+        toast({
+          title: "Éxito",
+          description: "La plataforma se actualizó correctamente.",
+        });
+        const updatedBank = { ...bank, bank: res.data };
+        setBank(updatedBank);
+        localStorage.setItem("bank", JSON.stringify(updatedBank));
       }
     } catch (error) {
       console.error("Error updating platform:", error);
@@ -98,29 +75,22 @@ export function PlatformForm() {
         description: "No se pudo actualizar la plataforma. Inténtalo de nuevo.",
         variant: "destructive",
       });
+    } finally {
+      setLoading(false);
     }
   };
-  function onSubmit(data: PlatformFormValues) {
-    //vaidate if avatar is empty
 
-    //validate if name is empty
+  function onSubmit(data: PlatformFormValues) {
     if (!data.name.trim()) {
-      data.name = bank.name;
+      data.name = bank.bank.name;
     }
     updatePlatform();
-    console.log(data);
-    toast({
-      title: "You submitted the following values:",
-      description: (
-        <pre className="mt-2 w-[340px] rounded-md bg-slate-950 p-4">
-          <code className="text-white">{JSON.stringify(data, null, 2)}</code>
-        </pre>
-      ),
-    });
   }
+
   useEffect(() => {
-    form.setValue("name", bank.name ?? "");
+    form.setValue("name", bank?.bank?.name ?? "");
   }, [bank]);
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
@@ -131,7 +101,7 @@ export function PlatformForm() {
             <FormItem>
               <FormLabel>Nombre </FormLabel>
               <FormControl>
-                <Input placeholder="shadcn" {...field} />
+                <Input {...field} />
               </FormControl>
               <FormDescription>
                 Este nombre es el oficial de tu asociacion.
@@ -140,32 +110,10 @@ export function PlatformForm() {
             </FormItem>
           )}
         />
-        <FormField
-          control={form.control}
-          name="avatar"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel htmlFor="picture">Logo</FormLabel>
-              <Input
-                name="avatar"
-                accept="image/*"
-                id="file"
-                type="file"
-                ref={field.ref}
-                onChange={(e) => {
-                  const file = e.target.files ? e.target.files[0] : null;
-                  form.setValue("avatar", file);
-                }}
-              />
-              <FormDescription>
-                Esta imagen sera la que represente a tu asociacion.
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
 
-        <Button type="submit">Actualizar Plataforma</Button>
+        <Button type="submit" disabled={loading}>
+          {loading ? "Actualizando..." : "Actualizar Plataforma"}
+        </Button>
       </form>
     </Form>
   );

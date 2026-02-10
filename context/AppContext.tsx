@@ -21,6 +21,7 @@ interface AppContextType {
   deleteUser?: (id: string) => void;
   updateUser?: (user: IUser) => void;
   bank: IBank;
+  setBank: (bank: IBank) => void;
 }
 
 const initialState: AppContextType = {
@@ -40,6 +41,7 @@ const initialState: AppContextType = {
       price: 0,
     },
   },
+  setBank: () => {},
 };
 
 export const AppContext = createContext<AppContextType>(initialState);
@@ -119,6 +121,7 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
         users,
         setUsers,
         bank,
+        setBank,
       }}
     >
       {children}

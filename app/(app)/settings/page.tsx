@@ -1,9 +1,6 @@
-import { ProfileForm } from "./profile-form";
+import { redirect } from 'next/navigation';
 
 export default function SettingsProfilePage() {
-  return (
-    <div className="space-y-6">
-      <ProfileForm />
-    </div>
-  );
+  redirect('/settings/platform');
+  return null
 }

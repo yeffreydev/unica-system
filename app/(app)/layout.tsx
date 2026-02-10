@@ -14,6 +14,7 @@ import {
 import { useContext } from "react";
 import { AuthContext } from "@/context/auth/AuthContex";
 import { useThemeHook } from "@/hooks/use-theme";
+import { AppContext } from "@/context/AppContext";
 
 
 export default function AppLayout({
@@ -25,6 +26,7 @@ export default function AppLayout({
 
   const { logout } = useContext(AuthContext);
   const { theme } = useThemeHook();
+  const { bank, users } = useContext(AppContext);
 
 
 
@@ -46,10 +48,10 @@ export default function AppLayout({
             
             <div className="flex items-center gap-3">
               <div className="px-4 py-1.5 rounded-full bg-secondary/10 text-primary font-semibold text-sm border border-primary/20">
-                Montes y Vegas
+                {bank?.bank?.name || "Plataforma"}
               </div>
               <div className="px-2.5 py-1 rounded-md bg-muted text-muted-foreground text-[10px] uppercase font-bold tracking-wider">
-                32 MIEMBROS
+                {users.length} MIEMBROS
               </div>
             </div>
           </div>

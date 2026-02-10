@@ -1,7 +1,7 @@
 "use client";
 
 import { Metadata } from "next";
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import apiClient from "@/config/apiClient";
 import {
   Card,
@@ -16,6 +16,7 @@ import { RecentDeposits } from "./recent-deposits";
 import { LoanStatusChart } from "./loan-status-chart";
 import { DepositsWithdrawalsChart } from "./deposits-withdrawals-chart";
 import Link from "next/link";
+import { AppContext } from "@/context/AppContext";
 
 export const metadata: Metadata = {
   title: "Dashboard",
@@ -93,6 +94,7 @@ interface DashboardData {
 export default function Dashboard() {
   const [dashboardData, setDashboardData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
+  const { users } = useContext(AppContext);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -181,8 +183,8 @@ export default function Dashboard() {
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="text-xs font-medium text-muted-foreground">Total Usuarios</p>
-                        <p className="text-lg font-bold">{dashboardData?.totalUsers.total || 0}</p>
+                        <p className="text-xs font-medium text-muted-foreground">Total Socios</p>
+                        <p className="text-lg font-bold">{users.length}</p>
                       </div>
                       <div className="h-8 w-8 bg-blue-500/10 rounded-full flex items-center justify-center">
                         <svg className="h-4 w-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
