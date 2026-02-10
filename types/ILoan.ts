@@ -29,6 +29,10 @@ export interface ILoanInstallment {
   status?: string;
   user?: IUser;
   installment_number?: number;
+  isAssemblyMonth?: boolean;
+  paymentDescription?: string | null;
+  paymentAmount?: number | null;
+  paymentInterest?: number | null;
 }
 
 export interface ILoanType {

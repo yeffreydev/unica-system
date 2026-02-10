@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { CreditCard, Info } from "lucide-react";
+import { Check, CreditCard, Info } from "lucide-react";
 import { useContext, useEffect, useState } from "react";
 import { AppContext } from "@/context/AppContext";
 import { IUser } from "@/types/IUser";
@@ -36,7 +36,7 @@ export default function Payments() {
   const [description, setDescription] = useState('');
   const [currentMonthInstallments, setCurrentMonthInstallments] = useState<ILoanInstallment[]>([]);
   const [userInstallments, setUserInstallments] = useState<ILoanInstallment[]>([]);
-  const [editedAmounts, setEditedAmounts] = useState<Record<string, { capital: string; interest: string }>>({});
+  const [editedAmounts, setEditedAmounts] = useState<Record<string, { capital: string; interest: string; description: string }>>({});
 
  useEffect(() => {
      //get assembly run
@@ -68,45 +68,57 @@ export default function Payments() {
   }, [assemblyRun]);
 
   useEffect(() => {
-    const fetchCurrentMonthInstallments = async () => {
+    const fetchAssemblyMonthInstallments = async () => {
+      if (!assemblyRun?.id) return;
       try {
-        const response = await apiClient.get('/schedules/installments/current-month');
-        console.log("Fetched current month installments:", response.data);
+        const response = await apiClient.get(`/schedules/assembly/run/${assemblyRun.id}/installments`);
+        console.log("Fetched assembly month installments:", response.data);
         setCurrentMonthInstallments(response.data);
       } catch (error) {
-        console.error("Error fetching current month installments:", error);
+        console.error("Error fetching assembly month installments:", error);
       }
     };
-    fetchCurrentMonthInstallments();
-  }, []);
+    fetchAssemblyMonthInstallments();
+  }, [assemblyRun?.id]);
 
 
  
   const handlePayInterest = (user: IUser) => {
     setSelectedUser(user);
     
-    // Get all installments for this user from current month
-    const installmentsForUser = currentMonthInstallments.filter(inst => inst.user?.id === user.id);
+    // Get installments for this user from the assembly month
+    const installmentsForUser = currentMonthInstallments.filter(
+      inst => inst.user?.id === user.id && inst.isAssemblyMonth
+    );
     setUserInstallments(installmentsForUser);
     
-    // Select all current month installments by default
+    // Select all assembly month installments by default
     const installmentIds = installmentsForUser.map(inst => inst.id || '');
     setSelectedInstallments(installmentIds);
     
-    // Initialize edited amounts with default values
-    const initialAmounts: Record<string, { capital: string; interest: string }> = {};
+    // Initialize edited amounts with values from each installment's payment data
+    const initialAmounts: Record<string, { capital: string; interest: string; description: string }> = {};
     installmentsForUser.forEach(inst => {
       if (inst.id) {
-        initialAmounts[inst.id] = {
-          capital: (inst.payment - inst.interest).toString(),
-          interest: inst.interest.toString()
-        };
+        // Check if this installment has payment data
+        if (inst.paymentAmount !== null && inst.paymentAmount !== undefined) {
+          // Load from installment's payment data
+          initialAmounts[inst.id] = {
+            capital: inst.paymentAmount.toString(),
+            interest: (inst.paymentInterest || 0).toString(),
+            description: inst.paymentDescription || ''
+          };
+        } else {
+          // No payment registered: capital = 0, interest = expected interest
+          initialAmounts[inst.id] = {
+            capital: '0',
+            interest: inst.interest.toString(),
+            description: ''
+          };
+        }
       }
     });
     setEditedAmounts(initialAmounts);
-    
-    const existingPayment = paymentsData.payments.find(p => p.userId === user.id);
-    setDescription(existingPayment?.description || '');
     
     setModalOpen(true);
   };
@@ -143,39 +155,66 @@ export default function Payments() {
       selectedInstallments.includes(inst.id || '')
     );
     
-    const capital = selectedInstallmentsData.reduce((sum, inst) => {
+    // Process each selected installment individually
+    for (const inst of selectedInstallmentsData) {
+      const edited = editedAmounts[inst.id || ''];
+      const capital = parseFloat(edited?.capital) || 0;
+      const interest = parseFloat(edited?.interest) || 0;
+      const instDescription = edited?.description || '';
+      
+      await apiRecordPayment(assemblyRun!.id, {
+        userId: selectedUser.id,
+        amount: capital,
+        interest: interest,
+        date: assemblyRun?.startAt ?? new Date(),
+        description: instDescription || undefined,
+        installmentId: inst.id,
+      });
+    }
+    
+    // Calculate totals for updating local state
+    const totalCapital = selectedInstallmentsData.reduce((sum, inst) => {
       const edited = editedAmounts[inst.id || ''];
       return sum + (parseFloat(edited?.capital) || 0);
     }, 0);
     
-    const interest = selectedInstallmentsData.reduce((sum, inst) => {
+    const totalInterest = selectedInstallmentsData.reduce((sum, inst) => {
       const edited = editedAmounts[inst.id || ''];
       return sum + (parseFloat(edited?.interest) || 0);
     }, 0);
 
-    const data: ILoanPayment = await apiRecordPayment(assemblyRun!.id, {
-      userId: selectedUser.id,
-      amount: Number(capital),
-      interest: Number(interest),
-      date: assemblyRun?.startAt ?? new Date(),
-      description: description || undefined,
-    });
-    console.log("Payment recorded:", data);
-    // Refresh payments data
-    if (data) {
-      const findPayment = paymentsData.payments.find(p => p.userId === selectedUser.id);
-      if (findPayment) {
-        // Update existing payment
-        findPayment.amount = Number(data.amount);
-        findPayment.interest = Number(data.interest);
-        findPayment.date = data.date; // Update to latest payment date
-      } else {
-        // Add new payment
-        setPaymentsData(prev => ({
-          ...prev,
-          payments: [...prev.payments, data]
-        }));
-      }
+    // Update local payments data
+    const findPayment = paymentsData.payments.find(p => p.userId === selectedUser.id);
+    if (findPayment) {
+      // Update existing payment
+      setPaymentsData(prev => ({
+        ...prev,
+        payments: prev.payments.map(p => 
+          p.userId === selectedUser.id 
+            ? { ...p, amount: totalCapital, interest: totalInterest, date: assemblyRun?.startAt ?? new Date() }
+            : p
+        )
+      }));
+    } else {
+      // Add new payment
+      setPaymentsData(prev => ({
+        ...prev,
+        payments: [...prev.payments, {
+          id: `temp-${Date.now()}`,
+          userId: selectedUser.id,
+          amount: totalCapital,
+          interest: totalInterest,
+          date: assemblyRun?.startAt ?? new Date(),
+        }]
+      }));
+    }
+
+    // Refresh installments data to get updated payment info
+    try {
+      const response = await apiClient.get(`/schedules/assembly/run/${assemblyRun!.id}/installments`);
+      setCurrentMonthInstallments(response.data);
+    } catch (error) {
+      console.error("Error refreshing installments:", error);
     }
     
     setModalOpen(false);
@@ -235,7 +274,9 @@ export default function Payments() {
             <TableHeader>
               <TableRow>
                 <TableHead>Nombres</TableHead>
-                <TableHead>Cuota</TableHead>
+                <TableHead>Balance</TableHead>
+                <TableHead>Préstamos</TableHead>
+                <TableHead>Interés</TableHead>
                 <TableHead>Pagado</TableHead>
                 <TableHead>Acción</TableHead>
               </TableRow>
@@ -254,34 +295,59 @@ export default function Payments() {
                 const hasPaid = (paymentAmount) > 0;
                 const installmentAmount = Number(installment?.amount) || 0;
 
+                // Calcular datos de préstamos del usuario
+                const userAssemblyInstallments = currentMonthInstallments.filter(
+                  inst => inst.user?.id === user.id && inst.isAssemblyMonth
+                );
+                
+                // Balance total (suma de balances de préstamos activos)
+                const totalBalance = userAssemblyInstallments.reduce((sum, inst) => {
+                  return sum + (inst.loan?.balance || 0);
+                }, 0);
+                
+                // Cantidad de préstamos activos (únicos por loanId)
+                const uniqueLoanIds = new Set(userAssemblyInstallments.map(inst => inst.loanId));
+                const activeLoansCount = uniqueLoanIds.size;
+                
+                // Suma de intereses de las cuotas del mes de la asamblea
+                const totalInterest = userAssemblyInstallments.reduce((sum, inst) => {
+                  return sum + (inst.interest || 0);
+                }, 0);
+                
+                // Suma del interés pagado de las cuotas del mes de la asamblea
+                const totalInterestPaid = userAssemblyInstallments.reduce((sum, inst) => {
+                  return sum + (inst.paymentInterest || 0);
+                }, 0);
+                const interestFullyPaid = totalInterestPaid >= totalInterest && totalInterest > 0;
+                
+                // Determinar si necesita sombra roja (tiene interés pero no ha pagado)
+                const needsRedShadow = totalInterest > 0 && !hasPaid;
+
                 //payment
                 return (
-                  <TableRow key={user.id} className={getRowColor(hasPaid, installmentAmount)}>
+                  <TableRow 
+                    key={user.id} 
+                    className={`${getRowColor(hasPaid, installmentAmount)} ${needsRedShadow ? 'shadow-[inset_0_0_0_2px_rgba(239,68,68,0.5)] bg-red-50 dark:bg-red-950/30' : ''}`}
+                  >
                     <TableCell className="text-sm font-medium">{`${user.lastname}, ${user.name}`}</TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-2">
-                        <div className="text-sm">
-                          <div className="font-semibold">S/ {installmentAmount.toFixed(2)}</div>
-                          {(() => {
-                            const currentInstallment = currentMonthInstallments.find(
-                              inst => inst.user?.id === user.id
-                            );
-                            return currentInstallment ? (
-                              <div className="text-muted-foreground">
-                                <span className="font-medium text-blue-600">Cap: S/ {(currentInstallment.payment).toFixed(2)}</span>
-                                <span className="ml-2 font-medium text-purple-600">Int: S/ {currentInstallment.interest.toFixed(2)}</span>
-                              </div>
-                            ) : null;
-                          })()}
-                        </div>
-                        <Button
-                          onClick={() => handleShowDetails(user)}
-                          size="sm"
-                          variant="ghost"
-                          className="h-6 w-6 p-0"
-                        >
-                          <Info className="w-3 h-3" />
-                        </Button>
+                      <span className="font-semibold text-orange-600 dark:text-orange-400">
+                        S/ {totalBalance.toFixed(2)}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className="font-semibold">
+                        {activeLoansCount}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1">
+                        <span className="font-semibold text-purple-600 dark:text-purple-400">
+                          S/ {totalInterest.toFixed(2)}
+                        </span>
+                        {interestFullyPaid && (
+                          <Check className="w-4 h-4 text-green-500" />
+                        )}
                       </div>
                     </TableCell>
                     <TableCell>
@@ -323,7 +389,7 @@ export default function Payments() {
               })}
               {users.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center text-sm text-muted-foreground">
+                  <TableCell colSpan={6} className="text-center text-sm text-muted-foreground">
                     No hay usuarios disponibles
                   </TableCell>
                 </TableRow>
@@ -448,6 +514,7 @@ export default function Payments() {
                                   <div>
                                     <Label htmlFor={`interest-${installment.id}`} className="text-xs text-muted-foreground">Interés</Label>
                                     <Input
+                                      disabled
                                       id={`interest-${installment.id}`}
                                       type="number"
                                       value={editedAmounts[installment.id || '']?.interest || ''}
@@ -487,18 +554,6 @@ export default function Payments() {
                       })
                     )}
                   </div>
-
-                  {/* Description */}
-                  <div className="space-y-2">
-                    <Label htmlFor="description">Descripción (Opcional)</Label>
-                    <Input
-                      id="description"
-                      type="text"
-                      value={description}
-                      onChange={(e) => setDescription(e.target.value)}
-                      placeholder="Descripción del pago"
-                    />
-                  </div>
                 </>
               )}
             </div>
@@ -529,7 +584,7 @@ export default function Payments() {
                 const totalPaid = paidCapital + paidInterest;
                 
                 const userInstallmentsForDetail = currentMonthInstallments.filter(
-                  inst => inst.user?.id === selectedUser.id
+                  inst => inst.user?.id === selectedUser.id && inst.isAssemblyMonth
                 );
                 
                 // Check if all balances are paid off

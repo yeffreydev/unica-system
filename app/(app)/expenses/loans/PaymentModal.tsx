@@ -10,9 +10,10 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ILoan, ILoanInstallment } from "@/types/ILoan";
+import { ILoan, ILoanInstallment, ILoanType } from "@/types/ILoan";
 import apiClient from "@/config/apiClient";
 import { formatCurrency } from "@/lib/utils";
+import { ComboboxLoanTypes } from "@/components/combobox/ComboboxLoanTypes";
 
 interface PaymentModalProps {
   isOpen: boolean;
@@ -29,10 +30,13 @@ export const PaymentModal = ({
 }: PaymentModalProps) => {
   const [paymentType, setPaymentType] = useState<'full' | 'partial'>('full');
   const [paymentAmount, setPaymentAmount] = useState<string>("");
-  const [installments, setInstallments] = useState<string>("3");
+  const [installments, setInstallments] = useState<string>("1");
+  const [initialInstallmentDate, setInitialInstallmentDate] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [currentInstallment, setCurrentInstallment] = useState<ILoanInstallment | null>(null);
+  const [loanTypes, setLoanTypes] = useState<ILoanType[]>([]);
+  const [loanTypeSelected, setLoanTypeSelected] = useState<ILoanType | null>(null);
 
   const handlePayAllClick = () => {
     setPaymentType('full');
@@ -50,7 +54,7 @@ export const PaymentModal = ({
     setIsSubmitting(true);
     setShowConfirmDialog(false);
     try {
-      const response = await apiClient.post(`/loans/paid-all/${loan.id}`, {
+      const response = await apiClient.post(`/loans/mark-as-paid-all/${loan.id}`, {
         date: new Date(),
         confirm: true,
       });
@@ -69,12 +73,12 @@ export const PaymentModal = ({
   };
 
   const handlePartialPayment = async () => {
-    if (!loan?.id || !paymentAmount || !installments) return;
+    if (!loan?.id || !paymentAmount || !installments || !initialInstallmentDate || !loanTypeSelected) return;
 
     const amount = parseFloat(paymentAmount);
     const numInstallments = parseInt(installments);
 
-    if (amount <= 0 || amount > (loan.balance || 0)) {
+    if (amount <= 0 || amount > (loan.amount || 0)) {
       alert("Monto inválido");
       return;
     }
@@ -90,6 +94,8 @@ export const PaymentModal = ({
         amount: amount,
         installments: numInstallments,
         date: new Date().toISOString(),
+        initialInstallmentDate: initialInstallmentDate,
+        loanTypeId: loanTypeSelected.id,
       });
 
       if (response.status === 200 || response.status === 201) {
@@ -121,10 +127,29 @@ export const PaymentModal = ({
         console.error("Error fetching current installment:", error);
       }
     };
+
+    const fetchLoanTypes = async () => {
+      try {
+        const response = await apiClient.get('/loans/types');
+        setLoanTypes(response.data);
+      } catch (error) {
+        console.error("Error fetching loan types:", error);
+      }
+    };
+
     if (isOpen) {
       fetchCurrentInstallment();
+      fetchLoanTypes();
     }
   }, [isOpen, loan?.id]);
+
+  // Set default loan type when loan or loan types are loaded
+  useEffect(() => {
+    if (loan && loanTypes.length > 0) {
+      const defaultLoanType = loanTypes.find(lt => lt.id === loan.loanTypeId) || null;
+      setLoanTypeSelected(defaultLoanType);
+    }
+  }, [loan, loanTypes]);
 
   return (
     <>
@@ -142,14 +167,14 @@ export const PaymentModal = ({
               <div className="flex justify-between items-center">
                 <span className="font-medium">Balance pendiente:</span>
                 <span className="text-lg font-bold text-red-600">
-                  S/ {formatCurrency(balance)}
+                  {formatCurrency(balance)}
                 </span>
               </div>
             </div>
 
             <div className="space-y-4">
               <div className="text-center">
-                <h3 className="text-lg font-semibold mb-4">¿Qué tipo de pago deseas realizar?</h3>
+                <h3 className="text-lg font-semibold mb-4">¿Qué tipo de acción deseas realizar?</h3>
                 <div className="flex flex-col gap-3">
                   <Button
                     onClick={handlePayAllClick}
@@ -158,7 +183,7 @@ export const PaymentModal = ({
                     className="w-full h-12"
                     variant={paymentType === 'full' ? 'default' : 'outline'}
                   >
-                    💰 Pagar Todo (S/ {formatCurrency(balance)})
+                   marcar como pagado: {formatCurrency(balance)}
                   </Button>
                   <Button
                     onClick={() => setPaymentType('partial')}
@@ -167,17 +192,17 @@ export const PaymentModal = ({
                     className="w-full h-12"
                     variant={paymentType === 'partial' ? 'default' : 'outline'}
                   >
-                    💳 Pagar Monto Parcial
+                   Generar cuotas
                   </Button>
                 </div>
               </div>
 
               {paymentType === 'partial' && (
                 <div className="border-t pt-6 space-y-4">
-                  <h4 className="text-md font-medium text-center">Detalles del Pago Parcial</h4>
+                  <h4 className="text-md font-medium text-center">Detalles para generar cuotas</h4>
                   <div className="grid grid-cols-1 gap-4">
                     <div>
-                      <Label htmlFor="payment-amount">Monto a pagar</Label>
+                      <Label htmlFor="payment-amount">Balance restante</Label>
                       <Input
                         id="payment-amount"
                         type="number"
@@ -190,16 +215,16 @@ export const PaymentModal = ({
                         className="text-lg"
                       />
                       <p className="text-sm text-gray-500 mt-1">
-                        Máximo: S/ {formatCurrency(balance)}
+                        Máximo: {formatCurrency(balance)}
                         {currentInstallment && (
                           <span className="block text-blue-600">
-                            Cuota actual: S/ {formatCurrency(currentInstallment.payment)}
+                            Cuota actual: {formatCurrency(currentInstallment.payment)}
                           </span>
                         )}
                       </p>
                     </div>
                     <div>
-                      <Label htmlFor="installments">Número de cuotas para el saldo restante</Label>
+                      <Label htmlFor="installments">Número de cuotas.</Label>
                       <Input
                         id="installments"
                         type="number"
@@ -219,12 +244,35 @@ export const PaymentModal = ({
                         </p>
                       )}
                     </div>
+                    <div>
+                      <Label htmlFor="loan-type">Tipo de Préstamo</Label>
+                      <ComboboxLoanTypes
+                        controller={{ loanTypeSelected, setLoanTypeSelected }}
+                        loanTypes={loanTypes}
+                      />
+                      <p className="text-sm text-gray-500 mt-1">
+                        Selecciona el tipo de préstamo para las nuevas cuotas
+                      </p>
+                    </div>
+                    <div>
+                      <Label htmlFor="initial-installment-date">Fecha de cuota inicial</Label>
+                      <Input
+                        id="initial-installment-date"
+                        type="date"
+                        value={initialInstallmentDate}
+                        onChange={(e) => setInitialInstallmentDate(e.target.value)}
+                        className="text-lg"
+                      />
+                      <p className="text-sm text-gray-500 mt-1">
+                        Fecha en que se realizará la primera cuota
+                      </p>
+                    </div>
                   </div>
 
                   <div className="flex justify-center pt-2">
                     <Button
                       onClick={handlePartialPaymentClick}
-                      disabled={!paymentAmount || !installments || isSubmitting}
+                      disabled={!paymentAmount || !installments || !initialInstallmentDate || !loanTypeSelected || isSubmitting}
                       size="lg"
                       className="px-8"
                     >

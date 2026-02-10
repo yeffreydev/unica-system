@@ -44,7 +44,7 @@ export const apiGetPaymentsData = async(runId: string) => {
     return response.data;
 }
 
-export const apiRecordPayment = async(runId: string, data: { userId: string; amount: number; interest: number; date: Date; description?: string; }) => {
+export const apiRecordPayment = async(runId: string, data: { userId: string; amount: number; interest: number; date: Date; description?: string; installmentId?: string; }) => {
     const response = await apiClient.post(`/schedules/assembly/run/${runId}/record-payment`, data);
     return response.data;
 }

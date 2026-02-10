@@ -4,8 +4,10 @@ import { useContext, useState, useEffect } from "react";
 import {
   ColumnDef,
   SortingState,
+  ColumnFiltersState,
   flexRender,
   getCoreRowModel,
+  getFilteredRowModel,
   getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
@@ -59,6 +61,7 @@ import {
 
 export function LoansTable() {
   const [sorting, setSorting] = useState<SortingState>([]);
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const { loans, deleteLoan, refreshLoans } = useContext(LoansContext);
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
@@ -143,7 +146,8 @@ export function LoansTable() {
       ),
     },
     {
-      accessorKey: "user.name",
+      id: "userName",
+      accessorFn: (row) => `${row.user?.name || ""} ${row.user?.lastname || ""}`,
       header: ({ column }) => (
         <Button
           variant="ghost"
@@ -158,6 +162,10 @@ export function LoansTable() {
           {row.original.user?.name} {row.original.user?.lastname}
         </div>
       ),
+      filterFn: (row, columnId, filterValue) => {
+        const fullName = `${row.original.user?.name || ""} ${row.original.user?.lastname || ""}`.toLowerCase();
+        return fullName.includes(filterValue.toLowerCase());
+      },
     },
     {
       accessorKey: "amount",
@@ -212,7 +220,7 @@ export function LoansTable() {
               }}
             >
               <CreditCard className="mr-2 h-4 w-4" />
-              Pagar
+              Regularizar
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
@@ -231,11 +239,14 @@ export function LoansTable() {
     data: loans,
     columns,
     onSortingChange: setSorting,
+    onColumnFiltersChange: setColumnFilters,
     getCoreRowModel: getCoreRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
     state: {
       sorting,
+      columnFilters,
       pagination: {
         pageIndex: currentPageIndex,
         pageSize: 10,
@@ -312,8 +323,9 @@ export function LoansTable() {
         <div className="flex items-center py-4 gap-3">
           <Input
             placeholder="Filtrar nombres..."
+            value={(table.getColumn("userName")?.getFilterValue() as string) ?? ""}
             onChange={(event) =>
-              table.getColumn("user.name")?.setFilterValue(event.target.value)
+              table.getColumn("userName")?.setFilterValue(event.target.value)
             }
             className="max-w-sm mr-auto bg-background border-border"
           />
