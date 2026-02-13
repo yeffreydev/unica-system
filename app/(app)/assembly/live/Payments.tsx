@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Check, CreditCard, Info } from "lucide-react";
+import { Check, CreditCard, Info, Search } from "lucide-react";
 import { useContext, useEffect, useState } from "react";
 import { AppContext } from "@/context/AppContext";
 import { IUser } from "@/types/IUser";
@@ -37,6 +37,7 @@ export default function Payments() {
   const [currentMonthInstallments, setCurrentMonthInstallments] = useState<ILoanInstallment[]>([]);
   const [userInstallments, setUserInstallments] = useState<ILoanInstallment[]>([]);
   const [editedAmounts, setEditedAmounts] = useState<Record<string, { capital: string; interest: string; description: string }>>({});
+  const [searchQuery, setSearchQuery] = useState('');
 
  useEffect(() => {
      //get assembly run
@@ -172,41 +173,12 @@ export default function Payments() {
       });
     }
     
-    // Calculate totals for updating local state
-    const totalCapital = selectedInstallmentsData.reduce((sum, inst) => {
-      const edited = editedAmounts[inst.id || ''];
-      return sum + (parseFloat(edited?.capital) || 0);
-    }, 0);
-    
-    const totalInterest = selectedInstallmentsData.reduce((sum, inst) => {
-      const edited = editedAmounts[inst.id || ''];
-      return sum + (parseFloat(edited?.interest) || 0);
-    }, 0);
-
-    // Update local payments data
-    const findPayment = paymentsData.payments.find(p => p.userId === selectedUser.id);
-    if (findPayment) {
-      // Update existing payment
-      setPaymentsData(prev => ({
-        ...prev,
-        payments: prev.payments.map(p => 
-          p.userId === selectedUser.id 
-            ? { ...p, amount: totalCapital, interest: totalInterest, date: assemblyRun?.startAt ?? new Date() }
-            : p
-        )
-      }));
-    } else {
-      // Add new payment
-      setPaymentsData(prev => ({
-        ...prev,
-        payments: [...prev.payments, {
-          id: `temp-${Date.now()}`,
-          userId: selectedUser.id,
-          amount: totalCapital,
-          interest: totalInterest,
-          date: assemblyRun?.startAt ?? new Date(),
-        }]
-      }));
+    // Re-fetch payments data from server to get accurate totals
+    try {
+      const data = await apiGetPaymentsData(assemblyRun!.id);
+      setPaymentsData(data);
+    } catch (error) {
+      console.error("Error refreshing payments data:", error);
     }
 
     // Refresh installments data to get updated payment info
@@ -269,6 +241,17 @@ export default function Payments() {
           </div> */}
         </div>
 
+        {/* Search */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Buscar por nombre..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+
         <div className="rounded-md border bg-card">
           <Table>
             <TableHeader>
@@ -282,13 +265,19 @@ export default function Payments() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {[...paymentsData.partners].sort((a, b) => {
+              {[...paymentsData.partners]
+              .filter((user) => {
+                if (!searchQuery.trim()) return true;
+                const fullName = `${user.lastname} ${user.name}`.toLowerCase();
+                return fullName.includes(searchQuery.toLowerCase());
+              })
+              .sort((a, b) => {
                 const lastNameCompare = (a.lastname || '').localeCompare(b.lastname || '', 'es');
                 if (lastNameCompare !== 0) return lastNameCompare;
                 return (a.name || '').localeCompare(b.name || '', 'es');
               }).map((user) => {
-                const payment = paymentsData.payments.find(p => p.userId === user.id);
-                const paymentAmount = Number(payment?.amount || 0) + Number(payment?.interest || 0);
+                const userPayments = paymentsData.payments.filter(p => p.userId === user.id);
+                const paymentAmount = userPayments.reduce((sum, p) => sum + Number(p.amount || 0) + Number(p.interest || 0), 0);
 
                  //cuota
                 const installment = paymentsData.installments.find(i => i.userId === user.id);
@@ -578,9 +567,9 @@ export default function Payments() {
             </DialogHeader>
             <div className="grid gap-4 py-4 max-h-[70vh] overflow-y-auto">
               {selectedUser && (() => {
-                const payment = paymentsData.payments.find(p => p.userId === selectedUser.id);
-                const paidCapital = Number(payment?.amount) || 0;
-                const paidInterest = Number(payment?.interest) || 0;
+                const userPaymentsDetail = paymentsData.payments.filter(p => p.userId === selectedUser.id);
+                const paidCapital = userPaymentsDetail.reduce((sum, p) => sum + Number(p.amount || 0), 0);
+                const paidInterest = userPaymentsDetail.reduce((sum, p) => sum + Number(p.interest || 0), 0);
                 const totalPaid = paidCapital + paidInterest;
                 
                 const userInstallmentsForDetail = currentMonthInstallments.filter(

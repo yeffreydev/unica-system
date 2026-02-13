@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Users, CheckCircle, XCircle, DollarSign, UserPlus, Info, Trash2 } from "lucide-react";
+import { Users, CheckCircle, XCircle, DollarSign, UserPlus, Info, Trash2, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -32,6 +32,7 @@ export function AttendanceTracker() {
   const [confirmChange, setConfirmChange] = useState<{id: string, status: ParticipantStatusTypes} | null>(null);
   const [confirmDeletePayment, setConfirmDeletePayment] = useState<string | null>(null);
   const [confirmRemoveParticipant, setConfirmRemoveParticipant] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
  
   useEffect(() => {
     //get assembly run
@@ -309,9 +310,26 @@ export function AttendanceTracker() {
               </div>
             </div>
 
+            {/* Search */}
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Buscar por nombre..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+
             {/* Attendees list */}
             <div className="space-y-2 max-h-128 overflow-y-auto">
-              {assemblyRun?.participants?.map((attendee) => (
+              {assemblyRun?.participants
+              ?.filter((attendee) => {
+                if (!searchQuery.trim()) return true;
+                const fullName = `${attendee.user?.name ?? ''} ${attendee.user?.lastname ?? ''}`.toLowerCase();
+                return fullName.includes(searchQuery.toLowerCase());
+              })
+              .map((attendee) => (
                 <div key={attendee.id} className={`flex items-center justify-between p-2 border rounded ${(attendee.status === ParticipantStatusTypes.LATE || attendee.status === ParticipantStatusTypes.ABSENT) && (payments[attendee.id]?.amount == null || payments[attendee.id]?.amount === 0) ? 'bg-red-100 dark:bg-red-900/20' : ''}`}>
                   <div className="flex-1">
                     <div className="font-medium text-foreground">{attendee.user?.name}</div>

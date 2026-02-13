@@ -6,6 +6,7 @@ import {
   SortingState,
   flexRender,
   getCoreRowModel,
+  getFilteredRowModel,
   getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
@@ -76,7 +77,8 @@ export function PaymentsTable() {
     //   ),
     // },
     {
-      accessorKey: "user.name",
+      id: "userName",
+      accessorFn: (row) => `${row.user?.name ?? ''} ${row.user?.lastname ?? ''}`,
       header: ({ column }) => (
         <Button
           variant="ghost"
@@ -149,6 +151,7 @@ export function PaymentsTable() {
     },
     onSortingChange: setSorting,
     getCoreRowModel: getCoreRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
     meta: {
@@ -173,8 +176,9 @@ export function PaymentsTable() {
       <div className="flex items-center py-4 gap-3">
         <Input
           placeholder="Filtrar nombres..."
+          value={(table.getColumn("userName")?.getFilterValue() as string) ?? ""}
           onChange={(event) =>
-            table.getColumn("user.name")?.setFilterValue(event.target.value)
+            table.getColumn("userName")?.setFilterValue(event.target.value)
           }
           className="max-w-sm mr-auto bg-background border-border"
         />

@@ -7,7 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { PlusCircle } from "lucide-react";
+import { PlusCircle, Search } from "lucide-react";
 import { useContext, useEffect, useState } from "react";
 import { AppContext } from "@/context/AppContext";
 import { IUser } from "@/types/IUser";
@@ -27,6 +27,7 @@ export default function Shares() {
   const [selectedUser, setSelectedUser] = useState<IUser | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [price] = useState(10); // Fixed price for now
+  const [searchQuery, setSearchQuery] = useState('');
 
   const handleAddShares = (user: IPartnerShares) => {
     setSelectedUser(user);
@@ -123,6 +124,18 @@ export default function Shares() {
             Total monto: <span className="font-semibold text-foreground">S/ {totalAmount.toFixed(2)}</span>
           </div>
         </div>
+
+        {/* Search */}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Buscar por nombre..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+
         <div className="rounded-md border bg-card">
           <Table>
             <TableHeader>
@@ -136,7 +149,13 @@ export default function Shares() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {[...partnerShares].sort((a, b) => {
+              {[...partnerShares]
+              .filter((user) => {
+                if (!searchQuery.trim()) return true;
+                const fullName = `${user.lastname} ${user.name}`.toLowerCase();
+                return fullName.includes(searchQuery.toLowerCase());
+              })
+              .sort((a, b) => {
                 const lastNameCompare = (a.lastname || '').localeCompare(b.lastname || '', 'es');
                 if (lastNameCompare !== 0) return lastNameCompare;
                 return (a.name || '').localeCompare(b.name || '', 'es');
