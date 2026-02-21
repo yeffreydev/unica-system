@@ -23,10 +23,14 @@ export const DividendsWithdrawForm = ({
   setOpenDialog,
   dividends,
   setDividends,
+  defaultDate,
+  scheduleRunId,
 }: {
   setOpenDialog?: (value: boolean) => void;
   dividends?: IDividendsWithdraw[];
   setDividends?: (value: IDividendsWithdraw[]) => void;
+  defaultDate?: Date;
+  scheduleRunId?: string;
 }) => {
   const { users } = useContext(AppContext);
   const [userSelected, setUserSelected] = useState<IUser | null>(null);
@@ -35,7 +39,7 @@ export const DividendsWithdrawForm = ({
     defaultValues: {
       username: "", // Asegúrate de definir un valor inicial
       amount: 0,
-      date: new Date().toISOString().split('T')[0],
+      date: (defaultDate ?? new Date()).toISOString().split('T')[0],
     },
   });
   const onSubmit = async () => {
@@ -53,6 +57,7 @@ export const DividendsWithdrawForm = ({
       description: "Retiro de Utilidades",
       userId: userSelected ? userSelected.id : null,
       date: new Date(form.getValues("date")),
+      scheduleRunId: scheduleRunId || undefined,
     });
     if (res.data) {
       form.reset();

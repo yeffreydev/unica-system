@@ -38,9 +38,11 @@ import { IOtherExpense } from "../../expenses/others/types";
 
 import { OtherExpenseForm } from "../../expenses/others/OtherExpenseForm";
 import { ISocialFunds } from "@/types/ISocialFunds";
+import { IDividendsWithdraw } from "../../expenses/dividends/types";
+import { DividendsWithdrawForm } from "../../expenses/dividends/DividendsWithdrawForm";
 
 type OperationCategory = 'ingreso' | 'egreso';
-type OperationType = 'deposit' | 'fund' | 'other-income' | 'withdrawal' | 'administrative' | 'payout' | 'social-expense' | 'other-expense';
+type OperationType = 'deposit' | 'fund' | 'other-income' | 'withdrawal' | 'administrative' | 'payout' | 'social-expense' | 'other-expense' | 'dividend';
 
 interface UnifiedOperation {
   id: string;
@@ -50,7 +52,7 @@ interface UnifiedOperation {
   amount: number;
   user?: string;
   description: string;
-  raw: IDeposit | ISocialFundsTransaction | IOtherIncome | IWithdrawal | IAdministrativeExpense | IPayout | ISocialFundsExpenseTransaction | IOtherExpense;
+  raw: IDeposit | ISocialFundsTransaction | IOtherIncome | IWithdrawal | IAdministrativeExpense | IPayout | ISocialFundsExpenseTransaction | IOtherExpense | IDividendsWithdraw;
 }
 
 export default function Operations() {
@@ -62,6 +64,7 @@ export default function Operations() {
   const [payouts, setPayouts] = useState<IPayout[]>([]);
   const [socialFundsExpenses, setSocialFundsExpenses] = useState<ISocialFundsExpenseTransaction[]>([]);
   const [otherExpenses, setOtherExpenses] = useState<IOtherExpense[]>([]);
+  const [dividends, setDividends] = useState<IDividendsWithdraw[]>([]);
   
   const { assembly } = useAssembly();
   const [assemblyRun, setAssemblyRun] = useState<IAssemblyScheduleRun | null>(null);
@@ -94,7 +97,7 @@ export default function Operations() {
     
     const fetchAll = async () => {
        try {
-        const [depRes, fundsRes, otherIncRes, withdrawRes, adminRes, payoutRes, socialExpRes, otherExpRes] = await Promise.all([
+        const [depRes, fundsRes, otherIncRes, withdrawRes, adminRes, payoutRes, socialExpRes, otherExpRes, dividendsRes] = await Promise.all([
           apiClient.get(`/deposits/schedule-run/${assemblyRun.id}`),
           apiClient.get(`/incomes/social-funds/schedule-run/${assemblyRun.id}`),
           apiClient.get(`/incomes/others/schedule-run/${assemblyRun.id}`),
@@ -103,6 +106,7 @@ export default function Operations() {
           apiClient.get(`/payouts/schedule-run/${assemblyRun.id}`),
           apiClient.get(`/expenses/social-funds/schedule-run/${assemblyRun.id}`),
           apiClient.get(`/expenses/others/schedule-run/${assemblyRun.id}`),
+          apiClient.get(`/expenses/dividends/schedule-run/${assemblyRun.id}`),
         ]);
 
         setDeposits(depRes.data || []);
@@ -113,6 +117,7 @@ export default function Operations() {
         setPayouts(payoutRes.data || []);
         setSocialFundsExpenses(socialExpRes.data || []);
         setOtherExpenses(otherExpRes.data || []);
+        setDividends(dividendsRes.data || []);
        } catch(e) {
          console.error("Error fetching operations", e);
        }
@@ -175,6 +180,10 @@ export default function Operations() {
             case 'other-expense':
                 await apiClient.delete(`/expenses/others/${id}`);
                 setOtherExpenses(prev => prev.filter(i => i.id.toString() !== id));
+                break;
+            case 'dividend':
+                await apiClient.delete(`/expenses/dividends/${id}`);
+                setDividends(prev => prev.filter(i => i.id.toString() !== id));
                 break;
         }
     } catch (error) {
@@ -243,9 +252,15 @@ export default function Operations() {
       user: '-',
       description: o.description || 'Otro Gasto', raw: o
     }));
+    dividends.forEach(d => list.push({
+      id: d.id.toString(), category: 'egreso', type: 'dividend',
+      date: new Date(d.date), amount: d.amount,
+      user: d.user?.name || d.user?.lastname || 'Desconocido',
+      description: 'Utilidades', raw: d
+    }));
 
     return list.sort((a, b) => b.date.getTime() - a.date.getTime());
-  }, [deposits, funds, otherIncomes, withdrawals, administrativeExpenses, payouts, socialFundsExpenses, otherExpenses]);
+  }, [deposits, funds, otherIncomes, withdrawals, administrativeExpenses, payouts, socialFundsExpenses, otherExpenses, dividends]);
 
   const filteredOperations = useMemo(() => {
     if (filterCategory === 'all') return allOperations;
@@ -265,6 +280,7 @@ export default function Operations() {
       case 'payout': return <Badge className="bg-purple-100 text-purple-700 hover:bg-purple-100 border-purple-200">Pago Interés</Badge>;
       case 'social-expense': return <Badge className="bg-indigo-100 text-indigo-700 hover:bg-indigo-100 border-indigo-200">Gasto Social</Badge>;
       case 'other-expense': return <Badge className="bg-rose-100 text-rose-700 hover:bg-rose-100 border-rose-200">Otro Gasto</Badge>;
+      case 'dividend': return <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100 border-amber-200">Utilidades</Badge>;
       default: return <Badge variant="outline">Operación</Badge>;
     }
   };
@@ -343,6 +359,9 @@ export default function Operations() {
                                 </DropdownMenuItem>
                                 <DropdownMenuItem onClick={() => { setActiveDialog('other-expense'); setOpenDialog(true); }}>
                                     Otros
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => { setActiveDialog('dividend'); setOpenDialog(true); }}>
+                                    Utilidades
                                 </DropdownMenuItem>
                             </DropdownMenuSubContent>
                         </DropdownMenuSub>
@@ -550,6 +569,15 @@ export default function Operations() {
                   <p className="text-sm text-muted-foreground">Ingresa los detalles del gasto.</p>
                 </div>
                 <OtherExpenseForm setOpenDialog={closeDialog} otherExpenses={otherExpenses} setOtherExpenses={setOtherExpenses} defaultDate={new Date(assemblyRun?.startAt ?? Date.now())} scheduleRunId={assemblyRun?.id} />
+              </>
+            )}
+            {activeDialog === 'dividend' && (
+              <>
+                <div className="mb-4">
+                  <h2 className="text-lg font-semibold">Utilidades</h2>
+                  <p className="text-sm text-muted-foreground">Ingresa los detalles del retiro de utilidades.</p>
+                </div>
+                <DividendsWithdrawForm setOpenDialog={closeDialog} dividends={dividends} setDividends={setDividends} defaultDate={new Date(assemblyRun?.startAt ?? Date.now())} scheduleRunId={assemblyRun?.id} />
               </>
             )}
           </div>
