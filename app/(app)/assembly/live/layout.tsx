@@ -157,7 +157,7 @@ export default function StepLayout({ children }: { children: React.ReactNode }) 
               {assemblyState.currentStep === assemblySteps.length ? (
                 <Button
                   variant="default"
-                  className="bg-green-600 hover:bg-green-700 text-white"
+                  className=""
                   onClick={handleFinalizeAssembly}
                 >
                   Finalizar Asamblea
@@ -185,8 +185,8 @@ export default function StepLayout({ children }: { children: React.ReactNode }) 
       <Dialog open={confirmModalOpen} onOpenChange={setConfirmModalOpen}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader className="space-y-4">
-            <div className="mx-auto w-16 h-16 rounded-full bg-gradient-to-br from-green-500/20 to-green-600/20 flex items-center justify-center ring-4 ring-green-500/10">
-              <CheckCircle className="w-8 h-8 text-green-600" />
+            <div className="mx-auto w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center ring-4 ring-primary/10">
+              <CheckCircle className="w-8 h-8 text-primary" />
             </div>
             <DialogTitle className="text-center text-2xl font-bold">
               ¿Finalizar Asamblea?
@@ -212,7 +212,7 @@ export default function StepLayout({ children }: { children: React.ReactNode }) 
             <Button 
               onClick={confirmFinalizeAssembly}
               disabled={isFinishing}
-              className="w-full sm:w-auto bg-green-600 hover:bg-green-700"
+              className="w-full sm:w-auto"
             >
               {isFinishing ? (
                 <>

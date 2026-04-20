@@ -3,17 +3,20 @@
 @tailwind utilities;
 
 body {
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-/* Snappy transitions for theme changes */
+/* Smooth transitions for theme changes */
 * {
   transition:
-    background-color 0.1s ease-in-out,
-    border-color 0.1s ease-in-out,
-    color 0.1s ease-in-out,
-    fill 0.1s ease-in-out,
-    stroke 0.1s ease-in-out;
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    color 0.15s ease,
+    fill 0.15s ease,
+    stroke 0.15s ease,
+    box-shadow 0.15s ease;
 }
 
 /* Disable transitions during theme change to prevent flashing */
@@ -22,10 +25,8 @@ body {
 }
 
 @layer utilities {
-
-  /* Additional dark mode utilities */
   .dark-shadow {
-    @apply shadow-lg shadow-black/10 dark:shadow-black/30;
+    @apply shadow-lg shadow-black/5 dark:shadow-black/30;
   }
 
   .theme-border {
@@ -40,140 +41,114 @@ body {
 
 @layer base {
   :root {
-    /* Main surfaces - Elegant White-2 */
-    --background: 197 100% 99%;
-    /* #F8FDFF */
-    --foreground: 205 48% 9%;
-    /* #0C1922 - Ink Black */
+    /* Surfaces - Clean white with barely-there warmth */
+    --background: 210 20% 98%;
+    --foreground: 210 25% 12%;
 
-    /* Cards and elevated surfaces */
+    /* Cards - Pure white, elevated with shadow not borders */
     --card: 0 0% 100%;
-    /* Pure White */
-    --card-foreground: 205 48% 9%;
+    --card-foreground: 210 25% 12%;
     --popover: 0 0% 100%;
-    --popover-foreground: 205 48% 9%;
+    --popover-foreground: 210 25% 12%;
 
-    /* Brand colors - Blue Slate and Light Blue */
-    --primary: 217 24% 43%;
-    /* #526687 - Blue Slate */
-    --primary-foreground: 240 100% 100%;
-    --main: 217 24% 43%;
-    --main-foreground: 240 100% 100%;
+    /* Brand - Rich dark cyan, authoritative */
+    --primary: 186 75% 28%;
+    --primary-foreground: 0 0% 100%;
+    --main: 186 75% 28%;
+    --main-foreground: 0 0% 100%;
 
-    /* Secondary surfaces - Light Blue */
-    --secondary: 186 28% 79%;
-    /* #BCD6D9 - Light Blue */
-    --secondary-foreground: 205 48% 9%;
+    /* Secondary - Soft cool gray */
+    --secondary: 210 15% 93%;
+    --secondary-foreground: 210 20% 25%;
 
-    /* Muted elements */
-    --muted: 186 28% 92%;
-    /* Desaturated Light Blue */
-    --muted-foreground: 217 24% 43%;
-    /* Blue Slate for text */
+    /* Muted - For labels and secondary text */
+    --muted: 210 15% 95%;
+    --muted-foreground: 210 10% 46%;
 
-    /* Accent */
-    --accent: 186 28% 88%;
-    --accent-foreground: 205 48% 9%;
+    /* Accent - Subtle cyan tint for hovers */
+    --accent: 186 20% 94%;
+    --accent-foreground: 186 75% 22%;
 
     /* Destructive */
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 240 100% 100%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
 
-    /* Borders and inputs */
-    --border: 186 28% 85%;
-    --input: 186 28% 85%;
-    --ring: 217 24% 43%;
+    /* Borders - Barely visible, let shadows do the work */
+    --border: 210 15% 90%;
+    --input: 210 15% 87%;
+    --ring: 186 75% 28%;
 
-    /* Chart colors - Harmonious with the new palette */
-    --chart-1: 217 24% 43%;
-    --chart-2: 186 28% 79%;
-    --chart-3: 205 48% 15%;
-    --chart-4: 217 24% 60%;
-    --chart-5: 186 28% 65%;
+    /* Chart colors - Brand cyan spectrum with good contrast */
+    --chart-1: 186 75% 28%;
+    --chart-2: 192 70% 36%;
+    --chart-3: 179 65% 32%;
+    --chart-4: 186 55% 48%;
+    --chart-5: 192 50% 52%;
 
-    --radius: 0.75rem;
-    /* Slightly more rounded for elegance */
+    --radius: 0.625rem;
 
-    /* Sidebar */
-    --sidebar-background: 205 48% 9%;
-    /* Ink Black */
-    --sidebar-foreground: 240 100% 100%;
-    /* White */
-    --sidebar-primary: 186 28% 79%;
-    /* Light Blue */
-    --sidebar-primary-foreground: 205 48% 9%;
-    --sidebar-accent: 217 24% 43%;
-    /* Blue Slate */
-    --sidebar-accent-foreground: 240 100% 100%;
-    --sidebar-border: 205 48% 15%;
-    --sidebar-ring: 186 28% 79%;
+    /* Sidebar - White/light, clean and modern */
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 210 25% 12%;
+    --sidebar-primary: 186 75% 28%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 186 20% 94%;
+    --sidebar-accent-foreground: 186 75% 22%;
+    --sidebar-border: 210 15% 92%;
+    --sidebar-ring: 186 75% 28%;
 
     /* Top header */
     --top-header-background: 0 0% 100%;
-    --top-header-foreground: 205 48% 9%;
+    --top-header-foreground: 210 25% 12%;
   }
 
   .dark {
-    /* Dark Mode - Ink Black background */
-    --background: 205 48% 9%;
-    /* #0C1922 */
-    --foreground: 240 100% 100%;
-    /* #FEFEFF - White */
+    --background: 210 8% 14%;
+    --foreground: 210 10% 92%;
 
-    /* Cards and elevated surfaces */
-    --card: 205 48% 12%;
-    --card-foreground: 240 100% 100%;
-    --popover: 205 48% 12%;
-    --popover-foreground: 240 100% 100%;
+    --card: 210 8% 17%;
+    --card-foreground: 210 10% 92%;
+    --popover: 210 8% 17%;
+    --popover-foreground: 210 10% 92%;
 
-    /* Brand colors - Light Blue for better contrast in dark mode */
-    --primary: 186 28% 79%;
-    /* #BCD6D9 */
-    --primary-foreground: 205 48% 9%;
-    --main: 186 28% 79%;
-    --main-foreground: 205 48% 9%;
+    /* Brand cyan - vivid on dark gray */
+    --primary: 186 90% 44%;
+    --primary-foreground: 0 0% 100%;
+    --main: 186 90% 44%;
+    --main-foreground: 0 0% 100%;
 
-    /* Secondary - Blue Slate */
-    --secondary: 217 24% 43%;
-    /* #526687 */
-    --secondary-foreground: 240 100% 100%;
+    --secondary: 210 8% 20%;
+    --secondary-foreground: 210 10% 85%;
 
-    /* Muted elements */
-    --muted: 205 48% 18%;
-    --muted-foreground: 186 28% 70%;
+    --muted: 210 8% 19%;
+    --muted-foreground: 210 8% 50%;
 
-    /* Accent */
-    --accent: 217 24% 30%;
-    --accent-foreground: 240 100% 100%;
+    --accent: 210 8% 20%;
+    --accent-foreground: 210 10% 88%;
 
-    /* Destructive */
-    --destructive: 0 62% 30%;
-    --destructive-foreground: 240 100% 100%;
+    --destructive: 0 70% 42%;
+    --destructive-foreground: 0 0% 100%;
 
-    /* Borders and inputs */
-    --border: 205 48% 20%;
-    --input: 205 48% 20%;
-    --ring: 186 28% 79%;
+    --border: 210 8% 22%;
+    --input: 210 8% 22%;
+    --ring: 186 90% 44%;
 
-    /* Chart colors */
-    --chart-1: 186 28% 79%;
-    --chart-2: 217 24% 43%;
-    --chart-3: 186 28% 90%;
-    --chart-4: 205 48% 40%;
-    --chart-5: 217 24% 60%;
+    --chart-1: 179 80% 38%;
+    --chart-2: 186 90% 44%;
+    --chart-3: 192 75% 40%;
+    --chart-4: 184 65% 55%;
+    --chart-5: 192 55% 52%;
 
-    /* Sidebar */
-    --sidebar-background: 205 48% 7%;
-    --sidebar-foreground: 240 100% 100%;
-    --sidebar-primary: 186 28% 79%;
-    --sidebar-primary-foreground: 205 48% 9%;
-    --sidebar-accent: 217 24% 43%;
-    --sidebar-accent-foreground: 240 100% 100%;
-    --sidebar-border: 205 48% 15%;
-    --sidebar-ring: 186 28% 79%;
+    --sidebar-background: 210 10% 11%;
+    --sidebar-foreground: 210 10% 88%;
+    --sidebar-primary: 186 90% 44%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 210 10% 16%;
+    --sidebar-accent-foreground: 210 10% 88%;
+    --sidebar-border: 210 8% 18%;
+    --sidebar-ring: 186 90% 44%;
 
-    /* Top header */
-    --top-header-background: 205 48% 9%;
-    --top-header-foreground: 240 100% 100%;
+    --top-header-background: 210 8% 14%;
+    --top-header-foreground: 210 10% 92%;
   }
 }

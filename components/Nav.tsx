@@ -56,9 +56,9 @@ export function AppSidebar() {
     return pathname.startsWith(path);
   };
 
-  const customNavClass = "flex items-center px-4 py-2.5 text-sm font-semibold rounded-xl transition-all duration-200 group mb-1";
-  const activeClass = "bg-primary text-primary-foreground shadow-md shadow-primary/20";
-  const inactiveClass = "text-muted-foreground hover:bg-secondary/10 hover:text-primary";
+  const customNavClass = "flex items-center px-3 py-2 text-[13px] font-medium rounded-lg transition-all duration-150 group mb-0.5";
+  const activeClass = "bg-primary text-primary-foreground";
+  const inactiveClass = "text-muted-foreground hover:bg-accent hover:text-accent-foreground";
 
   return (
     <nav className="flex flex-col space-y-1">
@@ -71,14 +71,14 @@ export function AppSidebar() {
             isActive(item.href) ? activeClass : inactiveClass
           )}
         >
-          <item.icon className={cn("mr-3 h-4.5 w-4.5 transition-transform group-hover:scale-110", isActive(item.href) ? "text-primary-foreground" : "text-muted-foreground/70 group-hover:text-primary")} />
+          <item.icon className={cn("mr-2.5 h-4 w-4", isActive(item.href) ? "text-primary-foreground" : "text-muted-foreground/60 group-hover:text-accent-foreground")} />
           {item.title}
         </Link>
       ))}
 
-      <div className="py-4">
-        <div className="px-4 mb-2">
-          <p className="text-[10px] font-bold text-muted-foreground/50 uppercase tracking-widest">Finanzas</p>
+      <div className="pt-4">
+        <div className="px-3 mb-1.5">
+          <p className="text-[10px] font-semibold text-muted-foreground/50 uppercase tracking-wider">Finanzas</p>
         </div>
         
         {/* Ingresos Sections */}
@@ -88,11 +88,11 @@ export function AppSidebar() {
             className={cn(
               customNavClass,
               "w-full justify-between",
-              incomesOpen ? "text-primary bg-secondary/5" : "text-muted-foreground hover:bg-secondary/10 hover:text-primary"
+              incomesOpen ? "text-foreground bg-accent" : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
             )}
           >
             <div className="flex items-center">
-              <TrendingUp className="mr-3 h-4.5 w-4.5" />
+              <TrendingUp className="mr-2.5 h-4 w-4" />
               <span>Ingresos</span>
             </div>
             <ChevronDown className={cn("w-4 h-4 transition-transform duration-300", incomesOpen ? "rotate-180" : "")} />
@@ -107,11 +107,11 @@ export function AppSidebar() {
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  "flex items-center px-4 py-2 text-xs font-medium rounded-lg transition-all mb-1 border-l-2 border-transparent hover:border-primary/30",
-                  isActive(item.href) ? "text-primary font-bold border-primary bg-primary/5" : "text-muted-foreground hover:text-primary hover:bg-secondary/5"
+                  "flex items-center px-3 py-1.5 text-xs font-medium rounded-md transition-all mb-0.5",
+                  isActive(item.href) ? "text-primary font-semibold bg-accent" : "text-muted-foreground hover:text-foreground hover:bg-accent/60"
                 )}
               >
-                <item.icon className="mr-3 h-3.5 w-3.5" />
+                <item.icon className="mr-2 h-3.5 w-3.5" />
                 {item.title}
               </Link>
             ))}
@@ -125,11 +125,11 @@ export function AppSidebar() {
             className={cn(
               customNavClass,
               "w-full justify-between",
-              expensesOpen ? "text-primary bg-secondary/5" : "text-muted-foreground hover:bg-secondary/10 hover:text-primary"
+              expensesOpen ? "text-foreground bg-accent" : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
             )}
           >
             <div className="flex items-center">
-              <TrendingDown className="mr-3 h-4.5 w-4.5" />
+              <TrendingDown className="mr-2.5 h-4 w-4" />
               <span>Egresos</span>
             </div>
             <ChevronDown className={cn("w-4 h-4 transition-transform duration-300", expensesOpen ? "rotate-180" : "")} />
@@ -144,11 +144,11 @@ export function AppSidebar() {
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  "flex items-center px-4 py-2 text-xs font-medium rounded-lg transition-all mb-1 border-l-2 border-transparent hover:border-primary/30",
-                  isActive(item.href) ? "text-primary font-bold border-primary bg-primary/5" : "text-muted-foreground hover:text-primary hover:bg-secondary/5"
+                  "flex items-center px-3 py-1.5 text-xs font-medium rounded-md transition-all mb-0.5",
+                  isActive(item.href) ? "text-primary font-semibold bg-accent" : "text-muted-foreground hover:text-foreground hover:bg-accent/60"
                 )}
               >
-                <item.icon className="mr-3 h-3.5 w-3.5" />
+                <item.icon className="mr-2 h-3.5 w-3.5" />
                 {item.title}
               </Link>
             ))}
@@ -162,11 +162,11 @@ export function AppSidebar() {
             className={cn(
               customNavClass,
               "w-full justify-between",
-              reportsOpen ? "text-primary bg-secondary/5" : "text-muted-foreground hover:bg-secondary/10 hover:text-primary"
+              reportsOpen ? "text-foreground bg-accent" : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
             )}
           >
             <div className="flex items-center">
-              <FileBarChart className="mr-3 h-4.5 w-4.5" />
+              <FileBarChart className="mr-2.5 h-4 w-4" />
               <span>Reportes</span>
             </div>
             <ChevronDown className={cn("w-4 h-4 transition-transform duration-300", reportsOpen ? "rotate-180" : "")} />
@@ -181,11 +181,11 @@ export function AppSidebar() {
                 key={item.href}
                 href={item.href}
                 className={cn(
-                  "flex items-center px-4 py-2 text-xs font-medium rounded-lg transition-all mb-1 border-l-2 border-transparent hover:border-primary/30",
-                  isActive(item.href) ? "text-primary font-bold border-primary bg-primary/5" : "text-muted-foreground hover:text-primary hover:bg-secondary/5"
+                  "flex items-center px-3 py-1.5 text-xs font-medium rounded-md transition-all mb-0.5",
+                  isActive(item.href) ? "text-primary font-semibold bg-accent" : "text-muted-foreground hover:text-foreground hover:bg-accent/60"
                 )}
               >
-                <item.icon className="mr-3 h-3.5 w-3.5" />
+                <item.icon className="mr-2 h-3.5 w-3.5" />
                 {item.title}
               </Link>
             ))}
@@ -193,9 +193,9 @@ export function AppSidebar() {
         </div>
       </div>
 
-      <div className="pt-2 border-t border-border/50">
-        <div className="px-4 mb-2 mt-4">
-          <p className="text-[10px] font-bold text-muted-foreground/50 uppercase tracking-widest">Sistema</p>
+      <div className="pt-3 mt-1 border-t border-border/40">
+        <div className="px-3 mb-1.5 mt-2">
+          <p className="text-[10px] font-semibold text-muted-foreground/50 uppercase tracking-wider">Sistema</p>
         </div>
         {otherItems.map((item) => (
           <Link
@@ -206,7 +206,7 @@ export function AppSidebar() {
               isActive(item.href) ? activeClass : inactiveClass
             )}
           >
-            <item.icon className={cn("mr-3 h-4.5 w-4.5", isActive(item.href) ? "text-primary-foreground" : "text-muted-foreground/70")} />
+            <item.icon className={cn("mr-2.5 h-4 w-4", isActive(item.href) ? "text-primary-foreground" : "text-muted-foreground/60 group-hover:text-accent-foreground")} />
             {item.title}
           </Link>
         ))}

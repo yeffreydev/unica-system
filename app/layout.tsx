@@ -6,6 +6,7 @@ import { AppProvider } from "@/context/AppContext";
 import { ThemeProvider } from "@/context/ThemeProvider";
 import { ThemeContextProvider } from "@/context/ThemeContext";
 import { AssemblyProvider } from "@/app/(app)/assembly/AssemblyContext";
+import { Toaster } from "sileo";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -41,11 +42,14 @@ export default function RootLayout({
           storageKey="unica-theme"
         >
           <ThemeContextProvider>
-            <AssemblyProvider>
-              <AuthProvider>
-                <AppProvider>{children}</AppProvider>
-              </AuthProvider>
-            </AssemblyProvider>
+            <AuthProvider>
+              <AppProvider>
+                <AssemblyProvider>
+                  {children}
+                  <Toaster position="bottom-right" />
+                </AssemblyProvider>
+              </AppProvider>
+            </AuthProvider>
           </ThemeContextProvider>
         </ThemeProvider>
       </body>

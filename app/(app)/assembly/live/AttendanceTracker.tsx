@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Users, CheckCircle, XCircle, DollarSign, UserPlus, Info, Trash2, Search } from "lucide-react";
+import { Users, CheckCircle, XCircle, DollarSign, UserPlus, Trash2, Search, Clock, CircleDot, Banknote } from "lucide-react";
+import { sileo } from "sileo";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -19,69 +20,91 @@ import { IUser } from "@/types/IUser";
 import { OtherIncomesTags } from "@/constants";
 import { IOtherIncome } from "../../incomes/others/types";
 
+const STATUS_CONFIG: Record<string, { color: string; icon: React.ReactNode }> = {
+  attended: {
+    color: "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800",
+    icon: <CheckCircle className="w-3.5 h-3.5" />,
+  },
+  absent: {
+    color: "bg-red-50 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-400 dark:border-red-800",
+    icon: <XCircle className="w-3.5 h-3.5" />,
+  },
+  late: {
+    color: "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800",
+    icon: <Clock className="w-3.5 h-3.5" />,
+  },
+  registered: {
+    color: "bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-800",
+    icon: <CircleDot className="w-3.5 h-3.5" />,
+  },
+};
+
+function getStatusConfig(status: string) {
+  return STATUS_CONFIG[status] ?? STATUS_CONFIG.registered;
+}
 
 export function AttendanceTracker() {
   const { assembly } = useAssembly();
   const { users } = useContext(AppContext);
   const [assemblyRun, setAssemblyRun] = useState<IAssemblyScheduleRun | null>(null);
-  const [payments, setPayments] = useState<Record<string, {amount: number; transactionIds: string[]}>>({});
+  const [payments, setPayments] = useState<Record<string, { amount: number; transactionIds: string[] }>>({});
   const [openModal, setOpenModal] = useState<string | null>(null);
   const [amount, setAmount] = useState<number>(0);
   const [openAddModal, setOpenAddModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<IUser | null>(null);
-  const [confirmChange, setConfirmChange] = useState<{id: string, status: ParticipantStatusTypes} | null>(null);
+  const [confirmChange, setConfirmChange] = useState<{ id: string; status: ParticipantStatusTypes } | null>(null);
   const [confirmDeletePayment, setConfirmDeletePayment] = useState<string | null>(null);
   const [confirmRemoveParticipant, setConfirmRemoveParticipant] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
- 
+  const [searchQuery, setSearchQuery] = useState("");
+
   useEffect(() => {
-    //get assembly run
     (async () => {
       if (!assembly?.lastRun) return;
       const data = await apiGetAssemblyRun(assembly.lastRun.id);
-      console.log({ data });
       setAssemblyRun(data);
-    
-      // Fetch other incomes for payments
+
       if (data.id) {
         try {
           const otherIncomes = await apiGetOtherIncomesByScheduleRun(data.id);
-          console.log({ otherIncomes });
-          const userData: Record<string, {amount: number; transactionIds: string[]}> = {};
+          const userData: Record<string, { amount: number; transactionIds: string[] }> = {};
           otherIncomes.forEach((income: IOtherIncome) => {
-            const uid = income.userId || '';
+            const uid = income.userId || "";
             if (!userData[uid]) {
-              userData[uid] = {amount: 0, transactionIds: []};
+              userData[uid] = { amount: 0, transactionIds: [] };
             }
             userData[uid].amount += income.amount;
             userData[uid].transactionIds.push(income.id);
           });
-          const newPayments: Record<string, {amount: number; transactionIds: string[]}> = {};
-            data.participants.forEach((attendee) => {
+          const newPayments: Record<string, { amount: number; transactionIds: string[] }> = {};
+          data.participants.forEach((attendee) => {
             if (!attendee.user?.id) return;
             const userDataEntry = userData[attendee.user.id];
             if (userDataEntry) {
               newPayments[attendee.id] = userDataEntry;
             }
-            });
+          });
           setPayments(newPayments);
         } catch (error) {
-          console.error('Error fetching other incomes:', error);
+          console.error("Error fetching other incomes:", error);
         }
       }
     })();
   }, [assembly?.lastRun]);
 
-  if (!assembly) {
-   return null;
-  }
+  if (!assembly) return null;
   if (!assembly.lastRun) {
-    return <div className="p-4">No hay una asamblea en curso.</div>;
+    return (
+      <Card className="w-full">
+        <CardContent className="py-12 text-center text-muted-foreground">
+          No hay una asamblea en curso.
+        </CardContent>
+      </Card>
+    );
   }
 
   const handleStatusChange = async (participantId: string, status: ParticipantStatusTypes) => {
+    const participant = assemblyRun?.participants.find((p) => p.id === participantId);
     try {
-      // Delete payments if exist
       const paymentData = payments[participantId];
       if (paymentData?.amount > 0 && paymentData.transactionIds.length > 0) {
         for (const transactionId of paymentData.transactionIds) {
@@ -89,28 +112,36 @@ export function AttendanceTracker() {
         }
       }
 
-      //fetch to patch endpoint
-    if (!assembly.lastRun?.id) return;
-    const data = await apiUpdateParticipantStatusInAssemblyRun( participantId, status);
-    if (!data || data.count === 0) {
-      throw new Error('No se pudo actualizar el estado del participante');
-    }
+      if (!assembly.lastRun?.id) return;
+      const data = await apiUpdateParticipantStatusInAssemblyRun(participantId, status);
+      if (!data || data.count === 0) {
+        throw new Error("No se pudo actualizar el estado");
+      }
 
-    const updatedAttendees = assemblyRun?.participants?.map(attendee =>
+      const updatedAttendees =
+        assemblyRun?.participants?.map((attendee) =>
+          attendee.id === participantId
+            ? { ...attendee, status, time: status === ParticipantStatusTypes.ATTENDED || status === ParticipantStatusTypes.LATE ? new Date().toLocaleTimeString() : undefined }
+            : attendee
+        ) || [];
+      setAssemblyRun((prev) => (prev ? { ...prev, participants: updatedAttendees } : prev));
+      setPayments((prev) => ({ ...prev, [participantId]: { amount: 0, transactionIds: [] } }));
 
-      attendee.id === participantId
-        ? { ...attendee, status, time: status === ParticipantStatusTypes.ATTENDED || status === ParticipantStatusTypes.LATE ? new Date().toLocaleTimeString() : undefined }
-        : attendee
-    ) || [];
-    setAssemblyRun(prev => prev ? { ...prev, participants: updatedAttendees } : prev);
-    setPayments(prev => ({ ...prev, [participantId]: {amount: 0, transactionIds: []} }));
+      sileo.success({
+        title: "Estado actualizado",
+        description: `${participant?.user?.name} ${participant?.user?.lastname} marcado como ${translateParticipantStatus(status).toLowerCase()}.`,
+      });
     } catch (error) {
       console.error("Error updating status:", error);
+      sileo.error({
+        title: "Error",
+        description: "No se pudo actualizar el estado del participante.",
+      });
     }
-  
   };
 
   const handleDeletePayment = async (participantId: string) => {
+    const participant = assemblyRun?.participants.find((p) => p.id === participantId);
     try {
       const paymentData = payments[participantId];
       if (paymentData?.transactionIds.length > 0) {
@@ -118,49 +149,40 @@ export function AttendanceTracker() {
           await apiDeleteOtherIncomesTransactionAssembly(transactionId);
         }
       }
-      setPayments(prev => ({ ...prev, [participantId]: {amount: 0, transactionIds: []} }));
+      setPayments((prev) => ({ ...prev, [participantId]: { amount: 0, transactionIds: [] } }));
+      setConfirmDeletePayment(null);
+      sileo.success({
+        title: "Pago eliminado",
+        description: `Se eliminó el pago de ${participant?.user?.name}.`,
+      });
     } catch (error) {
       console.error("Error deleting payment:", error);
+      sileo.error({ title: "Error", description: "No se pudo eliminar el pago." });
     }
   };
 
   const handleRemoveParticipant = async (participantId: string) => {
     try {
-      const participant = assemblyRun?.participants.find(p => p.id === participantId);
+      const participant = assemblyRun?.participants.find((p) => p.id === participantId);
       if (!participant || !assemblyRun?.id || !participant.user?.id) return;
 
       await apiUpdateParticipantInAssemblyRun(assemblyRun.id, {
         userId: participant.user.id,
-        action: 'remove'
+        action: "remove",
       });
-      // Refresh the assembly run data
       const updatedData = await apiGetAssemblyRun(assemblyRun.id);
       setAssemblyRun(updatedData);
       setConfirmRemoveParticipant(null);
+      sileo.success({
+        title: "Participante eliminado",
+        description: `${participant.user.name} fue removido de la asamblea.`,
+      });
     } catch (error) {
       console.error("Error removing participant:", error);
-      // Handle error - participant might have payments
-      alert("No se puede eliminar el participante porque tiene pagos registrados.");
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'present': return 'bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400';
-      case 'absent': return 'bg-red-100 text-red-800 dark:bg-red-900/20 dark:text-red-400';
-      case 'late': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/20 dark:text-yellow-400';
-      case 'registered': return 'bg-blue-100 text-blue-800 dark:bg-blue-900/20 dark:text-blue-400';
-      case 'MISSED': return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400';
-      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-900/20 dark:text-gray-400';
-    }
-  };
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'present': return <CheckCircle className="w-4 h-4" />;
-      case 'absent': return <XCircle className="w-4 h-4" />;
-      case 'late': return <Users className="w-4 h-4" />;
-      default: return <Users className="w-4 h-4" />;
+      sileo.error({
+        title: "Error",
+        description: "No se puede eliminar. El participante puede tener pagos registrados.",
+      });
     }
   };
 
@@ -169,378 +191,388 @@ export function AttendanceTracker() {
     try {
       await apiUpdateParticipantInAssemblyRun(assemblyRun.id, {
         userId: selectedUser.id,
-        action: 'add'
+        action: "add",
       });
-      // Refresh the assembly run data
       const updatedData = await apiGetAssemblyRun(assemblyRun.id);
       setAssemblyRun(updatedData);
+      sileo.success({
+        title: "Participante agregado",
+        description: `${selectedUser.name} ${selectedUser.lastname} fue agregado a la asamblea.`,
+      });
       setSelectedUser(null);
       setOpenAddModal(false);
     } catch (error) {
-      console.error('Error adding participant:', error);
+      console.error("Error adding participant:", error);
+      sileo.error({ title: "Error", description: "No se pudo agregar el participante." });
     }
   };
 
-  // Filter users to only show those not already registered in the assembly
-   const availableUsers = users?.filter(user =>
-     !assemblyRun?.participants?.some(participant => participant.user?.id === user.id)
-   ) || [];
+  const handlePayment = async (attendee: IAssemblyScheduleRun["participants"][0]) => {
+    if (!attendee.user?.id) return;
+    try {
+      const description = attendee.status === ParticipantStatusTypes.LATE ? "Pago por tardanza en asamblea" : "Pago por falta en asamblea";
+      const data = await apiCreateOtherIncomesTransaction({
+        userId: attendee.user.id,
+        description,
+        amount,
+        date: assemblyRun!.startAt,
+        scheduleRunId: assembly.lastRun!.id,
+        tag: attendee.status === ParticipantStatusTypes.LATE ? OtherIncomesTags.LATE : OtherIncomesTags.ABSENCE,
+      });
+      const transactionId = data.id;
+      setPayments((prev) => {
+        const existing = prev[attendee.id];
+        const newAmount = (existing ? existing.amount : 0) + amount;
+        const newIds = existing ? [...existing.transactionIds, transactionId] : [transactionId];
+        return { ...prev, [attendee.id]: { amount: newAmount, transactionIds: newIds } };
+      });
+      setOpenModal(null);
+      sileo.success({
+        title: "Pago registrado",
+        description: `S/ ${amount.toFixed(2)} cobrado a ${attendee.user.name}.`,
+      });
+    } catch (error) {
+      console.error("Error creating payment:", error);
+      sileo.error({ title: "Error", description: "No se pudo registrar el pago." });
+    }
+  };
 
-  const presentCount = assemblyRun?.participants?.filter(a => a.status === ParticipantStatusTypes.ATTENDED).length || 0;
-  const absentCount = assemblyRun?.participants?.filter(a => a.status === ParticipantStatusTypes.ABSENT).length || 0;
-  const lateCount = assemblyRun?.participants?.filter(a => a.status === ParticipantStatusTypes.LATE).length || 0;
+  const availableUsers =
+    users?.filter((user) => !assemblyRun?.participants?.some((participant) => participant.user?.id === user.id)) || [];
+
+  const presentCount = assemblyRun?.participants?.filter((a) => a.status === ParticipantStatusTypes.ATTENDED).length || 0;
+  const absentCount = assemblyRun?.participants?.filter((a) => a.status === ParticipantStatusTypes.ABSENT).length || 0;
+  const lateCount = assemblyRun?.participants?.filter((a) => a.status === ParticipantStatusTypes.LATE).length || 0;
   const totalCount = assemblyRun?.participants?.length || 0;
+  const quorumPercent = totalCount > 0 ? ((presentCount + lateCount) / totalCount) * 100 : 0;
+  const totalCollected = Object.values(payments).reduce((acc, curr) => acc + curr.amount, 0);
 
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <div className="flex justify-between items-center">
-          <CardTitle className="flex items-center space-x-2 text-lg">
-            <Users className="w-5 h-5" />
-            <span>Control de Asistencia</span>
-          </CardTitle>
-          <Button onClick={() => setOpenAddModal(true)} size="sm" className="flex items-center space-x-1">
-            <span>Participantes </span> <UserPlus className="w-4 h-4" />
+    <Card className="w-full overflow-hidden">
+      {/* Header */}
+      <CardHeader className="pb-0 pt-5 px-5">
+        <div className="flex items-center justify-between mb-4">
+          <CardTitle className="text-base font-semibold">Control de Asistencia</CardTitle>
+          <Button onClick={() => setOpenAddModal(true)} size="sm" variant="outline" className="gap-1.5 h-8 text-xs">
+            <UserPlus className="w-3.5 h-3.5" />
+            Agregar
           </Button>
         </div>
+
+        {/* Stats Row - Compact */}
+        {assemblyRun && (
+          <div className="space-y-3 pb-4">
+            {/* Quorum bar */}
+            <div className="flex items-center gap-3">
+              <div className="flex-1">
+                <div className="h-2 rounded-full bg-muted overflow-hidden">
+                  <div
+                    className={`h-full rounded-full transition-all duration-700 ease-out ${quorumPercent >= 50 ? "bg-emerald-500" : "bg-red-500"}`}
+                    style={{ width: `${Math.min(quorumPercent, 100)}%` }}
+                  />
+                </div>
+              </div>
+              <span className={`text-sm font-bold tabular-nums ${quorumPercent >= 50 ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"}`}>
+                {quorumPercent.toFixed(0)}%
+              </span>
+            </div>
+
+            {/* Counters inline */}
+            <div className="flex items-center gap-2 flex-wrap">
+              <CounterPill count={presentCount} label="Presentes" dotColor="bg-emerald-500" />
+              <CounterPill count={lateCount} label="Tardanzas" dotColor="bg-amber-500" />
+              <CounterPill count={absentCount} label="Ausentes" dotColor="bg-red-500" />
+              <div className="h-4 w-px bg-border mx-1" />
+              <span className="text-xs text-muted-foreground">{presentCount + lateCount}/{totalCount}</span>
+              {totalCollected > 0 && (
+                <>
+                  <div className="h-4 w-px bg-border mx-1" />
+                  <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">S/ {totalCollected.toFixed(2)}</span>
+                </>
+              )}
+            </div>
+          </div>
+        )}
       </CardHeader>
+
+      {/* Add Participant Dialog */}
       <Dialog open={openAddModal} onOpenChange={setOpenAddModal} modal={false}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Participantes</DialogTitle>
-            <DialogDescription>
-              Lista de participantes actuales y opción para agregar nuevos.
-            </DialogDescription>
+            <DialogDescription>Lista de participantes actuales y opción para agregar nuevos.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
-            <div className="max-h-64 overflow-y-auto space-y-2">
+            <div className="max-h-64 overflow-y-auto space-y-1.5">
               {assemblyRun?.participants?.map((participant) => (
-                 <div key={participant.id} className="flex items-center justify-between p-2 border rounded">
-                   <div>
-                     <div className="font-medium">{participant.user?.name} {participant.user?.lastname}</div>
-                     <div className="text-sm text-muted-foreground">{translateParticipantStatus(participant.status)}</div>
-                   </div>
+                <div key={participant.id} className="flex items-center justify-between p-2.5 rounded-lg border bg-muted/20 hover:bg-muted/40 transition-colors">
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary text-xs font-bold">
+                      {participant.user?.name?.[0]}
+                      {participant.user?.lastname?.[0]}
+                    </div>
+                    <div>
+                      <div className="font-medium text-sm">
+                        {participant.user?.name} {participant.user?.lastname}
+                      </div>
+                      <div className="text-xs text-muted-foreground">{translateParticipantStatus(participant.status)}</div>
+                    </div>
+                  </div>
                   <Button
-                    variant="outline"
+                    variant="ghost"
                     size="sm"
                     onClick={() => setConfirmRemoveParticipant(participant.id)}
                     disabled={payments[participant.id]?.amount > 0}
-                    className="text-red-600 hover:text-red-700"
+                    className="h-8 w-8 p-0 text-muted-foreground hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
                   >
-                    <Trash2 className="w-4 h-4" />
+                    <Trash2 className="w-3.5 h-3.5" />
                   </Button>
                 </div>
               ))}
             </div>
-            <div className="border-t pt-4">
-              <h4 className="font-medium mb-2">Agregar Nuevo Participante</h4>
-              <ComboBoxUsers
-                users={availableUsers}
-                controller={{ userSelected: selectedUser, setUserSelected: setSelectedUser }}
-              />
-              <Button onClick={handleAddAttendee} className="w-full mt-2" disabled={!selectedUser}>
+            <div className="border-t pt-4 space-y-3">
+              <h4 className="font-medium text-sm">Agregar Nuevo Participante</h4>
+              <ComboBoxUsers users={availableUsers} controller={{ userSelected: selectedUser, setUserSelected: setSelectedUser }} />
+              <Button onClick={handleAddAttendee} className="w-full" disabled={!selectedUser}>
                 Agregar Participante
               </Button>
             </div>
           </div>
         </DialogContent>
       </Dialog>
-      <CardContent className="space-y-4">
-        {!assemblyRun ? (
-          <>
-            {/* Loading Statistics */}
-            <div className="grid grid-cols-4 gap-2 text-center">
-              <div className="p-2 bg-green-50 dark:bg-green-950/20 rounded">
-                <Skeleton className="h-6 w-8 mb-1" />
-                <Skeleton className="h-3 w-12" />
-              </div>
-              <div className="p-2 bg-yellow-50 dark:bg-yellow-950/20 rounded">
-                <Skeleton className="h-6 w-8 mb-1" />
-                <Skeleton className="h-3 w-12" />
-              </div>
-              <div className="p-2 bg-red-50 dark:bg-red-950/20 rounded">
-                <Skeleton className="h-6 w-8 mb-1" />
-                <Skeleton className="h-3 w-12" />
-              </div>
-              <div className="p-2 bg-blue-50 dark:bg-blue-950/20 rounded">
-                <Skeleton className="h-6 w-8 mb-1" />
-                <Skeleton className="h-3 w-12" />
-              </div>
-            </div>
 
-            {/* Loading Attendees List */}
-            <div className="space-y-2 max-h-128 overflow-y-auto">
-              {Array.from({ length: 5 }).map((_, index) => (
-                <div key={index} className="flex items-center justify-between p-2 border rounded">
-                  <div className="flex-1">
-                    <Skeleton className="h-4 w-32 mb-1" />
-                    <Skeleton className="h-3 w-24" />
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Skeleton className="h-6 w-20" />
-                    <div className="flex space-x-1">
-                      <Skeleton className="h-8 w-8" />
-                      <Skeleton className="h-8 w-8" />
-                      <Skeleton className="h-8 w-8" />
-                    </div>
-                  </div>
+      <CardContent className="p-0">
+        {!assemblyRun ? (
+          <div className="px-5 pb-5 space-y-2">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="flex items-center gap-3 p-3 rounded-lg border">
+                <Skeleton className="h-9 w-9 rounded-full shrink-0" />
+                <div className="flex-1">
+                  <Skeleton className="h-4 w-32 mb-1" />
+                  <Skeleton className="h-3 w-20" />
                 </div>
-              ))}
-            </div>
-          </>
+                <Skeleton className="h-6 w-16" />
+              </div>
+            ))}
+          </div>
         ) : (
           <>
-            {/* Statistics */}
-            <div className="grid grid-cols-4 gap-2 text-center">
-              <div className="p-2 bg-green-50 dark:bg-green-950/20 rounded">
-                <div className="text-lg font-bold text-green-600 dark:text-green-400">{presentCount}</div>
-                <div className="text-xs text-green-600 dark:text-green-400">Presentes</div>
-              </div>
-              <div className="p-2 bg-yellow-50 dark:bg-yellow-950/20 rounded">
-                <div className="text-lg font-bold text-yellow-600 dark:text-yellow-400">{lateCount}</div>
-                <div className="text-xs text-yellow-600 dark:text-yellow-400">Tardanzas</div>
-              </div>
-              <div className="p-2 bg-red-50 dark:bg-red-950/20 rounded">
-                <div className="text-lg font-bold text-red-600 dark:text-red-400">{absentCount}</div>
-                <div className="text-xs text-red-600 dark:text-red-400">Ausentes</div>
-              </div>
-              <div className="p-2 bg-blue-50 dark:bg-blue-950/20 rounded">
-                <div className="text-lg font-bold text-blue-600 dark:text-blue-400">{totalCount}</div>
-                <div className="text-xs text-blue-600 dark:text-blue-400">Total</div>
-              </div>
-            </div>
-
             {/* Search */}
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Buscar por nombre..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9"
-              />
+            <div className="px-5 pt-1 pb-3">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar por nombre..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9 h-9 bg-muted/30 border-0 focus-visible:ring-1 text-sm"
+                />
+              </div>
             </div>
 
-            {/* Attendees list */}
-            <div className="space-y-2 max-h-128 overflow-y-auto">
+            {/* Attendees List */}
+            <div className="px-5 pb-5 space-y-1.5 max-h-[500px] overflow-y-auto">
               {assemblyRun?.participants
-              ?.filter((attendee) => {
-                if (!searchQuery.trim()) return true;
-                const fullName = `${attendee.user?.name ?? ''} ${attendee.user?.lastname ?? ''}`.toLowerCase();
-                return fullName.includes(searchQuery.toLowerCase());
-              })
-              .map((attendee) => (
-                <div key={attendee.id} className={`flex items-center justify-between p-2 border rounded ${(attendee.status === ParticipantStatusTypes.LATE || attendee.status === ParticipantStatusTypes.ABSENT) && (payments[attendee.id]?.amount == null || payments[attendee.id]?.amount === 0) ? 'bg-red-100 dark:bg-red-900/20' : ''}`}>
-                  <div className="flex-1">
-                    <div className="font-medium text-foreground">{attendee.user?.name}</div>
-                    {/* {attendee.time && (
-                      <div className="text-xs text-muted-foreground">Hora: {attendee.time}</div>
-                    )} */}
-
-                      <div className="text-xs text-muted-foreground">{attendee.user?.lastname}</div>
-
-
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Badge className={getStatusColor(attendee.status)}>
-                      <div className="flex items-center space-x-1">
-                        {getStatusIcon(attendee.status)}
-                        <span className="capitalize">{translateParticipantStatus(attendee.status)}</span>
+                ?.filter((attendee) => {
+                  if (!searchQuery.trim()) return true;
+                  const fullName = `${attendee.user?.name ?? ""} ${attendee.user?.lastname ?? ""}`.toLowerCase();
+                  return fullName.includes(searchQuery.toLowerCase());
+                })
+                .map((attendee) => {
+                  const config = getStatusConfig(attendee.status);
+                  const hasPaid = payments[attendee.id]?.amount > 0;
+                  return (
+                    <div key={attendee.id} className="group flex items-center gap-3 p-3 rounded-xl border bg-card hover:shadow-sm transition-all">
+                      {/* Avatar */}
+                      <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/10 text-primary text-xs font-bold shrink-0">
+                        {attendee.user?.name?.[0]}
+                        {attendee.user?.lastname?.[0]}
                       </div>
-                    </Badge>
-                    {payments[attendee.id]?.amount > 0 && (
-                      <Button
-                        variant="secondary"
-                        className="bg-green-100 text-green-800 dark:bg-green-900/20 dark:text-green-400 h-auto px-2 py-1"
-                        onClick={() => setConfirmDeletePayment(attendee.id)}
-                      >
-                        Pagado: ${payments[attendee.id].amount}
-                        <Info className="w-4 h-4 ml-1" />
-                      </Button>
-                    )}
-                    {(attendee.status === ParticipantStatusTypes.LATE || attendee.status === ParticipantStatusTypes.ABSENT) && (
-                      <Dialog open={openModal === attendee.id} onOpenChange={(open) => setOpenModal(open ? attendee.id : null)}>
-                        <DialogTrigger asChild>
-                          <Button size="sm" variant="outline" className="h-8 w-8 p-0" onClick={() => { setAmount(attendee.status === ParticipantStatusTypes.LATE ? 5 : 20); setOpenModal(attendee.id); }}>
-                            <DollarSign className="w-4 h-4" />
-                          </Button>
-                        </DialogTrigger>
-                        <DialogContent>
-                          <DialogHeader>
-                            <DialogTitle>Pagar {attendee.status === ParticipantStatusTypes.LATE ? 'Tardanza' : 'Falta'}</DialogTitle>
-                          </DialogHeader>
-                          <div className="space-y-4">
-                            <div>
-                              <label htmlFor="amount" className="block text-sm font-medium">Monto</label>
-                              <Input id="amount" type="number" value={amount} onChange={(e) => setAmount(Number(e.target.value))} />
-                            </div>
-                            <p>¿Confirmar pago para {attendee.user?.name} {attendee.user?.lastname}?</p>
-                            <Button onClick={async () => {
-                              if (!attendee.user?.id) return;
-                              try {
-                                const description = attendee.status === ParticipantStatusTypes.LATE ? 'Pago por tardanza en asamblea' : 'Pago por falta en asamblea';
-                                const data = await apiCreateOtherIncomesTransaction({
-                                  userId: attendee.user.id,
-                                  description,
-                                  amount,
-                                  date: assemblyRun.startAt,
-                                  scheduleRunId: assembly.lastRun!.id,
-                                  tag: attendee.status === ParticipantStatusTypes.LATE ? OtherIncomesTags.LATE : OtherIncomesTags.ABSENCE,
-                                });
-                                const transactionId = data.id;
-                                setPayments(prev => {
-                                  const existing = prev[attendee.id];
-                                  const newAmount = (existing ? existing.amount : 0) + amount;
-                                  const newIds = existing ? [...existing.transactionIds, transactionId] : [transactionId];
-                                  return { ...prev, [attendee.id]: {amount: newAmount, transactionIds: newIds} };
-                                });
-                                setOpenModal(null);
-                              } catch (error) {
-                                console.error('Error creating payment:', error);
-                                // Optionally show toast error
-                              }
-                            }} className="w-full">
-                              Confirmar Pago
+
+                      {/* Name */}
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium text-sm truncate">
+                          {attendee.user?.name} {attendee.user?.lastname}
+                        </div>
+                        <Badge variant="outline" className={`mt-0.5 text-[10px] px-1.5 py-0 h-5 gap-1 font-medium border ${config.color}`}>
+                          {config.icon}
+                          {translateParticipantStatus(attendee.status)}
+                        </Badge>
+                      </div>
+
+                      {/* Payment Badge */}
+                      {hasPaid && (
+                        <button
+                          onClick={() => setConfirmDeletePayment(attendee.id)}
+                          className="flex items-center gap-1 px-2 py-1 rounded-md text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800 dark:hover:bg-emerald-950/60 transition-colors"
+                        >
+                          <Banknote className="w-3.5 h-3.5" />
+                          S/ {payments[attendee.id].amount.toFixed(2)}
+                        </button>
+                      )}
+
+                      {/* Fine Button */}
+                      {(attendee.status === ParticipantStatusTypes.LATE || attendee.status === ParticipantStatusTypes.ABSENT) && (
+                        <Dialog open={openModal === attendee.id} onOpenChange={(open) => setOpenModal(open ? attendee.id : null)}>
+                          <DialogTrigger asChild>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="h-8 w-8 p-0 shrink-0"
+                              onClick={() => {
+                                setAmount(attendee.status === ParticipantStatusTypes.LATE ? 5 : 20);
+                                setOpenModal(attendee.id);
+                              }}
+                            >
+                              <DollarSign className="w-3.5 h-3.5" />
                             </Button>
-                          </div>
-                        </DialogContent>
-                      </Dialog>
-                    )}
-                    <div className="flex space-x-1">
-                      <Button
-                        size="sm"
-                        variant={attendee.status === ParticipantStatusTypes.ATTENDED ? 'default' : 'outline'}
-                        onClick={() => {
-                          if (attendee.status === ParticipantStatusTypes.ATTENDED) return;
-                          if (payments[attendee.id]?.amount > 0) {
-                            setConfirmChange({id: attendee.id, status: ParticipantStatusTypes.ATTENDED});
-                          } else {
-                            handleStatusChange(attendee.id, ParticipantStatusTypes.ATTENDED);
-                          }
-                        }}
-                        className="h-8 w-8 p-0"
-                      >
-                        <CheckCircle className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant={attendee.status === ParticipantStatusTypes.LATE ? 'default' : 'outline'}
-                        onClick={() => {
-                          if (attendee.status === ParticipantStatusTypes.LATE) return;
-                          if (payments[attendee.id]?.amount > 0) {
-                            setConfirmChange({id: attendee.id, status: ParticipantStatusTypes.LATE});
-                          } else {
-                            handleStatusChange(attendee.id, ParticipantStatusTypes.LATE);
-                          }
-                        }}
-                        className="h-8 w-8 p-0"
-                      >
-                        <Users className="w-4 h-4" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant={attendee.status === ParticipantStatusTypes.ABSENT ? 'default' : 'outline'}
-                        onClick={() => {
-                          if (attendee.status === ParticipantStatusTypes.ABSENT) return;
-                          if (payments[attendee.id]?.amount > 0) {
-                            setConfirmChange({id: attendee.id, status: ParticipantStatusTypes.ABSENT});
-                          } else {
-                            handleStatusChange(attendee.id, ParticipantStatusTypes.ABSENT);
-                          }
-                        }}
-                        className="h-8 w-8 p-0"
-                      >
-                        <XCircle className="w-4 h-4" />
-                      </Button>
+                          </DialogTrigger>
+                          <DialogContent>
+                            <DialogHeader>
+                              <DialogTitle>
+                                Cobrar {attendee.status === ParticipantStatusTypes.LATE ? "Tardanza" : "Falta"}
+                              </DialogTitle>
+                              <DialogDescription>
+                                Registrar cobro para {attendee.user?.name} {attendee.user?.lastname}.
+                              </DialogDescription>
+                            </DialogHeader>
+                            <div className="space-y-4 pt-2">
+                              <div className="space-y-2">
+                                <label className="text-sm font-medium">Monto (S/)</label>
+                                <Input type="number" value={amount} onChange={(e) => setAmount(Number(e.target.value))} />
+                              </div>
+                              <Button onClick={() => handlePayment(attendee)} className="w-full">
+                                Confirmar Cobro
+                              </Button>
+                            </div>
+                          </DialogContent>
+                        </Dialog>
+                      )}
+
+                      {/* Status Buttons */}
+                      <div className="flex gap-1 shrink-0">
+                        <StatusButton
+                          active={attendee.status === ParticipantStatusTypes.ATTENDED}
+                          activeColor="bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600"
+                          onClick={() => {
+                            if (attendee.status === ParticipantStatusTypes.ATTENDED) return;
+                            if (payments[attendee.id]?.amount > 0) {
+                              setConfirmChange({ id: attendee.id, status: ParticipantStatusTypes.ATTENDED });
+                            } else {
+                              handleStatusChange(attendee.id, ParticipantStatusTypes.ATTENDED);
+                            }
+                          }}
+                        >
+                          <CheckCircle className="w-3.5 h-3.5" />
+                        </StatusButton>
+                        <StatusButton
+                          active={attendee.status === ParticipantStatusTypes.LATE}
+                          activeColor="bg-amber-500 hover:bg-amber-600 text-white border-amber-500"
+                          onClick={() => {
+                            if (attendee.status === ParticipantStatusTypes.LATE) return;
+                            if (payments[attendee.id]?.amount > 0) {
+                              setConfirmChange({ id: attendee.id, status: ParticipantStatusTypes.LATE });
+                            } else {
+                              handleStatusChange(attendee.id, ParticipantStatusTypes.LATE);
+                            }
+                          }}
+                        >
+                          <Clock className="w-3.5 h-3.5" />
+                        </StatusButton>
+                        <StatusButton
+                          active={attendee.status === ParticipantStatusTypes.ABSENT}
+                          activeColor="bg-red-600 hover:bg-red-700 text-white border-red-600"
+                          onClick={() => {
+                            if (attendee.status === ParticipantStatusTypes.ABSENT) return;
+                            if (payments[attendee.id]?.amount > 0) {
+                              setConfirmChange({ id: attendee.id, status: ParticipantStatusTypes.ABSENT });
+                            } else {
+                              handleStatusChange(attendee.id, ParticipantStatusTypes.ABSENT);
+                            }
+                          }}
+                        >
+                          <XCircle className="w-3.5 h-3.5" />
+                        </StatusButton>
+                      </div>
                     </div>
-                  </div>
-                </div>
-              ))}
+                  );
+                })}
             </div>
+
+            {/* Confirm Status Change Dialog */}
             <Dialog open={!!confirmChange} onOpenChange={() => setConfirmChange(null)}>
               <DialogContent>
                 <DialogHeader>
                   <DialogTitle>Confirmar cambio de estado</DialogTitle>
                   <DialogDescription>
-                    El participante {assemblyRun?.participants.find(p => p.id === confirmChange?.id)?.user?.name || ''} tiene un pago de ${payments[confirmChange?.id || '']?.amount || 0}. ¿Estás seguro de que deseas cambiar el estado a {translateParticipantStatus(confirmChange?.status || ParticipantStatusTypes.ATTENDED)}? Esto eliminará el pago.
+                    <strong>{assemblyRun?.participants.find((p) => p.id === confirmChange?.id)?.user?.name}</strong> tiene un pago de{" "}
+                    <strong>S/ {payments[confirmChange?.id || ""]?.amount || 0}</strong>. Al cambiar el estado a{" "}
+                    <strong>{translateParticipantStatus(confirmChange?.status || ParticipantStatusTypes.ATTENDED).toLowerCase()}</strong>, se eliminará el pago.
                   </DialogDescription>
                 </DialogHeader>
-                <div className="flex space-x-2 pt-4">
+                <div className="flex gap-2 pt-2">
                   <Button
                     onClick={() => {
-                      if (confirmChange) {
-                        handleStatusChange(confirmChange.id, confirmChange.status);
-                      }
+                      if (confirmChange) handleStatusChange(confirmChange.id, confirmChange.status);
                       setConfirmChange(null);
                     }}
                     className="flex-1"
                   >
-                    Sí, cambiar estado
+                    Sí, cambiar
                   </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => setConfirmChange(null)}
-                    className="flex-1"
-                  >
+                  <Button variant="outline" onClick={() => setConfirmChange(null)} className="flex-1">
                     Cancelar
                   </Button>
                 </div>
               </DialogContent>
             </Dialog>
+
+            {/* Confirm Delete Payment Dialog */}
             <Dialog open={!!confirmDeletePayment} onOpenChange={() => setConfirmDeletePayment(null)}>
               <DialogContent>
                 <DialogHeader>
                   <DialogTitle>Eliminar Pago</DialogTitle>
                   <DialogDescription>
-                    ¿Estás seguro de que deseas eliminar el pago de {assemblyRun?.participants.find(p => p.id === confirmDeletePayment)?.user?.name || ''}?
+                    ¿Eliminar el pago de <strong>{assemblyRun?.participants.find((p) => p.id === confirmDeletePayment)?.user?.name}</strong>? Esta acción no se puede deshacer.
                   </DialogDescription>
                 </DialogHeader>
-                <div className="flex space-x-2 pt-4">
+                <div className="flex gap-2 pt-2">
                   <Button
+                    variant="destructive"
                     onClick={() => {
-                      if (confirmDeletePayment) {
-                        handleDeletePayment(confirmDeletePayment);
-                      }
-                      setConfirmDeletePayment(null);
+                      if (confirmDeletePayment) handleDeletePayment(confirmDeletePayment);
                     }}
                     className="flex-1"
                   >
-                    Sí, eliminar
+                    Eliminar Pago
                   </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => setConfirmDeletePayment(null)}
-                    className="flex-1"
-                  >
+                  <Button variant="outline" onClick={() => setConfirmDeletePayment(null)} className="flex-1">
                     Cancelar
                   </Button>
                 </div>
               </DialogContent>
             </Dialog>
+
+            {/* Confirm Remove Participant Dialog */}
             <Dialog open={!!confirmRemoveParticipant} onOpenChange={() => setConfirmRemoveParticipant(null)}>
               <DialogContent>
                 <DialogHeader>
                   <DialogTitle>Eliminar Participante</DialogTitle>
                   <DialogDescription>
-                    ¿Estás seguro de que deseas eliminar a {assemblyRun?.participants.find(p => p.id === confirmRemoveParticipant)?.user?.name || ''} de la asamblea? Esta acción no se puede deshacer.
+                    ¿Eliminar a <strong>{assemblyRun?.participants.find((p) => p.id === confirmRemoveParticipant)?.user?.name}</strong> de la asamblea? Esta acción no se puede deshacer.
                   </DialogDescription>
                 </DialogHeader>
-                <div className="flex space-x-2 pt-4">
+                <div className="flex gap-2 pt-2">
                   <Button
+                    variant="destructive"
                     onClick={() => {
-                      if (confirmRemoveParticipant) {
-                        handleRemoveParticipant(confirmRemoveParticipant);
-                      }
+                      if (confirmRemoveParticipant) handleRemoveParticipant(confirmRemoveParticipant);
                     }}
-                    className="flex-1 bg-red-600 hover:bg-red-700"
-                  >
-                    Sí, eliminar
-                  </Button>
-                  <Button
-                    variant="outline"
-                    onClick={() => setConfirmRemoveParticipant(null)}
                     className="flex-1"
                   >
+                    Eliminar
+                  </Button>
+                  <Button variant="outline" onClick={() => setConfirmRemoveParticipant(null)} className="flex-1">
                     Cancelar
                   </Button>
                 </div>
@@ -551,4 +583,27 @@ export function AttendanceTracker() {
       </CardContent>
     </Card>
   );
-} 
+}
+
+function CounterPill({ count, label, dotColor }: { count: number; label: string; dotColor: string }) {
+  return (
+    <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-muted/50 text-xs">
+      <div className={`w-2 h-2 rounded-full ${dotColor}`} />
+      <span className="font-semibold tabular-nums">{count}</span>
+      <span className="text-muted-foreground">{label}</span>
+    </div>
+  );
+}
+
+function StatusButton({ active, activeColor, onClick, children }: { active: boolean; activeColor: string; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      onClick={onClick}
+      className={`flex items-center justify-center w-8 h-8 rounded-lg border transition-all ${
+        active ? activeColor : "border-border text-muted-foreground hover:text-foreground hover:border-foreground/30 hover:bg-muted/50"
+      }`}
+    >
+      {children}
+    </button>
+  );
+}

@@ -90,3 +90,26 @@ export interface ICreditApplication {
   scheduleRunId?: string;
   user: IUser;
 }
+
+export interface ISavingsDeposit {
+  id: string;
+  amount: number;
+  date: string;
+  userId?: string;
+  scheduleRunId?: string;
+  user?: IUser;
+}
+
+export interface ISavingsPayout {
+  id: string;
+  amount: number;
+  description: string;
+  date: string;
+  userId?: string;
+  user?: IUser;
+}
+
+export interface ISavingsPartner extends IUser {
+  deposits: ISavingsDeposit[];
+  payouts: ISavingsPayout[];
+}

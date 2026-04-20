@@ -1,36 +1,34 @@
 "use client";
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Check, CreditCard, Info, Search } from "lucide-react";
-import { useContext, useEffect, useState } from "react";
-import { AppContext } from "@/context/AppContext";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Check, CreditCard, Info, Search, Banknote } from "lucide-react";
+import { useEffect, useState } from "react";
 import { IUser } from "@/types/IUser";
 import { IAssemblyScheduleRun, ILoanPayment, IPaymentData } from "../types";
 import { apiGetAssemblyRun, apiGetPaymentsData, apiRecordPayment } from "../api";
 import { useAssembly } from "../AssemblyContext";
-import { getPaymentStatusColor, getRowColor } from "./utils";
+
 import { ILoanInstallment } from "@/types/ILoan";
 import apiClient from "@/config/apiClient";
 import { Checkbox } from "@/components/ui/checkbox";
 
 export default function Payments() {
-  const { users } = useContext(AppContext);
-   const { assembly } = useAssembly();
-    
-     const [assemblyRun, setAssemblyRun] = useState<IAssemblyScheduleRun | null>(null);
+  const { assembly } = useAssembly();
+
+  const [assemblyRun, setAssemblyRun] = useState<IAssemblyScheduleRun | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [detailsModalOpen, setDetailsModalOpen] = useState(false);
-  const [paymentsData, setPaymentsData] = useState<IPaymentData> ({
+  const [paymentsData, setPaymentsData] = useState<IPaymentData>({
     partners: [],
     installments: [],
     payments: []
-  })
+  });
   const [selectedUser, setSelectedUser] = useState<IUser | null>(null);
   const [selectedInstallments, setSelectedInstallments] = useState<string[]>([]);
   const [description, setDescription] = useState('');
@@ -39,27 +37,19 @@ export default function Payments() {
   const [editedAmounts, setEditedAmounts] = useState<Record<string, { capital: string; interest: string; description: string }>>({});
   const [searchQuery, setSearchQuery] = useState('');
 
- useEffect(() => {
-     //get assembly run
-     (async () => {
-       if (!assembly?.lastRun) return;
-       const data = await apiGetAssemblyRun(assembly.lastRun.id);
-       console.log({ data });
-       setAssemblyRun(data);
-     })();
-   }, [assembly?.lastRun]);
-
-
-
-  //get payments data
   useEffect(() => {
-    // Fetch or compute payments data here and set it
-    // setPaymentsData(fetchedData);
-       if (!assemblyRun) return;
+    (async () => {
+      if (!assembly?.lastRun) return;
+      const data = await apiGetAssemblyRun(assembly.lastRun.id);
+      setAssemblyRun(data);
+    })();
+  }, [assembly?.lastRun]);
+
+  useEffect(() => {
+    if (!assemblyRun) return;
     const fetchData = async () => {
       try {
         const data = await apiGetPaymentsData(assemblyRun.id);
-        console.log("Fetched payments data:", data);
         setPaymentsData(data);
       } catch (error) {
         console.error("Error fetching payments data:", error);
@@ -73,7 +63,6 @@ export default function Payments() {
       if (!assemblyRun?.id) return;
       try {
         const response = await apiClient.get(`/schedules/assembly/run/${assemblyRun.id}/installments`);
-        console.log("Fetched assembly month installments:", response.data);
         setCurrentMonthInstallments(response.data);
       } catch (error) {
         console.error("Error fetching assembly month installments:", error);
@@ -82,35 +71,27 @@ export default function Payments() {
     fetchAssemblyMonthInstallments();
   }, [assemblyRun?.id]);
 
-
- 
   const handlePayInterest = (user: IUser) => {
     setSelectedUser(user);
-    
-    // Get installments for this user from the assembly month
+
     const installmentsForUser = currentMonthInstallments.filter(
       inst => inst.user?.id === user.id && inst.isAssemblyMonth
     );
     setUserInstallments(installmentsForUser);
-    
-    // Select all assembly month installments by default
+
     const installmentIds = installmentsForUser.map(inst => inst.id || '');
     setSelectedInstallments(installmentIds);
-    
-    // Initialize edited amounts with values from each installment's payment data
+
     const initialAmounts: Record<string, { capital: string; interest: string; description: string }> = {};
     installmentsForUser.forEach(inst => {
       if (inst.id) {
-        // Check if this installment has payment data
         if (inst.paymentAmount !== null && inst.paymentAmount !== undefined) {
-          // Load from installment's payment data
           initialAmounts[inst.id] = {
             capital: inst.paymentAmount.toString(),
             interest: (inst.paymentInterest || 0).toString(),
             description: inst.paymentDescription || ''
           };
         } else {
-          // No payment registered: capital = 0, interest = expected interest
           initialAmounts[inst.id] = {
             capital: '0',
             interest: inst.interest.toString(),
@@ -120,7 +101,6 @@ export default function Payments() {
       }
     });
     setEditedAmounts(initialAmounts);
-    
     setModalOpen(true);
   };
 
@@ -129,40 +109,29 @@ export default function Payments() {
     setDetailsModalOpen(true);
   };
 
-  
-
-  // Calculate totals
   const calculateTotals = () => {
     const totalInstallment = paymentsData.installments.reduce((sum, inst) => sum + Number(inst.amount || 0), 0);
     const totalCapital = paymentsData.payments.reduce((sum, payment) => sum + Number(payment.amount || 0), 0);
     const totalInterest = paymentsData.payments.reduce((sum, payment) => sum + Number(payment.interest || 0), 0);
     const totalPaid = totalCapital + totalInterest;
     const totalPending = totalInstallment - totalPaid;
-    
-    return {
-      totalInstallment,
-      totalCapital,
-      totalInterest,
-      totalPaid,
-      totalPending
-    };
+
+    return { totalInstallment, totalCapital, totalInterest, totalPaid, totalPending };
   };
 
-  const confirmPayment = async() => {
+  const confirmPayment = async () => {
     if (!selectedUser) return;
 
-    // Calculate totals from selected installments using edited amounts
-    const selectedInstallmentsData = userInstallments.filter(inst => 
+    const selectedInstallmentsData = userInstallments.filter(inst =>
       selectedInstallments.includes(inst.id || '')
     );
-    
-    // Process each selected installment individually
+
     for (const inst of selectedInstallmentsData) {
       const edited = editedAmounts[inst.id || ''];
       const capital = parseFloat(edited?.capital) || 0;
       const interest = parseFloat(edited?.interest) || 0;
       const instDescription = edited?.description || '';
-      
+
       await apiRecordPayment(assemblyRun!.id, {
         userId: selectedUser.id,
         amount: capital,
@@ -172,8 +141,7 @@ export default function Payments() {
         installmentId: inst.id,
       });
     }
-    
-    // Re-fetch payments data from server to get accurate totals
+
     try {
       const data = await apiGetPaymentsData(assemblyRun!.id);
       setPaymentsData(data);
@@ -181,14 +149,13 @@ export default function Payments() {
       console.error("Error refreshing payments data:", error);
     }
 
-    // Refresh installments data to get updated payment info
     try {
       const response = await apiClient.get(`/schedules/assembly/run/${assemblyRun!.id}/installments`);
       setCurrentMonthInstallments(response.data);
     } catch (error) {
       console.error("Error refreshing installments:", error);
     }
-    
+
     setModalOpen(false);
     setSelectedUser(null);
     setSelectedInstallments([]);
@@ -196,347 +163,526 @@ export default function Payments() {
     setEditedAmounts({});
   };
 
-  
-
-
- 
-
+  const totals = calculateTotals();
+  const paidCount = paymentsData.partners.filter(user => {
+    const userPayments = paymentsData.payments.filter(p => p.userId === user.id);
+    return userPayments.reduce((sum, p) => sum + Number(p.amount || 0) + Number(p.interest || 0), 0) > 0;
+  }).length;
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Recolectar Intereses</CardTitle>
-        <CardDescription>Lista de usuarios - registra pagos de intereses</CardDescription>
+    <Card className="w-full overflow-hidden">
+      {/* Header */}
+      <CardHeader className="pb-0 pt-5 px-5">
+        <div className="flex items-center justify-between mb-4">
+          <CardTitle className="text-base font-semibold">Recolectar Intereses</CardTitle>
+          <Badge variant="outline" className="text-xs font-medium gap-1">
+            <Banknote className="w-3 h-3" />
+            {paymentsData.partners.length} socios
+          </Badge>
+        </div>
+
+        {/* Stats */}
+        {assemblyRun && (
+          <div className="flex items-center gap-2 flex-wrap pb-4">
+            <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-muted/50 text-xs">
+              <div className="w-2 h-2 rounded-full bg-emerald-500" />
+              <span className="font-semibold tabular-nums">{paidCount}</span>
+              <span className="text-muted-foreground">Pagaron</span>
+            </div>
+            <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-muted/50 text-xs">
+              <div className="w-2 h-2 rounded-full bg-blue-500" />
+              <span className="font-semibold tabular-nums">S/ {totals.totalCapital.toFixed(2)}</span>
+              <span className="text-muted-foreground">Capital</span>
+            </div>
+            <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-muted/50 text-xs">
+              <div className="w-2 h-2 rounded-full bg-purple-500" />
+              <span className="font-semibold tabular-nums">S/ {totals.totalInterest.toFixed(2)}</span>
+              <span className="text-muted-foreground">Interés</span>
+            </div>
+            {totals.totalPaid > 0 && (
+              <>
+                <div className="h-4 w-px bg-border mx-1" />
+                <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                  S/ {totals.totalPaid.toFixed(2)} total
+                </span>
+              </>
+            )}
+          </div>
+        )}
       </CardHeader>
-      <CardContent className="space-y-4">
-        {/* Totals Section - Moved to top */}
-        <div className="grid grid-cols-4 gap-4 p-4 bg-muted/50 rounded-lg">
-          <div className="text-center">
-            <div className="text-sm text-muted-foreground mb-1">Total Cuota</div>
-            <div className="text-2xl font-bold">S/ {calculateTotals().totalInstallment.toFixed(2)}</div>
-          </div>
-          <div className="text-center">
-            <div className="text-sm text-muted-foreground mb-1">Total Capital</div>
-            <div className="text-2xl font-bold text-blue-700 dark:text-blue-400">
-              S/ {calculateTotals().totalCapital.toFixed(2)}
-            </div>
-          </div>
-          <div className="text-center">
-            <div className="text-sm text-muted-foreground mb-1">Total Interés</div>
-            <div className="text-2xl font-bold text-purple-700 dark:text-purple-400">
-              S/ {calculateTotals().totalInterest.toFixed(2)}
-            </div>
-          </div>
-          <div className="text-center">
-            <div className="text-sm text-muted-foreground mb-1">Total Pagado</div>
-            <div className="text-2xl font-bold text-green-700 dark:text-green-400">
-              S/ {calculateTotals().totalPaid.toFixed(2)}
-            </div>
-          </div>
-          {/* <div className="text-center">
-            <div className="text-sm text-muted-foreground mb-1">Pendiente</div>
-            <div className="text-2xl font-bold text-orange-600 dark:text-orange-400">
-              S/ {calculateTotals().totalPending.toFixed(2)}
-            </div>
-          </div> */}
-        </div>
 
-        {/* Search */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Buscar por nombre..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9"
-          />
-        </div>
+      <CardContent className="p-0">
+        {!assemblyRun ? (
+          <div className="px-5 pb-5 space-y-1.5">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="flex items-center gap-3 p-3 rounded-lg border">
+                <Skeleton className="h-9 w-9 rounded-full shrink-0" />
+                <div className="flex-1">
+                  <Skeleton className="h-4 w-32 mb-1" />
+                  <Skeleton className="h-3 w-20" />
+                </div>
+                <Skeleton className="h-8 w-20" />
+              </div>
+            ))}
+          </div>
+        ) : (
+          <>
+            {/* Search */}
+            <div className="px-5 pt-1 pb-3">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Buscar por nombre..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-9 h-9 bg-muted/30 border-0 focus-visible:ring-1 text-sm"
+                />
+              </div>
+            </div>
 
-        <div className="rounded-md border bg-card">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Nombres</TableHead>
-                <TableHead>Balance</TableHead>
-                <TableHead>Préstamos</TableHead>
-                <TableHead>Interés</TableHead>
-                <TableHead>Pagado</TableHead>
-                <TableHead>Acción</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
+            {/* Partners List */}
+            <div className="px-5 pb-5 space-y-1.5 max-h-[500px] overflow-y-auto">
               {[...paymentsData.partners]
-              .filter((user) => {
-                if (!searchQuery.trim()) return true;
-                const fullName = `${user.lastname} ${user.name}`.toLowerCase();
-                return fullName.includes(searchQuery.toLowerCase());
-              })
-              .sort((a, b) => {
-                const lastNameCompare = (a.lastname || '').localeCompare(b.lastname || '', 'es');
-                if (lastNameCompare !== 0) return lastNameCompare;
-                return (a.name || '').localeCompare(b.name || '', 'es');
-              }).map((user) => {
-                const userPayments = paymentsData.payments.filter(p => p.userId === user.id);
-                const paymentAmount = userPayments.reduce((sum, p) => sum + Number(p.amount || 0) + Number(p.interest || 0), 0);
+                .filter((user) => {
+                  if (!searchQuery.trim()) return true;
+                  const fullName = `${user.lastname} ${user.name}`.toLowerCase();
+                  return fullName.includes(searchQuery.toLowerCase());
+                })
+                .sort((a, b) => {
+                  const lastNameCompare = (a.lastname || '').localeCompare(b.lastname || '', 'es');
+                  if (lastNameCompare !== 0) return lastNameCompare;
+                  return (a.name || '').localeCompare(b.name || '', 'es');
+                })
+                .map((user) => {
+                  const userPayments = paymentsData.payments.filter(p => p.userId === user.id);
+                  const paymentAmount = userPayments.reduce((sum, p) => sum + Number(p.amount || 0) + Number(p.interest || 0), 0);
+                  const hasPaid = paymentAmount > 0;
 
-                 //cuota
-                const installment = paymentsData.installments.find(i => i.userId === user.id);
-                const hasPaid = (paymentAmount) > 0;
-                const installmentAmount = Number(installment?.amount) || 0;
+                  const userAssemblyInstallments = currentMonthInstallments.filter(
+                    inst => inst.user?.id === user.id && inst.isAssemblyMonth
+                  );
 
-                // Calcular datos de préstamos del usuario
-                const userAssemblyInstallments = currentMonthInstallments.filter(
-                  inst => inst.user?.id === user.id && inst.isAssemblyMonth
-                );
-                
-                // Balance total (suma de balances de préstamos activos)
-                const totalBalance = userAssemblyInstallments.reduce((sum, inst) => {
-                  return sum + (inst.loan?.balance || 0);
-                }, 0);
-                
-                // Cantidad de préstamos activos (únicos por loanId)
-                const uniqueLoanIds = new Set(userAssemblyInstallments.map(inst => inst.loanId));
-                const activeLoansCount = uniqueLoanIds.size;
-                
-                // Suma de intereses de las cuotas del mes de la asamblea
-                const totalInterest = userAssemblyInstallments.reduce((sum, inst) => {
-                  return sum + (inst.interest || 0);
-                }, 0);
-                
-                // Suma del interés pagado de las cuotas del mes de la asamblea
-                const totalInterestPaid = userAssemblyInstallments.reduce((sum, inst) => {
-                  return sum + (inst.paymentInterest || 0);
-                }, 0);
-                const interestFullyPaid = totalInterestPaid >= totalInterest && totalInterest > 0;
-                
-                // Determinar si necesita sombra roja (tiene interés pero no ha pagado)
-                const needsRedShadow = totalInterest > 0 && !hasPaid;
+                  const totalBalance = userAssemblyInstallments.reduce((sum, inst) => sum + (inst.loan?.balance || 0), 0);
+                  const uniqueLoanIds = new Set(userAssemblyInstallments.map(inst => inst.loanId));
+                  const activeLoansCount = uniqueLoanIds.size;
+                  const totalInterest = userAssemblyInstallments.reduce((sum, inst) => sum + (inst.interest || 0), 0);
+                  const totalInterestPaid = userAssemblyInstallments.reduce((sum, inst) => sum + (inst.paymentInterest || 0), 0);
+                  const interestFullyPaid = totalInterestPaid >= totalInterest && totalInterest > 0;
+                  const needsAttention = totalInterest > 0 && !hasPaid;
 
-                //payment
-                return (
-                  <TableRow 
-                    key={user.id} 
-                    className={`${getRowColor(hasPaid, installmentAmount)} ${needsRedShadow ? 'shadow-[inset_0_0_0_2px_rgba(239,68,68,0.5)] bg-red-50 dark:bg-red-950/30' : ''}`}
-                  >
-                    <TableCell className="text-sm font-medium">{`${user.lastname}, ${user.name}`}</TableCell>
-                    <TableCell>
-                      <span className="font-semibold text-orange-600 dark:text-orange-400">
-                        S/ {totalBalance.toFixed(2)}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className="font-semibold">
-                        {activeLoansCount}
-                      </Badge>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-1">
-                        <span className="font-semibold text-purple-600 dark:text-purple-400">
-                          S/ {totalInterest.toFixed(2)}
-                        </span>
-                        {interestFullyPaid && (
-                          <Check className="w-4 h-4 text-green-500" />
-                        )}
+                  return (
+                    <div
+                      key={user.id}
+                      className={`group flex items-center gap-3 p-3 rounded-xl border bg-card hover:shadow-sm transition-all ${
+                        needsAttention ? 'border-red-300 bg-red-50/50 dark:border-red-800 dark:bg-red-950/20' : ''
+                      }`}
+                    >
+                      {/* Avatar */}
+                      <div className={`flex items-center justify-center w-10 h-10 rounded-full text-xs font-bold shrink-0 ${
+                        hasPaid
+                          ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400'
+                          : 'bg-primary/10 text-primary'
+                      }`}>
+                        {user.name?.[0]}
+                        {user.lastname?.[0]}
                       </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Badge
-                          variant="secondary"
-                          className={`text-xs ${getPaymentStatusColor(
-                            paymentAmount
-                          )} text-white`}
+
+                      {/* Name & Info */}
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium text-sm truncate">
+                          {user.lastname}, {user.name}
+                        </div>
+                        <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                          {activeLoansCount > 0 && (
+                            <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5 font-medium">
+                              {activeLoansCount} {activeLoansCount === 1 ? 'préstamo' : 'préstamos'}
+                            </Badge>
+                          )}
+                          {totalBalance > 0 && (
+                            <span className="text-[11px] font-semibold text-orange-600 dark:text-orange-400">
+                              S/ {totalBalance.toFixed(2)}
+                            </span>
+                          )}
+                          {totalInterest > 0 && (
+                            <span className="flex items-center gap-0.5 text-[11px] font-semibold text-purple-600 dark:text-purple-400">
+                              Int: S/ {totalInterest.toFixed(2)}
+                              {interestFullyPaid && <Check className="w-3 h-3 text-emerald-500" />}
+                            </span>
+                          )}
+                          {activeLoansCount === 0 && (
+                            <span className="text-[11px] text-muted-foreground">Sin préstamos</span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Payment Badge */}
+                      {hasPaid && (
+                        <button
+                          onClick={() => handleShowDetails(user)}
+                          className="flex items-center gap-1 px-2 py-1 rounded-md text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800 dark:hover:bg-emerald-950/60 transition-colors"
                         >
-                          S/. {paymentAmount.toFixed(2)}
-                        </Badge>
-                       
-                          <Button
-                            onClick={() => handleShowDetails(user)}
-                            size="sm"
-                            variant="ghost"
-                            className="h-6 w-6 p-0"
-                          >
-                            <Info className="w-3 h-3" />
-                          </Button>
-                        
-                      </div>
-                    </TableCell>
-                    <TableCell>
+                          <Banknote className="w-3.5 h-3.5" />
+                          S/ {paymentAmount.toFixed(2)}
+                        </button>
+                      )}
+
+                      {!hasPaid && paymentAmount === 0 && (
+                        <Button
+                          onClick={() => handleShowDetails(user)}
+                          size="sm"
+                          variant="ghost"
+                          className="h-8 w-8 p-0 shrink-0"
+                        >
+                          <Info className="w-3.5 h-3.5" />
+                        </Button>
+                      )}
+
+                      {/* Action */}
                       <Button
                         onClick={() => handlePayInterest(user)}
                         size="sm"
                         variant={hasPaid ? "outline" : "default"}
-                        className="gap-2"
+                        className="gap-1.5 h-8 text-xs shrink-0 opacity-80 group-hover:opacity-100 transition-opacity"
                       >
-                        <CreditCard className="w-4 h-4" />
-                        Pagar
-                        {/* {payment?.status === 'paid' ? 'Actualizar' : hasPaid ? 'Pagar Más' : 'Pagar'} */}
+                        <CreditCard className="w-3.5 h-3.5" />
+                        {hasPaid ? "Editar" : "Pagar"}
                       </Button>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-              {users.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={6} className="text-center text-sm text-muted-foreground">
-                    No hay usuarios disponibles
-                  </TableCell>
-                </TableRow>
+                    </div>
+                  );
+                })}
+              {paymentsData.partners.length === 0 && (
+                <div className="py-8 text-center text-sm text-muted-foreground">
+                  No hay usuarios disponibles
+                </div>
               )}
-            </TableBody>
-          </Table>
-        </div>
+            </div>
+          </>
+        )}
+      </CardContent>
 
-        <Dialog open={modalOpen} onOpenChange={setModalOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Registrar Pago de Cuotas</DialogTitle>
-              <DialogDescription>
-                {selectedUser && `Selecciona las cuotas a pagar para ${selectedUser.lastname}, ${selectedUser.name}`}
-              </DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4 py-4 max-h-[60vh] overflow-y-auto">
-              {selectedUser && (
+      {/* Payment Modal */}
+      <Dialog open={modalOpen} onOpenChange={setModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Registrar Pago de Cuotas</DialogTitle>
+            <DialogDescription>
+              {selectedUser && `Selecciona las cuotas a pagar para ${selectedUser.lastname}, ${selectedUser.name}`}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4 max-h-[60vh] overflow-y-auto">
+            {selectedUser && (
+              <div className="space-y-2">
+                <Label className="text-sm font-semibold">Cuotas del Mes Actual</Label>
+                {userInstallments.length === 0 ? (
+                  <div className="p-4 text-center text-sm text-muted-foreground bg-muted/30 rounded-lg">
+                    No hay cuotas pendientes para este mes
+                  </div>
+                ) : (
+                  userInstallments.map((installment, index) => {
+                    const isSelected = selectedInstallments.includes(installment.id || '');
+                    const loan = installment.loan;
+
+                    return (
+                      <div
+                        key={installment.id || index}
+                        className={`p-3 border rounded-lg cursor-pointer transition-all ${
+                          isSelected
+                            ? 'border-primary bg-primary/5'
+                            : 'border-muted hover:border-primary/50'
+                        }`}
+                        onClick={() => {
+                          if (isSelected) {
+                            setSelectedInstallments(prev =>
+                              prev.filter(id => id !== installment.id)
+                            );
+                          } else {
+                            setSelectedInstallments(prev => [...prev, installment.id || '']);
+                          }
+                        }}
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-start gap-3 flex-1">
+                            <Checkbox
+                              checked={isSelected}
+                              onCheckedChange={() => {}}
+                              className="mt-1"
+                            />
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="font-semibold text-sm">
+                                  Cuota #{installment.installment_number || index + 1}
+                                </span>
+                                {loan && (
+                                  <Badge variant="outline" className="text-xs">
+                                    {loan.loanType?.name || 'Préstamo'}
+                                  </Badge>
+                                )}
+                              </div>
+
+                              {loan && (
+                                <div className="text-xs text-muted-foreground space-y-1 mt-2 p-2 bg-muted/30 rounded">
+                                  <div className="flex justify-between">
+                                    <span>Monto del préstamo:</span>
+                                    <span className="font-medium">S/ {loan.amount?.toFixed(2)}</span>
+                                  </div>
+                                  <div className="flex justify-between">
+                                    <span>Saldo:</span>
+                                    <span className="font-medium text-orange-600">S/ {loan.balance?.toFixed(2)}</span>
+                                  </div>
+                                  <div className="flex justify-between">
+                                    <span>Tasa de interés:</span>
+                                    <span className="font-medium">{loan.interestRate}%</span>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="ml-3 space-y-2 min-w-[140px]">
+                            <div className="text-xs text-muted-foreground font-medium mb-1">Editar montos:</div>
+                            <div className="space-y-1.5">
+                              <div>
+                                <Label htmlFor={`capital-${installment.id}`} className="text-xs text-muted-foreground">Capital</Label>
+                                <Input
+                                  id={`capital-${installment.id}`}
+                                  type="number"
+                                  value={editedAmounts[installment.id || '']?.capital || ''}
+                                  onChange={(e) => {
+                                    const value = e.target.value;
+                                    const numValue = parseFloat(value);
+                                    const maxCapital = loan?.balance || 0;
+
+                                    if (value === '' || (numValue >= 0 && numValue <= maxCapital)) {
+                                      setEditedAmounts(prev => ({
+                                        ...prev,
+                                        [installment.id || '']: {
+                                          ...prev[installment.id || ''],
+                                          capital: value
+                                        }
+                                      }));
+                                    }
+                                  }}
+                                  onClick={(e) => e.stopPropagation()}
+                                  step="0.01"
+                                  min="0"
+                                  max={loan?.balance || undefined}
+                                  placeholder="0.00"
+                                  className="h-8 text-xs"
+                                />
+                              </div>
+                              <div>
+                                <Label htmlFor={`interest-${installment.id}`} className="text-xs text-muted-foreground">Interés</Label>
+                                <Input
+                                  disabled
+                                  id={`interest-${installment.id}`}
+                                  type="number"
+                                  value={editedAmounts[installment.id || '']?.interest || ''}
+                                  onChange={(e) => {
+                                    const value = e.target.value;
+                                    setEditedAmounts(prev => ({
+                                      ...prev,
+                                      [installment.id || '']: {
+                                        ...prev[installment.id || ''],
+                                        interest: value
+                                      }
+                                    }));
+                                  }}
+                                  onClick={(e) => e.stopPropagation()}
+                                  step="0.01"
+                                  min="0"
+                                  placeholder="0.00"
+                                  className="h-8 text-xs"
+                                />
+                              </div>
+                              <div className="pt-1 border-t">
+                                <div className="text-xs text-muted-foreground">Total:</div>
+                                <div className="font-bold text-sm">
+                                  S/ {(() => {
+                                    const edited = editedAmounts[installment.id || ''];
+                                    const capital = parseFloat(edited?.capital) || 0;
+                                    const interest = parseFloat(edited?.interest) || 0;
+                                    return (capital + interest).toFixed(2);
+                                  })()}
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setModalOpen(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={confirmPayment}>
+              Registrar Pago
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Details Modal */}
+      <Dialog open={detailsModalOpen} onOpenChange={setDetailsModalOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Detalles de Pago</DialogTitle>
+            <DialogDescription>
+              {selectedUser && `Información detallada de pagos para ${selectedUser.lastname}, ${selectedUser.name}`}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4 max-h-[70vh] overflow-y-auto">
+            {selectedUser && (() => {
+              const userPaymentsDetail = paymentsData.payments.filter(p => p.userId === selectedUser.id);
+              const paidCapital = userPaymentsDetail.reduce((sum, p) => sum + Number(p.amount || 0), 0);
+              const paidInterest = userPaymentsDetail.reduce((sum, p) => sum + Number(p.interest || 0), 0);
+              const totalPaid = paidCapital + paidInterest;
+
+              const userInstallmentsForDetail = currentMonthInstallments.filter(
+                inst => inst.user?.id === selectedUser.id && inst.isAssemblyMonth
+              );
+
+              const allBalancesPaid = userInstallmentsForDetail.every(
+                inst => (inst.loan?.balance || 0) === 0
+              );
+
+              return (
                 <>
-                  {/* Installments List */}
+                  {allBalancesPaid && userInstallmentsForDetail.length > 0 && (
+                    <div className="p-4 bg-gradient-to-r from-yellow-50 to-amber-50 dark:from-yellow-950/20 dark:to-amber-950/20 border-2 border-yellow-300 dark:border-yellow-700 rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <div className="text-3xl">⭐</div>
+                        <div className="flex-1">
+                          <div className="font-semibold text-yellow-800 dark:text-yellow-300">
+                            ¡Felicitaciones!
+                          </div>
+                          <div className="text-sm text-yellow-700 dark:text-yellow-400">
+                            Has pagado todo el saldo del préstamo
+                          </div>
+                        </div>
+                        <div className="text-3xl">⭐</div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Payment Summary */}
+                  <div className="grid grid-cols-2 gap-3 p-4 bg-muted/50 rounded-lg">
+                    <div className="text-center">
+                      <div className="text-xs text-muted-foreground mb-1">Capital Pagado</div>
+                      <div className="text-xl font-bold text-blue-600 dark:text-blue-400">
+                        S/ {paidCapital.toFixed(2)}
+                      </div>
+                    </div>
+                    <div className="text-center">
+                      <div className="text-xs text-muted-foreground mb-1">Interés Pagado</div>
+                      <div className="text-xl font-bold text-purple-600 dark:text-purple-400">
+                        S/ {paidInterest.toFixed(2)}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Installments Detail */}
                   <div className="space-y-2">
-                    <Label className="text-sm font-semibold">Cuotas del Mes Actual</Label>
-                    {userInstallments.length === 0 ? (
+                    <Label className="text-sm font-semibold">Cuotas del Mes</Label>
+                    {userInstallmentsForDetail.length === 0 ? (
                       <div className="p-4 text-center text-sm text-muted-foreground bg-muted/30 rounded-lg">
-                        No hay cuotas pendientes para este mes
+                        No hay cuotas para este mes
                       </div>
                     ) : (
-                      userInstallments.map((installment, index) => {
-                        const isSelected = selectedInstallments.includes(installment.id || '');
+                      userInstallmentsForDetail.map((installment, index) => {
                         const loan = installment.loan;
-                        
+                        const expectedCapital = installment.payment - installment.interest;
+                        const expectedInterest = installment.interest;
+
+                        const installmentPaidCapital = totalPaid > 0 ? expectedCapital : 0;
+                        const installmentPaidInterest = totalPaid > 0 ? expectedInterest : 0;
+                        const installmentPaid = installmentPaidCapital + installmentPaidInterest;
+                        const installmentTotal = installment.payment;
+
+                        const paidPercentage = (installmentPaid / installmentTotal) * 100;
+
                         return (
                           <div
                             key={installment.id || index}
-                            className={`p-3 border rounded-lg cursor-pointer transition-all ${
-                              isSelected 
-                                ? 'border-primary bg-primary/5' 
-                                : 'border-muted hover:border-primary/50'
-                            }`}
-                            onClick={() => {
-                              if (isSelected) {
-                                setSelectedInstallments(prev => 
-                                  prev.filter(id => id !== installment.id)
-                                );
-                              } else {
-                                setSelectedInstallments(prev => [...prev, installment.id || '']);
-                              }
-                            }}
+                            className="p-4 border rounded-lg bg-card"
                           >
-                            <div className="flex items-start justify-between">
-                              <div className="flex items-start gap-3 flex-1">
-                                <Checkbox
-                                  checked={isSelected}
-                                  onCheckedChange={() => {}} // Handled by div onClick
-                                  className="mt-1"
-                                />
-                                <div className="flex-1">
-                                  <div className="flex items-center gap-2 mb-1">
-                                    <span className="font-semibold text-sm">
-                                      Cuota #{installment.installment_number || index + 1}
-                                    </span>
-                                    {loan && (
-                                      <Badge variant="outline" className="text-xs">
-                                        {loan.loanType?.name || 'Préstamo'}
-                                      </Badge>
-                                    )}
-                                  </div>
-                                  
-                                  {/* Loan Preview */}
+                            <div className="space-y-3">
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-semibold text-sm">
+                                    Cuota #{installment.installment_number || index + 1}
+                                  </span>
                                   {loan && (
-                                    <div className="text-xs text-muted-foreground space-y-1 mt-2 p-2 bg-muted/30 rounded">
-                                      <div className="flex justify-between">
-                                        <span>Monto del préstamo:</span>
-                                        <span className="font-medium">S/ {loan.amount?.toFixed(2)}</span>
-                                      </div>
-                                      <div className="flex justify-between">
-                                        <span>Saldo:</span>
-                                        <span className="font-medium text-orange-600">S/ {loan.balance?.toFixed(2)}</span>
-                                      </div>
-                                      <div className="flex justify-between">
-                                        <span>Tasa de interés:</span>
-                                        <span className="font-medium">{loan.interestRate}%</span>
-                                      </div>
-                                    </div>
+                                    <Badge variant="outline" className="text-xs">
+                                      {loan.loanType?.name || 'Préstamo'}
+                                    </Badge>
                                   )}
                                 </div>
+                                {paidPercentage === 100 && (
+                                  <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
+                                    Pagado ✓
+                                  </Badge>
+                                )}
                               </div>
-                              
-                              <div className="ml-3 space-y-2 min-w-[140px]">
-                                <div className="text-xs text-muted-foreground font-medium mb-1">Editar montos:</div>
-                                <div className="space-y-1.5">
-                                  <div>
-                                    <Label htmlFor={`capital-${installment.id}`} className="text-xs text-muted-foreground">Capital</Label>
-                                    <Input
-                                      id={`capital-${installment.id}`}
-                                      type="number"
-                                      value={editedAmounts[installment.id || '']?.capital || ''}
-                                      onChange={(e) => {
-                                        const value = e.target.value;
-                                        const numValue = parseFloat(value);
-                                        const maxCapital = loan?.balance || 0;
-                                        
-                                        // Allow empty string or validate against balance
-                                        if (value === '' || (numValue >= 0 && numValue <= maxCapital)) {
-                                          setEditedAmounts(prev => ({
-                                            ...prev,
-                                            [installment.id || '']: {
-                                              ...prev[installment.id || ''],
-                                              capital: value
-                                            }
-                                          }));
-                                        }
-                                      }}
-                                      onClick={(e) => e.stopPropagation()}
-                                      step="0.01"
-                                      min="0"
-                                      max={loan?.balance || undefined}
-                                      placeholder="0.00"
-                                      className="h-8 text-xs"
-                                    />
+
+                              <div>
+                                <div className="flex justify-between text-xs mb-1">
+                                  <span className="text-muted-foreground">Pago de cuota</span>
+                                  <span className="font-medium">
+                                    S/ {installmentPaid.toFixed(2)} / S/ {installmentTotal.toFixed(2)}
+                                  </span>
+                                </div>
+                                <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                                  <div
+                                    className="bg-green-500 h-2 rounded-full transition-all"
+                                    style={{ width: `${Math.min(paidPercentage, 100)}%` }}
+                                  />
+                                </div>
+                              </div>
+
+                              <div className="grid grid-cols-2 gap-2 text-xs">
+                                <div className="p-2 bg-blue-50 dark:bg-blue-950/20 rounded">
+                                  <div className="text-muted-foreground">Capital pagado</div>
+                                  <div className="font-semibold text-blue-600 dark:text-blue-400">
+                                    S/ {installmentPaidCapital.toFixed(2)}
                                   </div>
-                                  <div>
-                                    <Label htmlFor={`interest-${installment.id}`} className="text-xs text-muted-foreground">Interés</Label>
-                                    <Input
-                                      disabled
-                                      id={`interest-${installment.id}`}
-                                      type="number"
-                                      value={editedAmounts[installment.id || '']?.interest || ''}
-                                      onChange={(e) => {
-                                        const value = e.target.value;
-                                        setEditedAmounts(prev => ({
-                                          ...prev,
-                                          [installment.id || '']: {
-                                            ...prev[installment.id || ''],
-                                            interest: value
-                                          }
-                                        }));
-                                      }}
-                                      onClick={(e) => e.stopPropagation()}
-                                      step="0.01"
-                                      min="0"
-                                      placeholder="0.00"
-                                      className="h-8 text-xs"
-                                    />
-                                  </div>
-                                  <div className="pt-1 border-t">
-                                    <div className="text-xs text-muted-foreground">Total:</div>
-                                    <div className="font-bold text-sm">
-                                      S/ {(() => {
-                                        const edited = editedAmounts[installment.id || ''];
-                                        const capital = parseFloat(edited?.capital) || 0;
-                                        const interest = parseFloat(edited?.interest) || 0;
-                                        return (capital + interest).toFixed(2);
-                                      })()}
-                                    </div>
+                                </div>
+                                <div className="p-2 bg-purple-50 dark:bg-purple-950/20 rounded">
+                                  <div className="text-muted-foreground">Interés pagado</div>
+                                  <div className="font-semibold text-purple-600 dark:text-purple-400">
+                                    S/ {installmentPaidInterest.toFixed(2)}
                                   </div>
                                 </div>
                               </div>
+
+                              {loan && (
+                                <div className="pt-2 border-t space-y-1 text-xs">
+                                  <div className="flex justify-between">
+                                    <span className="text-muted-foreground">Saldo del préstamo:</span>
+                                    <span className={`font-semibold ${
+                                      loan.balance === 0
+                                        ? 'text-green-600 dark:text-green-400'
+                                        : 'text-orange-600 dark:text-orange-400'
+                                    }`}>
+                                      S/ {(loan.balance || 0).toFixed(2)}
+                                    </span>
+                                  </div>
+                                  <div className="flex justify-between">
+                                    <span className="text-muted-foreground">Monto prestado:</span>
+                                    <span className="font-medium">S/ {(loan.amount || 0).toFixed(2)}</span>
+                                  </div>
+                                  <div className="flex justify-between">
+                                    <span className="text-muted-foreground">Capital pagado del saldo:</span>
+                                    <span className="font-semibold text-green-600 dark:text-green-400">
+                                      S/ {((loan.amount || 0) - (loan.balance || 0)).toFixed(2)}
+                                    </span>
+                                  </div>
+                                </div>
+                              )}
                             </div>
                           </div>
                         );
@@ -544,203 +690,16 @@ export default function Payments() {
                     )}
                   </div>
                 </>
-              )}
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setModalOpen(false)}>
-                Cancelar
-              </Button>
-              <Button onClick={confirmPayment}>
-                Registrar Pago
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-
-        <Dialog open={detailsModalOpen} onOpenChange={setDetailsModalOpen}>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Detalles de Pago</DialogTitle>
-              <DialogDescription>
-                {selectedUser && `Información detallada de pagos para ${selectedUser.lastname}, ${selectedUser.name}`}
-              </DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4 py-4 max-h-[70vh] overflow-y-auto">
-              {selectedUser && (() => {
-                const userPaymentsDetail = paymentsData.payments.filter(p => p.userId === selectedUser.id);
-                const paidCapital = userPaymentsDetail.reduce((sum, p) => sum + Number(p.amount || 0), 0);
-                const paidInterest = userPaymentsDetail.reduce((sum, p) => sum + Number(p.interest || 0), 0);
-                const totalPaid = paidCapital + paidInterest;
-                
-                const userInstallmentsForDetail = currentMonthInstallments.filter(
-                  inst => inst.user?.id === selectedUser.id && inst.isAssemblyMonth
-                );
-                
-                // Check if all balances are paid off
-                const allBalancesPaid = userInstallmentsForDetail.every(
-                  inst => (inst.loan?.balance || 0) === 0
-                );
-
-                return (
-                  <>
-                    {/* Celebration Message */}
-                    {allBalancesPaid && userInstallmentsForDetail.length > 0 && (
-                      <div className="p-4 bg-gradient-to-r from-yellow-50 to-amber-50 dark:from-yellow-950/20 dark:to-amber-950/20 border-2 border-yellow-300 dark:border-yellow-700 rounded-lg">
-                        <div className="flex items-center gap-3">
-                          <div className="text-3xl">⭐</div>
-                          <div className="flex-1">
-                            <div className="font-semibold text-yellow-800 dark:text-yellow-300">
-                              ¡Felicitaciones!
-                            </div>
-                            <div className="text-sm text-yellow-700 dark:text-yellow-400">
-                              Has pagado todo el saldo del préstamo
-                            </div>
-                          </div>
-                          <div className="text-3xl">⭐</div>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Payment Summary */}
-                    <div className="grid grid-cols-2 gap-3 p-4 bg-muted/50 rounded-lg">
-                      <div className="text-center">
-                        <div className="text-xs text-muted-foreground mb-1">Capital Pagado</div>
-                        <div className="text-xl font-bold text-blue-600 dark:text-blue-400">
-                          S/ {paidCapital.toFixed(2)}
-                        </div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-xs text-muted-foreground mb-1">Interés Pagado</div>
-                        <div className="text-xl font-bold text-purple-600 dark:text-purple-400">
-                          S/ {paidInterest.toFixed(2)}
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Installments Detail */}
-                    <div className="space-y-2">
-                      <Label className="text-sm font-semibold">Cuotas del Mes</Label>
-                      {userInstallmentsForDetail.length === 0 ? (
-                        <div className="p-4 text-center text-sm text-muted-foreground bg-muted/30 rounded-lg">
-                          No hay cuotas para este mes
-                        </div>
-                      ) : (
-                        userInstallmentsForDetail.map((installment, index) => {
-                          const loan = installment.loan;
-                          const expectedCapital = installment.payment - installment.interest;
-                          const expectedInterest = installment.interest;
-                          
-                          // Calculate how much was paid for this installment
-                          // This is a simplified version - you might need to adjust based on your business logic
-                          const installmentPaidCapital = totalPaid > 0 ? expectedCapital : 0;
-                          const installmentPaidInterest = totalPaid > 0 ? expectedInterest : 0;
-                          const installmentPaid = installmentPaidCapital + installmentPaidInterest;
-                          const installmentTotal = installment.payment;
-                          
-                          const paidPercentage = (installmentPaid / installmentTotal) * 100;
-
-                          return (
-                            <div
-                              key={installment.id || index}
-                              className="p-4 border rounded-lg bg-card"
-                            >
-                              <div className="space-y-3">
-                                {/* Header */}
-                                <div className="flex items-center justify-between">
-                                  <div className="flex items-center gap-2">
-                                    <span className="font-semibold text-sm">
-                                      Cuota #{installment.installment_number || index + 1}
-                                    </span>
-                                    {loan && (
-                                      <Badge variant="outline" className="text-xs">
-                                        {loan.loanType?.name || 'Préstamo'}
-                                      </Badge>
-                                    )}
-                                  </div>
-                                  {paidPercentage === 100 && (
-                                    <Badge className="bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200">
-                                      Pagado ✓
-                                    </Badge>
-                                  )}
-                                </div>
-
-                                {/* Payment Progress */}
-                                <div>
-                                  <div className="flex justify-between text-xs mb-1">
-                                    <span className="text-muted-foreground">Pago de cuota</span>
-                                    <span className="font-medium">
-                                      S/ {installmentPaid.toFixed(2)} / S/ {installmentTotal.toFixed(2)}
-                                    </span>
-                                  </div>
-                                  <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
-                                    <div
-                                      className="bg-green-500 h-2 rounded-full transition-all"
-                                      style={{ width: `${Math.min(paidPercentage, 100)}%` }}
-                                    />
-                                  </div>
-                                </div>
-
-                                {/* Payment Details */}
-                                <div className="grid grid-cols-2 gap-2 text-xs">
-                                  <div className="p-2 bg-blue-50 dark:bg-blue-950/20 rounded">
-                                    <div className="text-muted-foreground">Capital pagado</div>
-                                    <div className="font-semibold text-blue-600 dark:text-blue-400">
-                                      S/ {installmentPaidCapital.toFixed(2)}
-                                    </div>
-                                  </div>
-                                  <div className="p-2 bg-purple-50 dark:bg-purple-950/20 rounded">
-                                    <div className="text-muted-foreground">Interés pagado</div>
-                                    <div className="font-semibold text-purple-600 dark:text-purple-400">
-                                      S/ {installmentPaidInterest.toFixed(2)}
-                                    </div>
-                                  </div>
-                                </div>
-
-                                {/* Loan Info */}
-                                {loan && (
-                                  <div className="pt-2 border-t space-y-1 text-xs">
-                                    <div className="flex justify-between">
-                                      <span className="text-muted-foreground">Saldo del préstamo:</span>
-                                      <span className={`font-semibold ${
-                                        loan.balance === 0 
-                                          ? 'text-green-600 dark:text-green-400' 
-                                          : 'text-orange-600 dark:text-orange-400'
-                                      }`}>
-                                        S/ {(loan.balance || 0).toFixed(2)}
-                                      </span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                      <span className="text-muted-foreground">Monto prestado:</span>
-                                      <span className="font-medium">S/ {(loan.amount || 0).toFixed(2)}</span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                      <span className="text-muted-foreground">Capital pagado del saldo:</span>
-                                      <span className="font-semibold text-green-600 dark:text-green-400">
-                                        S/ {((loan.amount || 0) - (loan.balance || 0)).toFixed(2)}
-                                      </span>
-                                    </div>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          );
-                        })
-                      )}
-                    </div>
-                  </>
-                );
-              })()}
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setDetailsModalOpen(false)}>
-                Cerrar
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </CardContent>
+              );
+            })()}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDetailsModalOpen(false)}>
+              Cerrar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
-
-

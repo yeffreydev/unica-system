@@ -39,6 +39,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const logout = () => {
     localStorage.removeItem("auth");
+    localStorage.removeItem("bank");
     apiClient.defaults.headers.common["Authorization"] = "";
 
     setAuth({
@@ -61,10 +62,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const loadToken = () => {
     const authData = localStorage.getItem("auth") as string;
     const token = authData ? JSON.parse(authData).token : null;
-    
+
     if (token) {
       apiClient.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-      
+
       // Simple 401/403 interceptor - just logout on auth errors
       apiClient.interceptors.response.use(
         (response) => response,
@@ -76,7 +77,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           return Promise.reject(error);
         }
       );
-      
+
       setAuth({
         token,
         authenticated: true,
@@ -91,11 +92,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, []);
 
   useEffect(() => {
-    console.log("Auth state changed:", auth);
     if (!loading && !auth.authenticated && pathname !== '/login') {
       router.push('/login');
     }
-    console.log('path name', pathname);
     if (!loading && auth.authenticated && pathname.startsWith('/login')) {
       router.push('/');
     }
@@ -114,4 +113,3 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     </AuthContext.Provider>
   );
 };
-

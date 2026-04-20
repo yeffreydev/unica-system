@@ -5,6 +5,7 @@ import { IAssemblySchedule } from "@/app/(app)/assembly/types";
 import { createContext, useContext, useState, ReactNode, useEffect, useCallback, useRef } from "react";
 import { apiGetAssemblySchedule, apiStartAssemblySchedule, apiFinishAssembly } from "./api";
 import { useRouter } from "next/navigation";
+import { AuthContext } from "@/context/auth/AuthContex";
 
 interface AssemblyState {
   isActive: boolean;
@@ -68,6 +69,7 @@ export function AssemblyProvider({ children }: { children: ReactNode }) {
     availableBalance: 0,
     lastUpdated: new Date()
   });
+  const { auth } = useContext(AuthContext);
   const router = useRouter();
   const prevBalanceRef = useRef<CashBalance | null>(null);
 
@@ -158,7 +160,8 @@ export function AssemblyProvider({ children }: { children: ReactNode }) {
   };
 
   useEffect(() => {
-    // Aquí podrías cargar datos reales desde un backend si es necesario
+    if (!auth.authenticated) return;
+
     const fetchAssemblyData = async () => {
       try {
         const data = await apiGetAssemblySchedule();
@@ -177,7 +180,7 @@ export function AssemblyProvider({ children }: { children: ReactNode }) {
     };
 
     fetchAssemblyData();
-  }, []);
+  }, [auth.authenticated]);
 
   return (
     <AssemblyContext.Provider value={value}>

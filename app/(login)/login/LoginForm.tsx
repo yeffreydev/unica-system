@@ -30,16 +30,15 @@ export const LoginForm = () => {
     setError(null);
     try {
       const res = await apiClient.post("/auth/login", formData);
-      console.log(res);
       if (res.data) {
         loginUser(res.data.accessToken);
         router.push("/");
       }
-    } catch (error) {
+    } catch (error: any) {
       setIsLoading(false);
-      const errorMessage = error instanceof Error
-        ? error.message
-        : "Error al iniciar sesión";
+      const errorMessage =
+        error?.response?.data?.message ||
+        (error instanceof Error ? error.message : "Error al iniciar sesión");
       setError(errorMessage);
       console.error(error);
     }

@@ -1,12 +1,12 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
-import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent } from "@/components/ui/dropdown-menu";
-import { MoreVertical, Trash2, Filter, Plus, ArrowUpRight, ArrowDownLeft } from "lucide-react";
+import { MoreVertical, Trash2, Filter, Plus, ArrowUpRight, ArrowDownLeft, Receipt } from "lucide-react";
 import { cn, formatCurrency } from "@/lib/utils";
 
 import { IDeposit } from "../../incomes/deposits/types";
@@ -65,11 +65,11 @@ export default function Operations() {
   const [socialFundsExpenses, setSocialFundsExpenses] = useState<ISocialFundsExpenseTransaction[]>([]);
   const [otherExpenses, setOtherExpenses] = useState<IOtherExpense[]>([]);
   const [dividends, setDividends] = useState<IDividendsWithdraw[]>([]);
-  
+
   const { assembly } = useAssembly();
   const [assemblyRun, setAssemblyRun] = useState<IAssemblyScheduleRun | null>(null);
   const [socialFunds, setSocialFunds] = useState<ISocialFunds[]>([]);
-  
+
   const [openDialog, setOpenDialog] = useState(false);
   const [activeDialog, setActiveDialog] = useState<OperationType | null>(null);
   const [editDeposit, setEditDeposit] = useState<IDeposit | null>(null);
@@ -78,10 +78,10 @@ export default function Operations() {
     setOpenDialog(false);
     setActiveDialog(null);
   };
-  
+
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<{id: string, type: OperationType} | null>(null);
-  
+
   const [filterCategory, setFilterCategory] = useState<'all' | 'ingreso' | 'egreso'>('all');
 
   useEffect(() => {
@@ -94,7 +94,7 @@ export default function Operations() {
 
   useEffect(() => {
     if (!assemblyRun?.id) return;
-    
+
     const fetchAll = async () => {
        try {
         const [depRes, fundsRes, otherIncRes, withdrawRes, adminRes, payoutRes, socialExpRes, otherExpRes, dividendsRes] = await Promise.all([
@@ -122,7 +122,7 @@ export default function Operations() {
          console.error("Error fetching operations", e);
        }
     };
-    
+
     fetchAll();
   }, [assemblyRun?.id]);
 
@@ -144,9 +144,9 @@ export default function Operations() {
   const handleDelete = async () => {
     if (!itemToDelete) return;
     const { id, type } = itemToDelete;
-    
+
     setDeleteConfirmOpen(false);
-    
+
     try {
         switch(type) {
             case 'deposit':
@@ -198,7 +198,6 @@ export default function Operations() {
     setDeleteConfirmOpen(true);
   };
 
-
   const allOperations = useMemo<UnifiedOperation[]>(() => {
     const list: UnifiedOperation[] = [];
 
@@ -221,7 +220,7 @@ export default function Operations() {
       user: o.user?.name || o.user?.lastname || 'Desconocido',
       description: o.description || 'Otro Ingreso', raw: o
     }));
-    
+
     withdrawals.forEach(w => list.push({
       id: w.id.toString(), category: 'egreso', type: 'withdrawal',
       date: new Date(w.date), amount: w.amount,
@@ -271,207 +270,238 @@ export default function Operations() {
   const totalExpense = allOperations.filter(op => op.category === 'egreso').reduce((sum, op) => sum + op.amount, 0);
 
   const getTypeBadge = (type: OperationType) => {
-    switch (type) {
-      case 'deposit': return <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 border-emerald-200">Depósito</Badge>;
-      case 'fund': return <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100 border-blue-200">Fondo</Badge>;
-      case 'other-income': return <Badge className="bg-cyan-100 text-cyan-700 hover:bg-cyan-100 border-cyan-200">Otros Ingresos</Badge>;
-      case 'withdrawal': return <Badge className="bg-orange-100 text-orange-700 hover:bg-orange-100 border-orange-200">Retiro</Badge>;
-      case 'administrative': return <Badge className="bg-slate-100 text-slate-700 hover:bg-slate-100 border-slate-200">Gasto Admin</Badge>;
-      case 'payout': return <Badge className="bg-purple-100 text-purple-700 hover:bg-purple-100 border-purple-200">Pago Interés</Badge>;
-      case 'social-expense': return <Badge className="bg-indigo-100 text-indigo-700 hover:bg-indigo-100 border-indigo-200">Gasto Social</Badge>;
-      case 'other-expense': return <Badge className="bg-rose-100 text-rose-700 hover:bg-rose-100 border-rose-200">Otro Gasto</Badge>;
-      case 'dividend': return <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100 border-amber-200">Utilidades</Badge>;
-      default: return <Badge variant="outline">Operación</Badge>;
-    }
+    const styles: Record<OperationType, { className: string; label: string }> = {
+      'deposit': { className: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800', label: 'Depósito' },
+      'fund': { className: 'bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-800', label: 'Fondo' },
+      'other-income': { className: 'bg-cyan-50 text-cyan-700 border-cyan-200 dark:bg-cyan-950/40 dark:text-cyan-400 dark:border-cyan-800', label: 'Otros Ing.' },
+      'withdrawal': { className: 'bg-orange-50 text-orange-700 border-orange-200 dark:bg-orange-950/40 dark:text-orange-400 dark:border-orange-800', label: 'Retiro' },
+      'administrative': { className: 'bg-slate-50 text-slate-700 border-slate-200 dark:bg-slate-950/40 dark:text-slate-400 dark:border-slate-800', label: 'Gasto Admin' },
+      'payout': { className: 'bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-400 dark:border-purple-800', label: 'Pago Interés' },
+      'social-expense': { className: 'bg-indigo-50 text-indigo-700 border-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-400 dark:border-indigo-800', label: 'Gasto Social' },
+      'other-expense': { className: 'bg-rose-50 text-rose-700 border-rose-200 dark:bg-rose-950/40 dark:text-rose-400 dark:border-rose-800', label: 'Otro Gasto' },
+      'dividend': { className: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800', label: 'Utilidades' },
+    };
+    const s = styles[type] || { className: '', label: 'Operación' };
+    return <Badge variant="outline" className={`text-[10px] px-1.5 py-0 h-5 font-medium border ${s.className}`}>{s.label}</Badge>;
   };
 
   return (
     <>
-      <div className="space-y-6">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-            <div>
-                 <div className="flex items-center gap-2 mb-1">
-                    <Badge variant="secondary" className="uppercase tracking-wide text-[10px]">Paso 5</Badge>
-                 </div>
-                <h2 className="text-2xl font-bold tracking-tight">Operaciones del Día</h2>
-                <p className="text-muted-foreground">Gestiona todos los movimientos de caja de la asamblea actual.</p>
+      <Card className="w-full overflow-hidden">
+        {/* Header */}
+        <CardHeader className="pb-0 pt-5 px-5">
+          <div className="flex items-center justify-between mb-4">
+            <CardTitle className="text-base font-semibold">Operaciones del Día</CardTitle>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button size="sm" className="gap-1.5 h-8 text-xs">
+                  <Plus className="w-3.5 h-3.5" />
+                  Nueva Operación
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel>Seleccionar Tipo</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuSub>
+                  <DropdownMenuSubTrigger className="gap-2 text-emerald-700">
+                    <ArrowUpRight className="w-4 h-4" />
+                    Ingresos
+                  </DropdownMenuSubTrigger>
+                  <DropdownMenuSubContent>
+                    <DropdownMenuItem onClick={() => { setActiveDialog('deposit'); setOpenDialog(true); }}>
+                      Depósito
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => { setActiveDialog('fund'); setOpenDialog(true); }}>
+                      Fondo Social
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => { setActiveDialog('other-income'); setOpenDialog(true); }}>
+                      Otros
+                    </DropdownMenuItem>
+                  </DropdownMenuSubContent>
+                </DropdownMenuSub>
+                <DropdownMenuSub>
+                  <DropdownMenuSubTrigger className="gap-2 text-rose-700">
+                    <ArrowDownLeft className="w-4 h-4" />
+                    Egresos
+                  </DropdownMenuSubTrigger>
+                  <DropdownMenuSubContent>
+                    <DropdownMenuItem onClick={() => { setActiveDialog('withdrawal'); setOpenDialog(true); }}>
+                      Retiro
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => { setActiveDialog('administrative'); setOpenDialog(true); }}>
+                      Gasto Administrativo
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => { setActiveDialog('payout'); setOpenDialog(true); }}>
+                      Pago a Ahorrista
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => { setActiveDialog('social-expense'); setOpenDialog(true); }}>
+                      Gasto Social
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => { setActiveDialog('other-expense'); setOpenDialog(true); }}>
+                      Otros
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => { setActiveDialog('dividend'); setOpenDialog(true); }}>
+                      Utilidades
+                    </DropdownMenuItem>
+                  </DropdownMenuSubContent>
+                </DropdownMenuSub>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+
+          {/* Stats */}
+          {assemblyRun && (
+            <div className="flex items-center gap-2 flex-wrap pb-4">
+              <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-muted/50 text-xs">
+                <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                <span className="font-semibold tabular-nums">{allOperations.filter(op => op.category === 'ingreso').length}</span>
+                <span className="text-muted-foreground">Ingresos</span>
+              </div>
+              <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-muted/50 text-xs">
+                <div className="w-2 h-2 rounded-full bg-rose-500" />
+                <span className="font-semibold tabular-nums">{allOperations.filter(op => op.category === 'egreso').length}</span>
+                <span className="text-muted-foreground">Egresos</span>
+              </div>
+              {totalIncome > 0 && (
+                <>
+                  <div className="h-4 w-px bg-border mx-1" />
+                  <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+                    +{formatCurrency(totalIncome)}
+                  </span>
+                </>
+              )}
+              {totalExpense > 0 && (
+                <>
+                  <div className="h-4 w-px bg-border mx-1" />
+                  <span className="text-xs font-semibold text-rose-600 dark:text-rose-400">
+                    -{formatCurrency(totalExpense)}
+                  </span>
+                </>
+              )}
             </div>
-            
-            <div className="flex items-center gap-3">
-                 <div className="bg-card border rounded-lg px-4 py-2 flex items-center gap-4 shadow-sm">
-                    <div className="flex flex-col">
-                        <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">Ingresos</span>
-                        <span className="text-sm font-semibold text-emerald-600">{formatCurrency(totalIncome)}</span>
-                    </div>
-                    <div className="h-8 w-[1px] bg-border mx-1 my-[-8px]"></div>
-                    <div className="flex flex-col">
-                        <span className="text-[10px] text-muted-foreground uppercase font-bold tracking-wider">Egresos</span>
-                        <span className="text-sm font-semibold text-rose-600">{formatCurrency(totalExpense)}</span>
-                    </div>
-                 </div>
+          )}
+        </CardHeader>
 
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button className="gap-2 shadow-md">
-                            <Plus className="w-4 h-4" />
-                            Nueva Operación
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-56">
-                        <DropdownMenuLabel>Seleccionar Tipo</DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        
-                        <DropdownMenuSub>
-                            <DropdownMenuSubTrigger className="gap-2 text-emerald-700">
-                                <ArrowUpRight className="w-4 h-4" />
-                                Ingresos
-                            </DropdownMenuSubTrigger>
-                            <DropdownMenuSubContent>
-                                <DropdownMenuItem onClick={() => { setActiveDialog('deposit'); setOpenDialog(true); }}>
-                                    Depósito
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => { setActiveDialog('fund'); setOpenDialog(true); }}>
-                                    Fondo Social
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => { setActiveDialog('other-income'); setOpenDialog(true); }}>
-                                    Otros
-                                </DropdownMenuItem>
-                            </DropdownMenuSubContent>
-                        </DropdownMenuSub>
-
-                        <DropdownMenuSub>
-                            <DropdownMenuSubTrigger className="gap-2 text-rose-700">
-                                <ArrowDownLeft className="w-4 h-4" />
-                                Egresos
-                            </DropdownMenuSubTrigger>
-                            <DropdownMenuSubContent>
-                                <DropdownMenuItem onClick={() => { setActiveDialog('withdrawal'); setOpenDialog(true); }}>
-                                    Retiro
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => { setActiveDialog('administrative'); setOpenDialog(true); }}>
-                                    Gasto Administrativo
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => { setActiveDialog('payout'); setOpenDialog(true); }}>
-                                    Pago a Ahorrista
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => { setActiveDialog('social-expense'); setOpenDialog(true); }}>
-                                    Gasto Social
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => { setActiveDialog('other-expense'); setOpenDialog(true); }}>
-                                    Otros
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => { setActiveDialog('dividend'); setOpenDialog(true); }}>
-                                    Utilidades
-                                </DropdownMenuItem>
-                            </DropdownMenuSubContent>
-                        </DropdownMenuSub>
-                    </DropdownMenuContent>
-                </DropdownMenu>
-            </div>
-        </div>
-
-        <Card className="shadow-sm border-muted/60">
-            <CardHeader className="pb-2 border-b bg-muted/20">
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                        <Button 
-                            variant={filterCategory === 'all' ? 'secondary' : 'ghost'} 
-                            size="sm" 
-                            onClick={() => setFilterCategory('all')}
-                            className="h-8"
-                        >
-                            Todas
-                        </Button>
-                        <Button 
-                            variant={filterCategory === 'ingreso' ? 'secondary' : 'ghost'} 
-                            size="sm" 
-                            onClick={() => setFilterCategory('ingreso')}
-                            className="h-8 text-emerald-700"
-                        >
-                            Ingresos
-                        </Button>
-                        <Button 
-                            variant={filterCategory === 'egreso' ? 'secondary' : 'ghost'} 
-                            size="sm" 
-                            onClick={() => setFilterCategory('egreso')}
-                            className="h-8 text-rose-700"
-                        >
-                            Egresos
-                        </Button>
-                    </div>
-                    
-                    <div className="text-xs text-muted-foreground flex items-center gap-1">
-                        <Filter className="w-3 h-3" />
-                        <span>Mostrando {filteredOperations.length} operaciones</span>
-                    </div>
+        <CardContent className="p-0">
+          {!assemblyRun ? (
+            <div className="px-5 pb-5 space-y-1.5">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="flex items-center gap-3 p-3 rounded-lg border">
+                  <Skeleton className="h-5 w-16 rounded-full shrink-0" />
+                  <div className="flex-1">
+                    <Skeleton className="h-4 w-40 mb-1" />
+                    <Skeleton className="h-3 w-24" />
+                  </div>
+                  <Skeleton className="h-4 w-20" />
                 </div>
-            </CardHeader>
-            <CardContent className="p-0">
-                <Table>
-                    <TableHeader>
-                        <TableRow className="hover:bg-transparent">
-                            <TableHead className="w-[120px]">Fecha</TableHead>
-                            <TableHead className="w-[100px]">Tipo</TableHead>
-                            <TableHead>Descripción</TableHead>
-                            <TableHead>Usuario / Beneficiario</TableHead>
-                            <TableHead className="text-right">Monto</TableHead>
-                            <TableHead className="w-[50px]"></TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {filteredOperations.length === 0 ? (
-                            <TableRow>
-                                <TableCell colSpan={6} className="h-32 text-center text-muted-foreground">
-                                    No hay operaciones registradas en esta categoría.
-                                </TableCell>
-                            </TableRow>
-                        ) : (
-                            filteredOperations.map((op) => (
-                                <TableRow key={`${op.type}-${op.id}`} className="hover:bg-muted/30">
-                                    <TableCell className="text-xs text-muted-foreground font-medium">
-                                        {op.date.toLocaleDateString("es-PE", { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: "UTC" })}
-                                    </TableCell>
-                                    <TableCell>
-                                        {getTypeBadge(op.type)}
-                                    </TableCell>
-                                    <TableCell className="font-medium text-sm text-foreground/80">
-                                        {op.description}
-                                    </TableCell>
-                                    <TableCell className="text-sm">
-                                        {op.user}
-                                    </TableCell>
-                                    <TableCell className={cn(
-                                        "text-right font-semibold",
-                                        op.category === 'ingreso' ? "text-emerald-600" : "text-rose-600"
-                                    )}>
-                                        {op.category === 'ingreso' ? '+' : '-'}{formatCurrency(op.amount)}
-                                    </TableCell>
-                                    <TableCell>
-                                        <DropdownMenu>
-                                            <DropdownMenuTrigger asChild>
-                                                <Button variant="ghost" className="h-8 w-8 p-0">
-                                                    <MoreVertical className="h-4 w-4" />
-                                                </Button>
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent align="end">
-                                                <DropdownMenuItem 
-                                                    className="text-red-600 cursor-pointer"
-                                                    onClick={() => confirmDelete(op.id, op.type)}
-                                                >
-                                                    <Trash2 className="w-4 h-4 mr-2" />
-                                                    Eliminar
-                                                </DropdownMenuItem>
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
-                                    </TableCell>
-                                </TableRow>
-                            ))
-                        )}
-                    </TableBody>
-                </Table>
-            </CardContent>
-        </Card>
-      </div>
+              ))}
+            </div>
+          ) : (
+            <>
+              {/* Filter Tabs */}
+              <div className="px-5 pt-1 pb-3 flex items-center justify-between">
+                <div className="flex items-center gap-1">
+                  <Button
+                    variant={filterCategory === 'all' ? 'secondary' : 'ghost'}
+                    size="sm"
+                    onClick={() => setFilterCategory('all')}
+                    className="h-7 text-xs px-2.5"
+                  >
+                    Todas
+                  </Button>
+                  <Button
+                    variant={filterCategory === 'ingreso' ? 'secondary' : 'ghost'}
+                    size="sm"
+                    onClick={() => setFilterCategory('ingreso')}
+                    className="h-7 text-xs px-2.5 text-emerald-700 dark:text-emerald-400"
+                  >
+                    Ingresos
+                  </Button>
+                  <Button
+                    variant={filterCategory === 'egreso' ? 'secondary' : 'ghost'}
+                    size="sm"
+                    onClick={() => setFilterCategory('egreso')}
+                    className="h-7 text-xs px-2.5 text-rose-700 dark:text-rose-400"
+                  >
+                    Egresos
+                  </Button>
+                </div>
+                <div className="text-[11px] text-muted-foreground flex items-center gap-1">
+                  <Filter className="w-3 h-3" />
+                  {filteredOperations.length} operaciones
+                </div>
+              </div>
+
+              {/* Operations List */}
+              <div className="px-5 pb-5 space-y-1.5 max-h-[500px] overflow-y-auto">
+                {filteredOperations.length === 0 ? (
+                  <div className="py-8 text-center text-sm text-muted-foreground">
+                    <Receipt className="w-8 h-8 mx-auto mb-2 text-muted-foreground/50" />
+                    No hay operaciones registradas
+                  </div>
+                ) : (
+                  filteredOperations.map((op) => (
+                    <div
+                      key={`${op.type}-${op.id}`}
+                      className="group flex items-center gap-3 p-3 rounded-xl border bg-card hover:shadow-sm transition-all"
+                    >
+                      {/* Category Icon */}
+                      <div className={`flex items-center justify-center w-10 h-10 rounded-full text-xs font-bold shrink-0 ${
+                        op.category === 'ingreso'
+                          ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400'
+                          : 'bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400'
+                      }`}>
+                        {op.category === 'ingreso'
+                          ? <ArrowUpRight className="w-4 h-4" />
+                          : <ArrowDownLeft className="w-4 h-4" />
+                        }
+                      </div>
+
+                      {/* Info */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-0.5">
+                          <span className="font-medium text-sm truncate">{op.description}</span>
+                          {getTypeBadge(op.type)}
+                        </div>
+                        <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
+                          {op.user && op.user !== '-' && <span>{op.user}</span>}
+                          <span>{op.date.toLocaleDateString("es-PE", { day: '2-digit', month: '2-digit', year: 'numeric', timeZone: "UTC" })}</span>
+                        </div>
+                      </div>
+
+                      {/* Amount */}
+                      <span className={cn(
+                        "text-sm font-semibold tabular-nums shrink-0",
+                        op.category === 'ingreso' ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"
+                      )}>
+                        {op.category === 'ingreso' ? '+' : '-'}{formatCurrency(op.amount)}
+                      </span>
+
+                      {/* Actions */}
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" className="h-8 w-8 p-0 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <MoreVertical className="h-3.5 w-3.5" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem
+                            className="text-red-600 cursor-pointer"
+                            onClick={() => confirmDelete(op.id, op.type)}
+                          >
+                            <Trash2 className="w-4 h-4 mr-2" />
+                            Eliminar
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  ))
+                )}
+              </div>
+            </>
+          )}
+        </CardContent>
+      </Card>
 
       {deleteConfirmOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
@@ -493,8 +523,7 @@ export default function Operations() {
           </div>
         </div>
       )}
-      
-      {/* Dialogs usando Dialog directamente como en Payments.tsx */}
+
       {openDialog && activeDialog && (
         <div className="fixed inset-0 z-50 flex items-center justify-center">
           <div className="fixed inset-0 bg-black/50" onClick={closeDialog}></div>

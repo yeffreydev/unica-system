@@ -1,6 +1,6 @@
 "use client";
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { ClipboardCheck, Trash2, Eye, CheckCircle, XCircle, MoreVertical } from "lucide-react";
 import { useContext, useEffect, useState } from "react";
@@ -353,207 +354,234 @@ export default function Loans() {
 
   return (
    <div className="flex flex-col gap-4">
-    <Card>
-        <CardHeader className="pb-3">
-          <div className="flex items-center gap-2">
-            <div>
-              <CardTitle className="text-base">Arqueo de Caja</CardTitle>
-              <CardDescription>Resumen financiero de la sesión</CardDescription>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="">
-            <div className="rounded-md border bg-card">
-              <div className="p-3 border-b">
-                <div className="text-sm font-medium text-foreground">Saldos</div>
-                <div className="text-xs text-muted-foreground">Cálculo del mes</div>
-              </div>
-              <div className="p-3">
-                <Table className="w-full">
-                  <TableBody>
-                    <TableRow>
-                      <TableCell className="text-sm">1. Saldo del mes anterior</TableCell>
-                      <TableCell className="text-right border-r">{formatCurrency(lastMonthBalance.balance)}</TableCell>
-                      <TableCell className="text-sm">2. Ingresos del mes</TableCell>
-                      <TableCell className="text-right">{formatCurrency(currentBalance)}</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell className="text-sm font-medium">3. Saldo Bruto del Mes (2+1)</TableCell>
-                      <TableCell className="text-right border-r">{formatCurrency(currentBalance + lastMonthBalance.balance)}</TableCell>
-                      <TableCell className="text-sm">4. Egresos del Mes</TableCell>
-                      <TableCell className="text-right">{formatCurrency(expensesAmount)}</TableCell>
-                    </TableRow>
-                    <TableRow>
-                      <TableCell className="text-sm font-semibold">Saldo Neto del Mes (3-4)</TableCell>
-                      <TableCell className="text-right font-semibold">{formatCurrency(currentBalance + lastMonthBalance.balance - expensesAmount)}</TableCell>
-                      <TableCell />
-                      <TableCell />
-                    </TableRow>
-                  </TableBody>
-                </Table>
-              </div>
-            </div>
+    {/* Arqueo de Caja */}
+    <Card className="w-full overflow-hidden">
+      <CardHeader className="pb-0 pt-5 px-5">
+        <div className="flex items-center justify-between mb-4">
+          <CardTitle className="text-base font-semibold">Arqueo de Caja</CardTitle>
+          <Badge variant="outline" className="text-xs font-medium">Resumen del mes</Badge>
+        </div>
 
-            
+        {/* Stats Pills */}
+        <div className="flex items-center gap-2 flex-wrap pb-4">
+          <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-muted/50 text-xs">
+            <span className="text-muted-foreground">Anterior:</span>
+            <span className="font-semibold tabular-nums">{formatCurrency(lastMonthBalance.balance)}</span>
           </div>
-
-        
-        </CardContent>
-      </Card>
-     <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle>Aplicación a créditos y evaluación</CardTitle>
-            <CardDescription>Registra solicitudes y define su estado</CardDescription>
+          <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-muted/50 text-xs">
+            <div className="w-2 h-2 rounded-full bg-emerald-500" />
+            <span className="font-semibold tabular-nums">{formatCurrency(currentBalance)}</span>
+            <span className="text-muted-foreground">Ingresos</span>
           </div>
-          <Button onClick={() => setIsModalOpen(true)} className="gap-2"><ClipboardCheck className="w-4 h-4" /> Agregar</Button>
+          <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-muted/50 text-xs">
+            <div className="w-2 h-2 rounded-full bg-rose-500" />
+            <span className="font-semibold tabular-nums">{formatCurrency(expensesAmount)}</span>
+            <span className="text-muted-foreground">Egresos</span>
+          </div>
+          <div className="h-4 w-px bg-border mx-1" />
+          <span className={`text-xs font-bold ${(currentBalance + lastMonthBalance.balance - expensesAmount) >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+            Neto: {formatCurrency(currentBalance + lastMonthBalance.balance - expensesAmount)}
+          </span>
         </div>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="rounded-md border bg-card">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="text-center">Nombre</TableHead>
-                <TableHead className="text-center">Tipo de Préstamo</TableHead>
-                <TableHead className="text-center">Monto Solicitado</TableHead>
-                <TableHead className="text-center">Monto Aprobado</TableHead>
-                <TableHead className="text-center">Meses</TableHead>
-                <TableHead className="text-center">Estado</TableHead>
-                <TableHead className="text-center">Acciones</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {creditApplications.map((it) => {
-                const getStatusColor = (status: string) => {
-                  switch (status.toLowerCase()) {
-                    case 'approved':
-                      return 'bg-green-100 text-green-800 border-green-200';
-                    case 'rejected':
-                      return 'bg-red-100 text-red-800 border-red-200';
-                    case 'pending':
-                      return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-                    default:
-                      return 'bg-gray-100 text-gray-800 border-gray-200';
-                  }
-                };
 
-                return (
-                  <TableRow key={it.id} className="hover:bg-muted/50">
-                    <TableCell className="text-center font-medium">
-                      {it.user.name} {it.user.lastname}
-                    </TableCell>
-                    <TableCell className="text-center">
-                      {getLoanTypeDisplay(it.loan?.loanType)}
-                    </TableCell>
-                    <TableCell className="text-center font-semibold text-blue-600">
-                      S/ {it.amount.toFixed(2)}
-                    </TableCell>
-                    <TableCell className="text-center">
-                      {it.loan?.amount ? (
-                        <span className="font-semibold text-green-600">
-                          S/ {it.loan.amount.toFixed(2)}
-                        </span>
-                      ) : (
-                        <span className="text-muted-foreground">-</span>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-center">
-                      {it.loan?.initalInstallments || '-'}
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(it.status)}`}>
-                        {it.status === 'approved' ? 'Aprobado' :
-                         it.status === 'rejected' ? 'Rechazado' :
-                         it.status === 'pending' ? 'Pendiente' : it.status}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <div className="flex items-center justify-center gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            setSelectedLoan({ id: it.id, dni: it.user.dni ?? "", name: it.user.name, amount: it.amount, months: it.loan?.initalInstallments || 6, status: it.status as "Pendiente" | "Aprobado" | "Rechazado" });
-                            setApproveConfirmOpen(true);
-                            setDropdownOpen(null);
-                          }}
-                          className="h-8 px-3 bg-green-50 border-green-200 text-green-700 hover:bg-green-100 hover:border-green-300"
-                          title="Aprobar solicitud"
-                        >
-                          <CheckCircle className="w-4 h-4 mr-1" />
-                          Aprobar
-                        </Button>
-
-                        <DropdownMenu
-                          open={dropdownOpen === it.id}
-                          onOpenChange={(open) => setDropdownOpen(open ? it.id : null)}
-                        >
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-8 w-8 p-0 hover:bg-gray-100"
-                              title="Más opciones"
-                            >
-                              <MoreVertical className="w-4 h-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-48">
-                            <DropdownMenuItem
-                              onClick={() => {
-                                setSelectedApplication(it);
-                                setDetailsModalOpen(true);
-                                setDropdownOpen(null);
-                              }}
-                              className="cursor-pointer"
-                            >
-                              <Eye className="w-4 h-4 mr-2" />
-                              Ver detalles
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => {
-                                setSelectedLoan({ id: it.id, dni: it.user.dni ?? "", name: it.user.name, amount: it.amount, months: it.loan?.initalInstallments || 6, status: it.status as "Pendiente" | "Aprobado" | "Rechazado" });
-                                setRejectConfirmOpen(true);
-                                setDropdownOpen(null);
-                              }}
-                              className="cursor-pointer text-red-600 focus:text-red-600"
-                            >
-                              <XCircle className="w-4 h-4 mr-2" />
-                              Rechazar
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() => {
-                                setApplicationToDelete(it.id);
-                                setDeleteConfirmOpen(true);
-                                setDropdownOpen(null);
-                              }}
-                              className="cursor-pointer text-gray-600 focus:text-gray-600"
-                            >
-                              <Trash2 className="w-4 h-4 mr-2" />
-                              Eliminar
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-              {creditApplications.length === 0 && (
-                <TableRow>
-                  <TableCell colSpan={7} className="text-center text-sm text-muted-foreground py-8">
-                    <div className="flex flex-col items-center gap-2">
-                      <ClipboardCheck className="w-8 h-8 text-muted-foreground/50" />
-                      <span>No hay solicitudes de préstamo</span>
-                    </div>
-                  </TableCell>
+      <CardContent className="p-0">
+        <div className="px-5 pb-5">
+          <div className="rounded-lg border bg-muted/20 overflow-hidden">
+            <Table className="w-full">
+              <TableBody>
+                <TableRow className="hover:bg-transparent">
+                  <TableCell className="text-xs text-muted-foreground">1. Saldo anterior</TableCell>
+                  <TableCell className="text-right text-sm font-medium border-r">{formatCurrency(lastMonthBalance.balance)}</TableCell>
+                  <TableCell className="text-xs text-muted-foreground">2. Ingresos</TableCell>
+                  <TableCell className="text-right text-sm font-medium">{formatCurrency(currentBalance)}</TableCell>
                 </TableRow>
-              )}
-            </TableBody>
-          </Table>
+                <TableRow className="hover:bg-transparent">
+                  <TableCell className="text-xs font-medium">3. Bruto (2+1)</TableCell>
+                  <TableCell className="text-right text-sm font-semibold border-r">{formatCurrency(currentBalance + lastMonthBalance.balance)}</TableCell>
+                  <TableCell className="text-xs text-muted-foreground">4. Egresos</TableCell>
+                  <TableCell className="text-right text-sm font-medium">{formatCurrency(expensesAmount)}</TableCell>
+                </TableRow>
+                <TableRow className="hover:bg-transparent bg-muted/30">
+                  <TableCell className="text-xs font-semibold">Saldo Neto (3-4)</TableCell>
+                  <TableCell className="text-right text-sm font-bold">{formatCurrency(currentBalance + lastMonthBalance.balance - expensesAmount)}</TableCell>
+                  <TableCell />
+                  <TableCell />
+                </TableRow>
+              </TableBody>
+            </Table>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+
+    {/* Credit Applications */}
+    <Card className="w-full overflow-hidden">
+      <CardHeader className="pb-0 pt-5 px-5">
+        <div className="flex items-center justify-between mb-4">
+          <CardTitle className="text-base font-semibold">Solicitudes de Crédito</CardTitle>
+          <Button onClick={() => setIsModalOpen(true)} size="sm" className="gap-1.5 h-8 text-xs">
+            <ClipboardCheck className="w-3.5 h-3.5" />
+            Agregar
+          </Button>
+        </div>
+
+        {creditApplications.length > 0 && (
+          <div className="flex items-center gap-2 flex-wrap pb-4">
+            <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-muted/50 text-xs">
+              <span className="font-semibold tabular-nums">{creditApplications.length}</span>
+              <span className="text-muted-foreground">Solicitudes</span>
+            </div>
+            <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-muted/50 text-xs">
+              <div className="w-2 h-2 rounded-full bg-yellow-500" />
+              <span className="font-semibold tabular-nums">{creditApplications.filter(a => a.status === 'pending').length}</span>
+              <span className="text-muted-foreground">Pendientes</span>
+            </div>
+            <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-muted/50 text-xs">
+              <div className="w-2 h-2 rounded-full bg-emerald-500" />
+              <span className="font-semibold tabular-nums">{creditApplications.filter(a => a.status === 'approved').length}</span>
+              <span className="text-muted-foreground">Aprobados</span>
+            </div>
+          </div>
+        )}
+      </CardHeader>
+
+      <CardContent className="p-0">
+        {/* Applications List */}
+        <div className="px-5 pb-5 space-y-1.5 max-h-[500px] overflow-y-auto">
+          {creditApplications.map((it) => {
+            const statusConfig: Record<string, { color: string; label: string }> = {
+              'approved': { color: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800', label: 'Aprobado' },
+              'rejected': { color: 'bg-red-50 text-red-700 border-red-200 dark:bg-red-950/40 dark:text-red-400 dark:border-red-800', label: 'Rechazado' },
+              'pending': { color: 'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800', label: 'Pendiente' },
+            };
+            const sc = statusConfig[it.status] || statusConfig['pending'];
+
+            return (
+              <div key={it.id} className="group flex items-center gap-3 p-3 rounded-xl border bg-card hover:shadow-sm transition-all">
+                {/* Avatar */}
+                <div className={`flex items-center justify-center w-10 h-10 rounded-full text-xs font-bold shrink-0 ${
+                  it.status === 'approved'
+                    ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400'
+                    : it.status === 'rejected'
+                    ? 'bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-400'
+                    : 'bg-primary/10 text-primary'
+                }`}>
+                  {it.user.name?.[0]}
+                  {it.user.lastname?.[0]}
+                </div>
+
+                {/* Info */}
+                <div className="flex-1 min-w-0">
+                  <div className="font-medium text-sm truncate">
+                    {it.user.lastname}, {it.user.name}
+                  </div>
+                  <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                    <Badge variant="outline" className={`text-[10px] px-1.5 py-0 h-5 font-medium border ${sc.color}`}>
+                      {sc.label}
+                    </Badge>
+                    {it.loan?.loanType && (
+                      <span className="text-[11px] text-muted-foreground">
+                        {getLoanTypeDisplay(it.loan.loanType)}
+                      </span>
+                    )}
+                    {it.loan?.initalInstallments && (
+                      <span className="text-[11px] text-muted-foreground">
+                        {it.loan.initalInstallments} meses
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Amounts */}
+                <div className="flex items-center gap-3 shrink-0">
+                  <div className="text-right">
+                    <div className="text-[10px] text-muted-foreground">Solicitado</div>
+                    <div className="text-sm font-semibold text-blue-600 dark:text-blue-400">S/ {it.amount.toFixed(2)}</div>
+                  </div>
+                  {it.loan?.amount && (
+                    <div className="text-right">
+                      <div className="text-[10px] text-muted-foreground">Aprobado</div>
+                      <div className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">S/ {it.loan.amount.toFixed(2)}</div>
+                    </div>
+                  )}
+                </div>
+
+                {/* Actions */}
+                <div className="flex items-center gap-1 shrink-0">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setSelectedLoan({ id: it.id, dni: it.user.dni ?? "", name: it.user.name, amount: it.amount, months: it.loan?.initalInstallments || 6, status: it.status as "Pendiente" | "Aprobado" | "Rechazado" });
+                      setApproveConfirmOpen(true);
+                      setDropdownOpen(null);
+                    }}
+                    className="h-7 px-2 text-xs bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-950/30 dark:border-emerald-800 dark:text-emerald-400"
+                  >
+                    <CheckCircle className="w-3.5 h-3.5 mr-1" />
+                    Aprobar
+                  </Button>
+
+                  <DropdownMenu
+                    open={dropdownOpen === it.id}
+                    onOpenChange={(open) => setDropdownOpen(open ? it.id : null)}
+                  >
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 w-7 p-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                      >
+                        <MoreVertical className="w-3.5 h-3.5" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-48">
+                      <DropdownMenuItem
+                        onClick={() => {
+                          setSelectedApplication(it);
+                          setDetailsModalOpen(true);
+                          setDropdownOpen(null);
+                        }}
+                        className="cursor-pointer"
+                      >
+                        <Eye className="w-4 h-4 mr-2" />
+                        Ver detalles
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => {
+                          setSelectedLoan({ id: it.id, dni: it.user.dni ?? "", name: it.user.name, amount: it.amount, months: it.loan?.initalInstallments || 6, status: it.status as "Pendiente" | "Aprobado" | "Rechazado" });
+                          setRejectConfirmOpen(true);
+                          setDropdownOpen(null);
+                        }}
+                        className="cursor-pointer text-red-600 focus:text-red-600"
+                      >
+                        <XCircle className="w-4 h-4 mr-2" />
+                        Rechazar
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => {
+                          setApplicationToDelete(it.id);
+                          setDeleteConfirmOpen(true);
+                          setDropdownOpen(null);
+                        }}
+                        className="cursor-pointer text-gray-600 focus:text-gray-600"
+                      >
+                        <Trash2 className="w-4 h-4 mr-2" />
+                        Eliminar
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              </div>
+            );
+          })}
+          {creditApplications.length === 0 && (
+            <div className="py-8 text-center text-sm text-muted-foreground">
+              <ClipboardCheck className="w-8 h-8 mx-auto mb-2 text-muted-foreground/50" />
+              No hay solicitudes de préstamo
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>

@@ -115,3 +115,19 @@ export const apiUpdateParticipantInAssemblyRun = async (scheduleRunId: string, d
   const response = await apiClient.patch(`/schedules/assembly/run/${scheduleRunId}/participants`, data);
   return response.data;
 };
+
+// savings (ahorristas)
+export const apiGetSavingsData = async (runId: string) => {
+  const response = await apiClient.get(`/schedules/assembly/run/${runId}/savings-data`);
+  return response.data;
+};
+
+export const apiRecordSaving = async (runId: string, data: { userId: string; amount: number; date: Date; }) => {
+  const response = await apiClient.post(`/schedules/assembly/run/${runId}/record-saving`, data);
+  return response.data;
+};
+
+export const apiRecordInterestPayment = async (runId: string, data: { userId: string; amount: number; description?: string; date: Date; }) => {
+  const response = await apiClient.post(`/schedules/assembly/run/${runId}/record-interest-payment`, data);
+  return response.data;
+};

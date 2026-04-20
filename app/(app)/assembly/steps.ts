@@ -1,4 +1,4 @@
-import { ClipboardCheck, FileCheck, FileText, PiggyBank, TrendingUp, Users, type LucideIcon } from "lucide-react";
+import { ClipboardCheck, FileCheck, FileText, PiggyBank, TrendingUp, Users, Wallet, type LucideIcon } from "lucide-react";
 
 export interface IAssemblyStep {
   id: number;
@@ -22,17 +22,6 @@ export const assemblySteps: IAssemblyStep[] = [
   },
   {
     id: 2,
-    title: "Agenda y Acta",
-    description: "",
-    icon: FileText,
-    details: [
-      "Presentar agenda del día",
-      "Leer acta anterior",
-      "Aprobar acta anterior"
-    ]
-  },
-  {
-    id: 3,
     title: "Acciones",
     description: "",
     icon: TrendingUp,
@@ -43,7 +32,7 @@ export const assemblySteps: IAssemblyStep[] = [
     ]
   },
   {
-    id: 4,
+    id: 3,
     title: "Intereses",
     description: "",
     icon: PiggyBank,
@@ -51,6 +40,17 @@ export const assemblySteps: IAssemblyStep[] = [
       "Recibir pagos de intereses",
       "Actualizar saldos de intereses",
       "Emitir comprobantes de pago"
+    ]
+  },
+  {
+    id: 4,
+    title: "Ahorristas",
+    description: "",
+    icon: Wallet,
+    details: [
+      "Registrar nuevos ahorros",
+      "Pagar intereses a ahorristas",
+      "Actualizar saldos de ahorros"
     ]
   },
   {
@@ -75,16 +75,6 @@ export const assemblySteps: IAssemblyStep[] = [
       "Tomar decisiones de aprobación"
     ]
   },
-  //    {
-  //   id: 6,
-  //   title: "Arqueo de Caja con el socio responsable",
-  //   description: "Arqueo de caja con el socio responsable",
-  //   icon: Flag,
-  //   details: [
-  //     "Arqueo de caja",
-  //   ]
-  // },
-
   {
     id: 7,
     title: "Resumen",
@@ -96,15 +86,4 @@ export const assemblySteps: IAssemblyStep[] = [
       "Archivar expedientes"
     ]
   },
-  // {
-  //   id: 7,
-  //   title: "Llamado de Lista y Terminar Reunión",
-  //   description: "Finalizar asamblea con acta de todo lo realizado",
-  //   icon: Flag,
-  //   details: [
-  //     "Hacer llamado final de lista",
-  //     "Redactar acta de la reunión",
-  //     "Cerrar sesión oficialmente"
-  //   ]
-  // }
 ];

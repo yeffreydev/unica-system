@@ -19,6 +19,7 @@ import {
   Edit,
   MoreHorizontal,
   Trash,
+  Smartphone,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -55,6 +56,28 @@ export function UsersTable() {
   const [selectedUser, setSelectedUser] = useState<IUser | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+
+  const [invitingUserId, setInvitingUserId] = useState<string | null>(null);
+
+  const handleInviteToApp = async (user: IUser) => {
+    const confirm = window.confirm(
+      `¿Enviar invitación a QIPI para ${user.name} ${user.lastname} (DNI: ${user.dni})?`
+    );
+    if (!confirm) return;
+
+    setInvitingUserId(user.id);
+    try {
+      const res = await apiClient.post("/invitations", { userId: user.id });
+      if (res.status === 201) {
+        alert(`Invitación enviada exitosamente a ${user.name} ${user.lastname}`);
+      }
+    } catch (error: any) {
+      const msg = error?.response?.data?.message || "Error al enviar invitación";
+      alert(msg);
+    } finally {
+      setInvitingUserId(null);
+    }
+  };
 
   const handleEdit = (user: IUser) => {
     setSelectedUser(user);
@@ -148,6 +171,14 @@ export function UsersTable() {
               <DropdownMenuItem onClick={() => handleEdit(user)}>
                 <Edit />
                 Editar
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={() => handleInviteToApp(user)}
+                disabled={invitingUserId === user.id}
+              >
+                <Smartphone />
+                {invitingUserId === user.id ? "Enviando..." : "Invitar a QIPI"}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => handleDelete(user.id)}>
