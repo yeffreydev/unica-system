@@ -207,6 +207,21 @@ export default function Savings() {
     (sum, p) => sum + p.payouts.reduce((s, py) => s + py.amount, 0),
     0
   );
+  const visiblePartners = savingsPartners
+    .filter((user) => {
+      if (!searchQuery.trim()) return true;
+      const fullName = `${user.lastname} ${user.name}`.toLowerCase();
+      return fullName.includes(searchQuery.toLowerCase());
+    })
+    .sort((a, b) => {
+      const aHasSavings = (a.savingsBalance ?? 0) > 0;
+      const bHasSavings = (b.savingsBalance ?? 0) > 0;
+      if (aHasSavings !== bHasSavings) return aHasSavings ? -1 : 1;
+
+      const lastNameCompare = (a.lastname || "").localeCompare(b.lastname || "", "es");
+      if (lastNameCompare !== 0) return lastNameCompare;
+      return (a.name || "").localeCompare(b.name || "", "es");
+    });
 
   return (
     <Card className="w-full overflow-hidden">
@@ -279,17 +294,7 @@ export default function Savings() {
 
             {/* Partners List */}
             <div className="px-5 pb-5 space-y-1.5 max-h-[500px] overflow-y-auto">
-              {[...savers]
-                .filter((user) => {
-                  if (!searchQuery.trim()) return true;
-                  const fullName = `${user.lastname} ${user.name}`.toLowerCase();
-                  return fullName.includes(searchQuery.toLowerCase());
-                })
-                .sort((a, b) => {
-                  const lastNameCompare = (a.lastname || "").localeCompare(b.lastname || "", "es");
-                  if (lastNameCompare !== 0) return lastNameCompare;
-                  return (a.name || "").localeCompare(b.name || "", "es");
-                })
+              {visiblePartners
                 .map((partner) => {
                   const depositRun = partner.deposits.reduce((sum, d) => sum + d.amount, 0);
                   const withdrawRun = (partner.withdrawals ?? []).reduce((sum, w) => sum + w.amount, 0);
@@ -371,9 +376,9 @@ export default function Savings() {
                     </div>
                   );
                 })}
-              {savers.length === 0 && (
+              {visiblePartners.length === 0 && (
                 <div className="py-8 text-center text-sm text-muted-foreground">
-                  No hay socios con ahorros
+                  {searchQuery.trim() ? "No hay socios que coincidan con la búsqueda" : "No hay socios registrados"}
                 </div>
               )}
             </div>

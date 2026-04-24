@@ -40,6 +40,13 @@ export default function Loans() {
   const [creditApplications, setCreditApplications] = useState<ICreditApplication[]>([]);
   const { assembly, updateCashBalance } = useAssembly();
   const configuredLoanRate = bank?.bank?.loanInterestRate ?? 0.02;
+  const configuredRoundingMode = bank?.bank?.loanInterestRoundingMode ?? "NORMAL";
+  const configuredRoundingDigits = bank?.bank?.loanInterestRoundingDigits ?? 2;
+  const roundingModeLabels = {
+    NORMAL: "normal",
+    UP: "hacia arriba",
+    DOWN: "hacia abajo",
+  };
   const [lastMonthBalance, setLastMonthBalance] = useState<{
      incomes: {
         deposits: IDeposit[],
@@ -233,6 +240,29 @@ export default function Loans() {
 
     // Fallback
     return String(loanType);
+  };
+
+  const roundLoanInterest = (value: number) => {
+    const factor = 10 ** configuredRoundingDigits;
+    if (configuredRoundingMode === "UP") return Math.ceil(value * factor - Number.EPSILON) / factor;
+    if (configuredRoundingMode === "DOWN") return Math.floor(value * factor + Number.EPSILON) / factor;
+    return Math.round(value * factor) / factor;
+  };
+
+  const getPreviewInstallment = (index: number) => {
+    const loanTypeName = loanTypeSelected?.name as LoanTypesEnum | undefined;
+    const baseCapital = form.amount / form.installments;
+    const remainingBalance = form.amount - baseCapital * index;
+    const capital = loanTypeName === LoanTypesEnum.MATURITY && index < form.installments - 1 ? 0 : baseCapital;
+    const interestBase =
+      loanTypeName === LoanTypesEnum.VARIABLE || loanTypeName === LoanTypesEnum.REBATE
+        ? remainingBalance
+        : form.amount;
+
+    return {
+      capital: loanTypeName === LoanTypesEnum.MATURITY && index === form.installments - 1 ? form.amount : capital,
+      interest: roundLoanInterest(interestBase * configuredLoanRate),
+    };
   };
 
   const handleApproveCreditApplication = async () => {
@@ -691,6 +721,10 @@ export default function Loans() {
               <div className="p-3 rounded-md bg-muted/40 border text-xs text-muted-foreground">
                 Tasa de interés aplicada: <strong className="text-foreground">{(configuredLoanRate * 100).toFixed(2)}% mensual</strong>
                 {" "}(configurable en Ajustes → Plataforma)
+                <div className="mt-1">
+                  Redondeo del interés: <strong className="text-foreground">{roundingModeLabels[configuredRoundingMode]}</strong>
+                  {" "}a <strong className="text-foreground">{configuredRoundingDigits}</strong> decimales.
+                </div>
               </div>
             </>
           )}
@@ -701,19 +735,23 @@ export default function Loans() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Cuota</TableHead>
-                      <TableHead>Monto</TableHead>
+                      <TableHead>Capital</TableHead>
+                      <TableHead>Interés</TableHead>
+                      <TableHead>Total</TableHead>
                       <TableHead>Fecha</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {Array.from({ length: form.installments }, (_, i) => {
-                      const installmentAmount = form.amount / form.installments;
+                      const { capital, interest } = getPreviewInstallment(i);
                       const date = new Date();
                       date.setMonth(date.getMonth() + i + 1);
                       return (
                         <TableRow key={i}>
                           <TableCell>{i + 1}</TableCell>
-                          <TableCell>S/ {installmentAmount.toFixed(2)}</TableCell>
+                          <TableCell>S/ {capital.toFixed(2)}</TableCell>
+                          <TableCell>S/ {interest.toFixed(configuredRoundingDigits)}</TableCell>
+                          <TableCell>S/ {(capital + interest).toFixed(2)}</TableCell>
                           <TableCell>{date.toLocaleDateString()}</TableCell>
                         </TableRow>
                       );
@@ -1016,5 +1054,3 @@ export default function Loans() {
     </div>
   );
 }
-
-

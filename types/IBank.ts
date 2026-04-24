@@ -6,6 +6,8 @@ export interface IBank {
     avatar?: string;
     loanInterestRate?: number;
     savingsInterestRate?: number;
+    loanInterestRoundingMode?: "NORMAL" | "UP" | "DOWN";
+    loanInterestRoundingDigits?: number;
   };
   mainStock: IStock;
 }

@@ -94,17 +94,8 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
   const fetchBank = async () => {
     try {
       const res = await apiClient.get("/banks");
-
-      //obtener data del localstorage.
-      const data = localStorage.getItem("bank") as string;
-      const bank = data ? JSON.parse(data) : null;
-      console.log(bank);
-      if (bank) {
-        setBank(bank);
-      } else {
-        setBank(res.data);
-        localStorage.setItem("bank", JSON.stringify(res.data));
-      }
+      setBank(res.data);
+      localStorage.setItem("bank", JSON.stringify(res.data));
     } catch (error) {
       console.error(error);
     }

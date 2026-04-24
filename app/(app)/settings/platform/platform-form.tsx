@@ -20,6 +20,13 @@ import { useContext, useEffect, useState } from "react";
 import { AppContext } from "@/context/AppContext";
 import apiClient from "@/config/apiClient";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
+const roundingModeLabels = {
+  NORMAL: "Normal",
+  UP: "Hacia arriba",
+  DOWN: "Hacia abajo",
+} as const;
 
 const PlatformFormSchema = z.object({
   name: z
@@ -38,6 +45,13 @@ const PlatformFormSchema = z.object({
     .refine((v) => !isNaN(Number(v)), { message: "Debe ser un número válido." })
     .refine((v) => Number(v) >= 0, { message: "La tasa no puede ser negativa." })
     .refine((v) => Number(v) <= 100, { message: "La tasa no puede ser mayor a 100%." }),
+  loanInterestRoundingMode: z.enum(["NORMAL", "UP", "DOWN"]),
+  loanInterestRoundingDigits: z
+    .string()
+    .refine((v) => v !== "", { message: "Este campo es requerido." })
+    .refine((v) => Number.isInteger(Number(v)), { message: "Debe ser un número entero." })
+    .refine((v) => Number(v) >= 0, { message: "No puede ser menor a 0." })
+    .refine((v) => Number(v) <= 4, { message: "No puede ser mayor a 4." }),
 });
 
 type PlatformFormValues = z.infer<typeof PlatformFormSchema>;
@@ -46,6 +60,8 @@ const defaultValues: PlatformFormValues = {
   name: "",
   loanInterestRate: "2",
   savingsInterestRate: "1",
+  loanInterestRoundingMode: "NORMAL",
+  loanInterestRoundingDigits: "2",
 };
 
 export function PlatformForm() {
@@ -65,6 +81,8 @@ export function PlatformForm() {
         name: data.name,
         loanInterestRate: Number(data.loanInterestRate) / 100,
         savingsInterestRate: Number(data.savingsInterestRate) / 100,
+        loanInterestRoundingMode: data.loanInterestRoundingMode,
+        loanInterestRoundingDigits: Number(data.loanInterestRoundingDigits),
       });
 
       if (res.data) {
@@ -98,7 +116,25 @@ export function PlatformForm() {
     form.setValue("name", bank?.bank?.name ?? "");
     form.setValue("loanInterestRate", String((bank?.bank?.loanInterestRate ?? 0.02) * 100));
     form.setValue("savingsInterestRate", String((bank?.bank?.savingsInterestRate ?? 0.01) * 100));
+    form.setValue("loanInterestRoundingMode", bank?.bank?.loanInterestRoundingMode ?? "NORMAL");
+    form.setValue("loanInterestRoundingDigits", String(bank?.bank?.loanInterestRoundingDigits ?? 2));
   }, [bank]);
+
+  const roundingMode = form.watch("loanInterestRoundingMode");
+  const roundingDigits = Number(form.watch("loanInterestRoundingDigits") || 0);
+  const roundingExample = (() => {
+    const value = roundingDigits === 0
+      ? roundingMode === "NORMAL" ? 5.5 : roundingMode === "UP" ? 5.2 : 5.08
+      : roundingMode === "NORMAL" ? 5.25 : roundingMode === "UP" ? 5.22 : 5.17;
+    const factor = 10 ** roundingDigits;
+    const rounded =
+      roundingMode === "UP"
+        ? Math.ceil(value * factor - Number.EPSILON) / factor
+        : roundingMode === "DOWN"
+          ? Math.floor(value * factor + Number.EPSILON) / factor
+          : Math.round(value * factor) / factor;
+    return `${value} → ${rounded.toFixed(roundingDigits)}`;
+  })();
 
   return (
     <Form {...form}>
@@ -161,6 +197,51 @@ export function PlatformForm() {
                 </FormItem>
               )}
             />
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <FormField
+                control={form.control}
+                name="loanInterestRoundingMode"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Redondeo de Interés de Préstamos</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecciona el redondeo" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="NORMAL">{roundingModeLabels.NORMAL}</SelectItem>
+                        <SelectItem value="UP">{roundingModeLabels.UP}</SelectItem>
+                        <SelectItem value="DOWN">{roundingModeLabels.DOWN}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>
+                      Normal usa el decimal estándar; arriba siempre sube; abajo siempre corta.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="loanInterestRoundingDigits"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Decimales del Interés</FormLabel>
+                    <FormControl>
+                      <Input type="number" step="1" min="0" max="4" {...field} />
+                    </FormControl>
+                    <FormDescription>
+                      Ejemplo con la configuración actual: {roundingExample}
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
           </CardContent>
         </Card>
 
