@@ -7,23 +7,69 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Search, Wallet, HandCoins, PiggyBank } from "lucide-react";
-import { useEffect, useState } from "react";
-import { apiGetAssemblyRun, apiGetSavingsData, apiRecordSaving, apiRecordInterestPayment } from "../api";
+import { Search, HandCoins, PiggyBank, Loader2, ArrowDownCircle, ArrowUpCircle, TrendingUp, TrendingDown } from "lucide-react";
+import React, { useContext, useEffect, useState } from "react";
+import { apiGetAssemblyRun, apiGetSavingsData, apiRecordSaving, apiRecordInterestPayment, apiRecordWithdrawal } from "../api";
 import { IAssemblyScheduleRun, ISavingsPartner } from "../types";
 import { useAssembly } from "../AssemblyContext";
+import { AppContext } from "@/context/AppContext";
+import { sileo } from "sileo";
+
+type NumberInputProps = Omit<React.ComponentProps<typeof Input>, "value" | "onChange" | "type"> & {
+  value: number | null | undefined;
+  onChange: (n: number) => void;
+};
+
+function NumberInput({ value, onChange, onBlur, ...rest }: NumberInputProps) {
+  const toText = (v: number | null | undefined) =>
+    v === null || v === undefined || (typeof v === "number" && Number.isNaN(v)) ? "" : String(v);
+  const [text, setText] = useState<string>(toText(value));
+
+  useEffect(() => {
+    const current = text === "" || text === "." ? NaN : Number(text);
+    const valIsEmpty = value === null || value === undefined || (typeof value === "number" && Number.isNaN(value));
+    const curIsEmpty = Number.isNaN(current);
+    if (valIsEmpty && curIsEmpty) return;
+    if (current !== value) setText(toText(value));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value]);
+
+  return (
+    <Input
+      {...rest}
+      type="text"
+      inputMode="decimal"
+      value={text}
+      onChange={(e) => {
+        const v = e.target.value;
+        if (v === "" || /^\d*\.?\d*$/.test(v)) {
+          setText(v);
+          if (v === "" || v === ".") onChange(0);
+          else {
+            const n = Number(v);
+            if (!isNaN(n)) onChange(n);
+          }
+        }
+      }}
+      onBlur={onBlur}
+    />
+  );
+}
 
 export default function Savings() {
   const { assembly } = useAssembly();
+  const { bank } = useContext(AppContext);
+  const savingsRate = bank?.bank?.savingsInterestRate ?? 0.01;
 
   const [assemblyRun, setAssemblyRun] = useState<IAssemblyScheduleRun | null>(null);
   const [savingsPartners, setSavingsPartners] = useState<ISavingsPartner[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Deposit modal
-  const [depositModalOpen, setDepositModalOpen] = useState(false);
+  // Movement modal (deposit/withdraw toggle)
+  const [movementModalOpen, setMovementModalOpen] = useState(false);
+  const [movementMode, setMovementMode] = useState<"deposit" | "withdraw">("deposit");
   const [selectedPartner, setSelectedPartner] = useState<ISavingsPartner | null>(null);
-  const [depositAmount, setDepositAmount] = useState(0);
+  const [movementAmount, setMovementAmount] = useState(0);
 
   // Interest payment modal
   const [interestModalOpen, setInterestModalOpen] = useState(false);
@@ -55,55 +101,55 @@ export default function Savings() {
     fetchData();
   }, [assemblyRun]);
 
-  // Open deposit modal
-  const handleOpenDeposit = (partner: ISavingsPartner) => {
+  // Open movement modal (deposit or withdraw)
+  const handleOpenMovement = (partner: ISavingsPartner, mode: "deposit" | "withdraw") => {
     setSelectedPartner(partner);
-    const currentDeposit = partner.deposits.reduce((sum, d) => sum + d.amount, 0);
-    setDepositAmount(currentDeposit || 0);
-    setDepositModalOpen(true);
+    setMovementMode(mode);
+    const existing =
+      mode === "deposit"
+        ? partner.deposits.reduce((sum, d) => sum + d.amount, 0)
+        : (partner.withdrawals ?? []).reduce((sum, w) => sum + w.amount, 0);
+    setMovementAmount(existing || 0);
+    setMovementModalOpen(true);
   };
 
-  // Confirm deposit
-  const handleConfirmDeposit = async () => {
+  // Confirm deposit or withdraw — refetches after save for consistent balance
+  const handleConfirmMovement = async () => {
     if (!selectedPartner || !assemblyRun || isSubmitting) return;
+    if (movementMode === "withdraw" && movementAmount > selectedPartner.savingsBalance) {
+      sileo.error({
+        title: "Monto excede balance",
+        description: `Balance disponible: S/ ${selectedPartner.savingsBalance.toFixed(2)}.`,
+      });
+      return;
+    }
     setIsSubmitting(true);
     try {
-      const result = await apiRecordSaving(assemblyRun.id, {
-        userId: selectedPartner.id,
-        amount: depositAmount,
-        date: assemblyRun.startAt ?? new Date(),
-      });
+      if (movementMode === "deposit") {
+        await apiRecordSaving(assemblyRun.id, {
+          userId: selectedPartner.id,
+          amount: movementAmount,
+          date: assemblyRun.startAt ?? new Date(),
+        });
+        sileo.success({ title: "Depósito registrado", description: `S/ ${movementAmount.toFixed(2)} ingresó al ahorro.` });
+      } else {
+        await apiRecordWithdrawal(assemblyRun.id, {
+          userId: selectedPartner.id,
+          amount: movementAmount,
+          date: assemblyRun.startAt ?? new Date(),
+        });
+        sileo.success({ title: "Retiro registrado", description: `S/ ${movementAmount.toFixed(2)} retirado del ahorro.` });
+      }
 
-      setSavingsPartners((prev) =>
-        prev.map((p) => {
-          if (p.id === selectedPartner.id) {
-            if (depositAmount === 0) {
-              return { ...p, deposits: [] };
-            }
-            const existingDeposit = p.deposits.find((d) => d.userId === selectedPartner.id);
-            if (existingDeposit) {
-              return {
-                ...p,
-                deposits: p.deposits.map((d) =>
-                  d.userId === selectedPartner.id ? { ...d, amount: depositAmount } : d
-                ),
-              };
-            } else {
-              return {
-                ...p,
-                deposits: [...p.deposits, result],
-              };
-            }
-          }
-          return p;
-        })
-      );
+      const fresh = await apiGetSavingsData(assemblyRun.id);
+      setSavingsPartners(fresh);
 
-      setDepositModalOpen(false);
+      setMovementModalOpen(false);
       setSelectedPartner(null);
-      setDepositAmount(0);
+      setMovementAmount(0);
     } catch (error) {
-      console.error("Error recording saving:", error);
+      console.error("Error recording movement:", error);
+      sileo.error({ title: "Error", description: "No se pudo registrar la operación." });
     } finally {
       setIsSubmitting(false);
     }
@@ -113,7 +159,8 @@ export default function Savings() {
   const handleOpenInterest = (partner: ISavingsPartner) => {
     setSelectedPartner(partner);
     const currentInterest = partner.payouts.reduce((sum, p) => sum + p.amount, 0);
-    setInterestAmount(currentInterest || 0);
+    const suggested = currentInterest > 0 ? currentInterest : Number((partner.savingsBalance * savingsRate).toFixed(2));
+    setInterestAmount(suggested);
     setInterestDescription(partner.payouts[0]?.description || "");
     setInterestModalOpen(true);
   };
@@ -123,36 +170,17 @@ export default function Savings() {
     if (!selectedPartner || !assemblyRun || isSubmitting) return;
     setIsSubmitting(true);
     try {
-      const result = await apiRecordInterestPayment(assemblyRun.id, {
+      await apiRecordInterestPayment(assemblyRun.id, {
         userId: selectedPartner.id,
         amount: interestAmount,
         description: interestDescription || "Pago de interés a ahorrista",
         date: assemblyRun.startAt ?? new Date(),
       });
 
-      setSavingsPartners((prev) =>
-        prev.map((p) => {
-          if (p.id === selectedPartner.id) {
-            if (interestAmount === 0) {
-              return { ...p, payouts: [] };
-            }
-            if (p.payouts.length > 0) {
-              return {
-                ...p,
-                payouts: p.payouts.map((py, i) =>
-                  i === 0 ? { ...py, amount: interestAmount, description: interestDescription || py.description } : py
-                ),
-              };
-            } else {
-              return {
-                ...p,
-                payouts: [result],
-              };
-            }
-          }
-          return p;
-        })
-      );
+      const fresh = await apiGetSavingsData(assemblyRun.id);
+      setSavingsPartners(fresh);
+
+      sileo.success({ title: "Interés pagado", description: `S/ ${interestAmount.toFixed(2)} a ${selectedPartner.name}.` });
 
       setInterestModalOpen(false);
       setSelectedPartner(null);
@@ -160,22 +188,25 @@ export default function Savings() {
       setInterestDescription("");
     } catch (error) {
       console.error("Error recording interest payment:", error);
+      sileo.error({ title: "Error", description: "No se pudo registrar el pago de interés." });
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const totalDeposits = savingsPartners.reduce(
+  const savers = savingsPartners.filter((p) => (p.savingsBalance ?? 0) > 0);
+  const totalDeposits = savers.reduce(
     (sum, p) => sum + p.deposits.reduce((s, d) => s + d.amount, 0),
     0
   );
-  const totalInterestPaid = savingsPartners.reduce(
+  const totalWithdrawals = savers.reduce(
+    (sum, p) => sum + (p.withdrawals ?? []).reduce((s, w) => s + w.amount, 0),
+    0
+  );
+  const totalInterestPaid = savers.reduce(
     (sum, p) => sum + p.payouts.reduce((s, py) => s + py.amount, 0),
     0
   );
-  const depositorsCount = savingsPartners.filter(
-    (p) => p.deposits.reduce((s, d) => s + d.amount, 0) > 0
-  ).length;
 
   return (
     <Card className="w-full overflow-hidden">
@@ -185,33 +216,33 @@ export default function Savings() {
           <CardTitle className="text-base font-semibold">Gestión de Ahorristas</CardTitle>
           <Badge variant="outline" className="text-xs font-medium gap-1">
             <PiggyBank className="w-3 h-3" />
-            {savingsPartners.length} ahorristas
+            {savers.length} ahorristas
           </Badge>
         </div>
 
         {/* Stats */}
         {assemblyRun && (
           <div className="flex items-center gap-2 flex-wrap pb-4">
-            <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-muted/50 text-xs">
-              <div className="w-2 h-2 rounded-full bg-blue-500" />
-              <span className="font-semibold tabular-nums">{depositorsCount}</span>
-              <span className="text-muted-foreground">Ahorraron</span>
-            </div>
             {totalDeposits > 0 && (
-              <>
-                <div className="h-4 w-px bg-border mx-1" />
-                <span className="text-xs font-semibold text-blue-600 dark:text-blue-400">
-                  S/ {totalDeposits.toFixed(2)} ahorros
-                </span>
-              </>
+              <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-emerald-50 dark:bg-emerald-950/30 text-xs border border-emerald-200 dark:border-emerald-900">
+                <TrendingUp className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
+                <span className="font-semibold tabular-nums text-emerald-700 dark:text-emerald-400">+S/ {totalDeposits.toFixed(2)}</span>
+                <span className="text-muted-foreground">depósitos</span>
+              </div>
+            )}
+            {totalWithdrawals > 0 && (
+              <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-amber-50 dark:bg-amber-950/30 text-xs border border-amber-200 dark:border-amber-900">
+                <TrendingDown className="w-3 h-3 text-amber-600 dark:text-amber-400" />
+                <span className="font-semibold tabular-nums text-amber-700 dark:text-amber-400">-S/ {totalWithdrawals.toFixed(2)}</span>
+                <span className="text-muted-foreground">retiros</span>
+              </div>
             )}
             {totalInterestPaid > 0 && (
-              <>
-                <div className="h-4 w-px bg-border mx-1" />
-                <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
-                  S/ {totalInterestPaid.toFixed(2)} intereses
-                </span>
-              </>
+              <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-red-50 dark:bg-red-950/30 text-xs border border-red-200 dark:border-red-900">
+                <HandCoins className="w-3 h-3 text-red-600 dark:text-red-400" />
+                <span className="font-semibold tabular-nums text-red-700 dark:text-red-400">-S/ {totalInterestPaid.toFixed(2)}</span>
+                <span className="text-muted-foreground">intereses</span>
+              </div>
             )}
           </div>
         )}
@@ -248,7 +279,7 @@ export default function Savings() {
 
             {/* Partners List */}
             <div className="px-5 pb-5 space-y-1.5 max-h-[500px] overflow-y-auto">
-              {[...savingsPartners]
+              {[...savers]
                 .filter((user) => {
                   if (!searchQuery.trim()) return true;
                   const fullName = `${user.lastname} ${user.name}`.toLowerCase();
@@ -260,41 +291,48 @@ export default function Savings() {
                   return (a.name || "").localeCompare(b.name || "", "es");
                 })
                 .map((partner) => {
-                  const depositTotal = partner.deposits.reduce((sum, d) => sum + d.amount, 0);
-                  const interestTotal = partner.payouts.reduce((sum, p) => sum + p.amount, 0);
-                  const hasDeposit = depositTotal > 0;
+                  const depositRun = partner.deposits.reduce((sum, d) => sum + d.amount, 0);
+                  const withdrawRun = (partner.withdrawals ?? []).reduce((sum, w) => sum + w.amount, 0);
+                  const interestRun = partner.payouts.reduce((sum, p) => sum + p.amount, 0);
+                  const balance = partner.savingsBalance ?? 0;
 
                   return (
                     <div
                       key={partner.id}
-                      className="group flex items-center gap-3 p-3 rounded-xl border bg-card hover:shadow-sm transition-all"
+                      className="group flex items-center gap-3 p-3 rounded-xl border bg-gradient-to-r from-card to-blue-50/30 dark:to-blue-950/20 hover:shadow-md transition-all"
                     >
                       {/* Avatar */}
-                      <div className={`flex items-center justify-center w-10 h-10 rounded-full text-xs font-bold shrink-0 ${
-                        hasDeposit
-                          ? 'bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-400'
-                          : 'bg-primary/10 text-primary'
-                      }`}>
+                      <div className="flex items-center justify-center w-11 h-11 rounded-full text-xs font-bold shrink-0 bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-400 ring-2 ring-blue-200/50 dark:ring-blue-900/50">
                         {partner.name?.[0]}
                         {partner.lastname?.[0]}
                       </div>
 
                       {/* Name & Info */}
                       <div className="flex-1 min-w-0">
-                        <div className="font-medium text-sm truncate">
+                        <div className="font-semibold text-sm truncate">
                           {partner.lastname}, {partner.name}
                         </div>
-                        <div className="flex items-center gap-2 mt-0.5">
-                          {hasDeposit ? (
-                            <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5 font-medium border bg-blue-50 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:text-blue-400 dark:border-blue-800">
-                              S/ {depositTotal.toFixed(2)}
-                            </Badge>
-                          ) : (
-                            <span className="text-[11px] text-muted-foreground">Sin ahorro</span>
+                        <div className="flex items-center gap-1.5 mt-1 flex-wrap">
+                          <div className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-100 text-blue-800 dark:bg-blue-950/50 dark:text-blue-300 text-[11px] font-semibold">
+                            <PiggyBank className="w-3 h-3" />
+                            S/ {balance.toFixed(2)}
+                          </div>
+                          {depositRun > 0 && (
+                            <span className="flex items-center gap-0.5 text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
+                              <TrendingUp className="w-3 h-3" />
+                              +S/ {depositRun.toFixed(2)}
+                            </span>
                           )}
-                          {interestTotal > 0 && (
-                            <span className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
-                              Int: S/ {interestTotal.toFixed(2)}
+                          {withdrawRun > 0 && (
+                            <span className="flex items-center gap-0.5 text-[11px] font-bold text-amber-600 dark:text-amber-400">
+                              <TrendingDown className="w-3 h-3" />
+                              -S/ {withdrawRun.toFixed(2)}
+                            </span>
+                          )}
+                          {interestRun > 0 && (
+                            <span className="flex items-center gap-0.5 text-[11px] font-bold text-red-600 dark:text-red-400">
+                              <HandCoins className="w-3 h-3" />
+                              -S/ {interestRun.toFixed(2)}
                             </span>
                           )}
                         </div>
@@ -303,36 +341,39 @@ export default function Savings() {
                       {/* Actions */}
                       <div className="flex gap-1.5 shrink-0">
                         <Button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleOpenInterest(partner);
-                          }}
+                          onClick={(e) => { e.stopPropagation(); handleOpenInterest(partner); }}
                           size="sm"
                           variant="outline"
-                          className="gap-1.5 h-8 text-xs text-emerald-700 border-emerald-200 hover:bg-emerald-50 dark:text-emerald-400 dark:border-emerald-800 dark:hover:bg-emerald-950/30 opacity-80 group-hover:opacity-100 transition-opacity"
+                          className="gap-1 h-8 text-xs text-red-700 border-red-200 bg-red-50 hover:bg-red-100 dark:text-red-400 dark:border-red-900 dark:bg-red-950/30 dark:hover:bg-red-950/50"
                         >
                           <HandCoins className="w-3.5 h-3.5" />
-                          Interés
+                          Pagar Interés
                         </Button>
                         <Button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleOpenDeposit(partner);
-                          }}
+                          onClick={(e) => { e.stopPropagation(); handleOpenMovement(partner, "deposit"); }}
                           size="sm"
-                          variant={hasDeposit ? "outline" : "default"}
-                          className="gap-1.5 h-8 text-xs opacity-80 group-hover:opacity-100 transition-opacity"
+                          variant="outline"
+                          className="gap-1 h-8 text-xs text-emerald-700 border-emerald-200 bg-emerald-50 hover:bg-emerald-100 dark:text-emerald-400 dark:border-emerald-900 dark:bg-emerald-950/30 dark:hover:bg-emerald-950/50"
                         >
-                          <Wallet className="w-3.5 h-3.5" />
-                          {hasDeposit ? "Editar" : "Agregar"}
+                          <ArrowUpCircle className="w-3.5 h-3.5" />
+                          Depositar
+                        </Button>
+                        <Button
+                          onClick={(e) => { e.stopPropagation(); handleOpenMovement(partner, "withdraw"); }}
+                          size="sm"
+                          variant="outline"
+                          className="gap-1 h-8 text-xs text-amber-700 border-amber-200 bg-amber-50 hover:bg-amber-100 dark:text-amber-400 dark:border-amber-900 dark:bg-amber-950/30 dark:hover:bg-amber-950/50"
+                        >
+                          <ArrowDownCircle className="w-3.5 h-3.5" />
+                          Retirar
                         </Button>
                       </div>
                     </div>
                   );
                 })}
-              {savingsPartners.length === 0 && (
+              {savers.length === 0 && (
                 <div className="py-8 text-center text-sm text-muted-foreground">
-                  No hay socios disponibles
+                  No hay socios con ahorros
                 </div>
               )}
             </div>
@@ -340,75 +381,139 @@ export default function Savings() {
         )}
       </CardContent>
 
-      {/* Deposit Modal */}
-      <Dialog open={depositModalOpen} onOpenChange={setDepositModalOpen}>
+      {/* Movement Modal — Deposit / Withdraw */}
+      <Dialog open={movementModalOpen} onOpenChange={(open) => { if (!isSubmitting) setMovementModalOpen(open); }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>
-              {selectedPartner && selectedPartner.deposits.length > 0
-                ? "Actualizar Ahorro"
-                : "Registrar Ahorro"}
+            <DialogTitle className="flex items-center gap-2">
+              {movementMode === "deposit" ? (
+                <><ArrowUpCircle className="w-5 h-5 text-emerald-600" /> Depositar Ahorro</>
+              ) : (
+                <><ArrowDownCircle className="w-5 h-5 text-amber-600" /> Retirar Ahorro</>
+              )}
             </DialogTitle>
             <DialogDescription>
               {selectedPartner && `${selectedPartner.name} ${selectedPartner.lastname}`}
+              {selectedPartner && (
+                <span className="block mt-1 text-[11px]">
+                  Balance actual: S/ {(selectedPartner.savingsBalance ?? 0).toFixed(2)}
+                </span>
+              )}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-5 py-2">
+            {/* Toggle deposit/withdraw */}
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setMovementMode("deposit")}
+                disabled={isSubmitting}
+                className={`flex flex-col items-center gap-1 p-3 rounded-lg border text-xs font-semibold transition-all disabled:opacity-50 ${
+                  movementMode === "deposit"
+                    ? "border-emerald-500 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400 shadow-sm"
+                    : "border-border hover:bg-muted/50"
+                }`}
+              >
+                <ArrowUpCircle className="w-4 h-4" />
+                Depositar
+              </button>
+              <button
+                type="button"
+                onClick={() => setMovementMode("withdraw")}
+                disabled={isSubmitting}
+                className={`flex flex-col items-center gap-1 p-3 rounded-lg border text-xs font-semibold transition-all disabled:opacity-50 ${
+                  movementMode === "withdraw"
+                    ? "border-amber-500 bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400 shadow-sm"
+                    : "border-border hover:bg-muted/50"
+                }`}
+              >
+                <ArrowDownCircle className="w-4 h-4" />
+                Retirar
+              </button>
+            </div>
+
             <div className="space-y-2">
               <Label className="text-sm">Monto (S/)</Label>
-              <Input
-                type="number"
-                value={depositAmount}
-                onChange={(e) => setDepositAmount(e.target.value === '' ? 0 : Number(e.target.value))}
-                className="text-lg font-semibold h-10"
-                min="0"
-                step="0.01"
+              <NumberInput
+                value={movementAmount}
+                onChange={setMovementAmount}
+                className="text-lg font-semibold h-11"
+                disabled={isSubmitting}
               />
             </div>
 
-            <div className="rounded-lg bg-muted/50 p-3 space-y-1.5">
+            <div className={`rounded-lg p-3 border ${movementMode === "deposit"
+              ? "bg-emerald-50/60 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-900"
+              : "bg-amber-50/60 dark:bg-amber-950/20 border-amber-200 dark:border-amber-900"}`}>
               <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Monto a registrar</span>
-                <span className="text-lg font-bold text-primary">S/ {depositAmount.toFixed(2)}</span>
+                <span className="text-muted-foreground">
+                  {movementMode === "deposit" ? "Se sumará al balance" : "Se restará del balance"}
+                </span>
+                <span className={`text-lg font-bold ${movementMode === "deposit"
+                  ? "text-emerald-600 dark:text-emerald-400"
+                  : "text-amber-600 dark:text-amber-400"}`}>
+                  {movementMode === "deposit" ? "+" : "-"}S/ {movementAmount.toFixed(2)}
+                </span>
               </div>
+              {selectedPartner && (
+                <div className="text-[11px] text-muted-foreground mt-1">
+                  Nuevo balance: S/ {(
+                    (selectedPartner.savingsBalance ?? 0) +
+                    (movementMode === "deposit" ? movementAmount : -movementAmount)
+                  ).toFixed(2)}
+                </div>
+              )}
             </div>
           </div>
           <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setDepositModalOpen(false)}>
+            <Button variant="outline" onClick={() => setMovementModalOpen(false)} disabled={isSubmitting}>
               Cancelar
             </Button>
-            <Button onClick={handleConfirmDeposit} disabled={isSubmitting}>
-              {isSubmitting
-                ? "Guardando..."
-                : selectedPartner && selectedPartner.deposits.length > 0
-                ? "Actualizar"
-                : "Registrar Ahorro"}
+            <Button
+              onClick={handleConfirmMovement}
+              disabled={isSubmitting}
+              className={movementMode === "deposit"
+                ? "bg-emerald-600 hover:bg-emerald-700 text-white"
+                : "bg-amber-600 hover:bg-amber-700 text-white"}
+            >
+              {isSubmitting ? (
+                <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Guardando...</>
+              ) : movementMode === "deposit" ? "Confirmar Depósito" : "Confirmar Retiro"}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* Interest Payment Modal */}
-      <Dialog open={interestModalOpen} onOpenChange={setInterestModalOpen}>
+      <Dialog open={interestModalOpen} onOpenChange={(open) => { if (!isSubmitting) setInterestModalOpen(open); }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
-            <DialogTitle>Pagar Interés</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <HandCoins className="w-5 h-5 text-red-600" /> Pagar Interés
+            </DialogTitle>
             <DialogDescription>
               {selectedPartner && `${selectedPartner.name} ${selectedPartner.lastname}`}
+              {selectedPartner && (
+                <span className="block mt-1 text-[11px]">
+                  Tasa: {(savingsRate * 100).toFixed(2)}% · Balance: S/ {(selectedPartner.savingsBalance ?? 0).toFixed(2)}
+                </span>
+              )}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-5 py-2">
             <div className="space-y-2">
               <Label className="text-sm">Monto (S/)</Label>
-              <Input
-                type="number"
+              <NumberInput
                 value={interestAmount}
-                onChange={(e) => setInterestAmount(e.target.value === '' ? 0 : Number(e.target.value))}
-                className="text-lg font-semibold h-10"
-                min="0"
-                step="0.01"
+                onChange={setInterestAmount}
+                className="text-lg font-semibold h-11"
+                disabled={isSubmitting}
               />
+              <p className="text-[11px] text-muted-foreground">
+                Sugerencia: S/ {selectedPartner ? (selectedPartner.savingsBalance * savingsRate).toFixed(2) : "0.00"}
+              </p>
             </div>
+
             <div className="space-y-2">
               <Label className="text-sm">Descripción</Label>
               <Input
@@ -417,26 +522,35 @@ export default function Savings() {
                 value={interestDescription}
                 onChange={(e) => setInterestDescription(e.target.value)}
                 className="h-10"
+                disabled={isSubmitting}
               />
             </div>
 
-            <div className="rounded-lg bg-muted/50 p-3 space-y-1.5">
+            <div className="rounded-lg p-3 bg-red-50/60 dark:bg-red-950/20 border border-red-200 dark:border-red-900">
               <div className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground">Interés a pagar</span>
-                <span className="text-lg font-bold text-emerald-600 dark:text-emerald-400">S/ {interestAmount.toFixed(2)}</span>
+                <span className="text-lg font-bold text-red-600 dark:text-red-400">
+                  -S/ {interestAmount.toFixed(2)}
+                </span>
               </div>
             </div>
           </div>
           <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setInterestModalOpen(false)}>
+            <Button variant="outline" onClick={() => setInterestModalOpen(false)} disabled={isSubmitting}>
               Cancelar
             </Button>
-            <Button onClick={handleConfirmInterest} disabled={isSubmitting}>
-              {isSubmitting
-                ? "Procesando..."
-                : selectedPartner && selectedPartner.payouts.length > 0
-                ? "Actualizar"
-                : "Pagar Interés"}
+            <Button
+              onClick={handleConfirmInterest}
+              disabled={isSubmitting}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              {isSubmitting ? (
+                <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Procesando...</>
+              ) : selectedPartner && selectedPartner.payouts.length > 0 ? (
+                "Actualizar Pago"
+              ) : (
+                "Pagar Interés"
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -131,3 +131,26 @@ export const apiRecordInterestPayment = async (runId: string, data: { userId: st
   const response = await apiClient.post(`/schedules/assembly/run/${runId}/record-interest-payment`, data);
   return response.data;
 };
+
+export const apiRecordWithdrawal = async (runId: string, data: { userId: string; amount: number; description?: string; date: Date; }) => {
+  const response = await apiClient.post(`/schedules/assembly/run/${runId}/record-withdrawal`, data);
+  return response.data;
+};
+
+// acta summary
+export const apiGetAssemblyActaSummary = async (runId: string) => {
+  const response = await apiClient.get(`/schedules/assembly/run/${runId}/acta-summary`);
+  return response.data;
+};
+
+// fines config
+export interface IFinesConfig {
+  lateFineAmount: number;
+  absenceFineAmount: number;
+  consecutiveAbsencesLimit: number;
+  consecutiveAbsencesFine: number;
+}
+export const apiGetFinesConfig = async () => {
+  const response = await apiClient.get<IFinesConfig>(`/settings/fines`);
+  return response.data;
+};

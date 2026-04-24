@@ -29,6 +29,8 @@ export interface IAssemblyParticipant {
     id: string;
     user: IUser;
     status: ParticipantStatusTypes;
+    absencesCount?: number;
+    consecutiveAbsencesCount?: number;
 }
 export interface IAssemblySchedule {
     id: string;
@@ -109,7 +111,19 @@ export interface ISavingsPayout {
   user?: IUser;
 }
 
+export interface ISavingsWithdrawal {
+  id: string;
+  amount: number;
+  description: string;
+  date: string;
+  userId?: string;
+  scheduleRunId?: string;
+  user?: IUser;
+}
+
 export interface ISavingsPartner extends IUser {
+  savingsBalance: number;
   deposits: ISavingsDeposit[];
   payouts: ISavingsPayout[];
+  withdrawals: ISavingsWithdrawal[];
 }

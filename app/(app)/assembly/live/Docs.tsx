@@ -320,20 +320,8 @@ export default function Docs() {
 
     y = 44;
 
-    // ===== 1. LECTURA DE AGENDA =====
-    sectionTitle(1, 'Lectura de agenda y acta anterior');
-    doc.setFillColor(...colors.light);
-    doc.roundedRect(margin + 10, y - 1, contentWidth - 10, 8, 1.5, 1.5, 'F');
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(8);
-    doc.setTextColor(...colors.muted);
-    doc.text('Se realizó la lectura de la agenda del día y del acta de la reunión anterior.', margin + 13, y + 3.5);
-    y += 12;
-
-    drawLine(y); y += 6;
-
-    // ===== 2. ASISTENCIA =====
-    sectionTitle(2, 'Control de asistencia');
+    // ===== 1. ASISTENCIA =====
+    sectionTitle(1, 'Control de asistencia');
 
     // Attendance pills
     const attendPills = [
@@ -369,10 +357,15 @@ export default function Docs() {
 
       finesIncomes.forEach((fine: IOtherIncome) => {
         checkPage(6);
-        doc.setFont('helvetica', 'normal');
+        const fullName = fine.user ? `${fine.user.lastname}, ${fine.user.name}` : 'Sin socio';
+        doc.setFont('helvetica', 'bold');
         doc.setFontSize(8);
+        doc.setTextColor(...colors.dark);
+        doc.text(fullName, margin + 13, y + 2);
+        doc.setFont('helvetica', 'normal');
         doc.setTextColor(...colors.muted);
-        doc.text(fine.description || 'Multa', margin + 13, y + 2);
+        const descX = margin + 13 + doc.getTextWidth(fullName) + 3;
+        doc.text(`— ${fine.description || 'Multa'}`, descX, y + 2);
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(...colors.dark);
         doc.text(fmtCurrency(fine.amount), pageWidth - margin, y + 2, { align: 'right' });
@@ -390,7 +383,7 @@ export default function Docs() {
     drawLine(y); y += 6;
 
     // ===== 3. COMPRA DE ACCIONES =====
-    sectionTitle(3, 'Compra de acciones');
+    sectionTitle(2, 'Compra de acciones');
 
     if (sharesWithPurchases.length > 0) {
       sharesWithPurchases.forEach((partner) => {
@@ -425,7 +418,7 @@ export default function Docs() {
     drawLine(y); y += 6;
 
     // ===== 4. PAGOS DE CAPITAL E INTERESES =====
-    sectionTitle(4, 'Pago de capital e intereses');
+    sectionTitle(3, 'Pago de capital e intereses');
 
     if (payments.length > 0) {
       // Table header
@@ -481,7 +474,7 @@ export default function Docs() {
     drawLine(y); y += 6;
 
     // ===== 5. AHORRISTAS =====
-    sectionTitle(5, 'Gestión de ahorristas');
+    sectionTitle(4, 'Gestión de ahorristas');
 
     if (savingsWithDeposits.length > 0) {
       savingsWithDeposits.forEach((partner) => {
@@ -521,7 +514,7 @@ export default function Docs() {
     drawLine(y); y += 6;
 
     // ===== 6. OPERACIONES =====
-    sectionTitle(6, 'Operaciones realizadas');
+    sectionTitle(5, 'Operaciones realizadas');
 
     const incomeItems: [string, number][] = [];
     if (deposits.length > 0) incomeItems.push([`Depósitos (${deposits.length})`, totalDepositsAmount]);
@@ -595,7 +588,7 @@ export default function Docs() {
     drawLine(y); y += 6;
 
     // ===== 7. CRÉDITOS =====
-    sectionTitle(7, 'Aplicación y aprobación de créditos');
+    sectionTitle(6, 'Aplicación y aprobación de créditos');
 
     if (creditApplications.length > 0) {
       creditApplications.forEach((credit) => {
@@ -645,7 +638,7 @@ export default function Docs() {
     drawLine(y); y += 6;
 
     // ===== 8. ARQUEO DE CAJA =====
-    sectionTitle(8, 'Arqueo de caja');
+    sectionTitle(7, 'Arqueo de caja');
 
     if (cashBalance) {
       checkPage(14);
@@ -743,26 +736,6 @@ export default function Docs() {
       y += 3;
       doc.text('Todos los acuerdos y decisiones han sido registrados correctamente.', pageWidth / 2, y, { align: 'center' });
     }
-
-    // Signature lines
-    y += 15;
-    checkPage(20);
-    const sigWidth = 55;
-    const sig1X = margin + 10;
-    const sig2X = pageWidth - margin - sigWidth - 10;
-
-    drawLine(y);
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(7);
-    doc.setTextColor(...colors.muted);
-
-    // Left signature
-    doc.line(sig1X, y, sig1X + sigWidth, y);
-    doc.text('Presidente', sig1X + sigWidth / 2, y + 4, { align: 'center' });
-
-    // Right signature
-    doc.line(sig2X, y, sig2X + sigWidth, y);
-    doc.text('Secretario(a)', sig2X + sigWidth / 2, y + 4, { align: 'center' });
 
     // Footer
     const footerY = pageHeight - 8;
@@ -864,18 +837,9 @@ export default function Docs() {
         <CardContent className="px-5 pb-5">
           <div className="space-y-6">
 
-            {/* 1. Lectura de agenda */}
-            <Section number={1} title="Lectura de agenda y acta anterior" icon={FileText}>
-              <div className="rounded-lg bg-muted/30 p-3 text-sm text-muted-foreground">
-                <p>Se realizó la lectura de la agenda del día y del acta de la reunión anterior.</p>
-              </div>
-            </Section>
-
-            <div className="border-t" />
-
-            {/* 2. Asistencia */}
+            {/* 1. Asistencia */}
             <Section
-              number={2}
+              number={1}
               title="Control de asistencia"
               icon={Users}
               badge={{ label: `${presentCount} presentes`, variant: "outline" }}
@@ -911,12 +875,18 @@ export default function Docs() {
                       Multas cobradas
                     </div>
                     <div className="divide-y">
-                      {finesIncomes.map((fine: IOtherIncome, idx: number) => (
-                        <div key={idx} className="flex justify-between items-center px-3 py-2 text-sm">
-                          <span className="text-muted-foreground">{fine.description}</span>
-                          <span className="font-semibold tabular-nums">{formatCurrency(fine.amount)}</span>
-                        </div>
-                      ))}
+                      {finesIncomes.map((fine: IOtherIncome, idx: number) => {
+                        const fullName = fine.user ? `${fine.user.lastname}, ${fine.user.name}` : "Sin socio";
+                        return (
+                          <div key={idx} className="flex justify-between items-center px-3 py-2 text-sm gap-3">
+                            <div className="flex flex-col min-w-0 flex-1">
+                              <span className="font-medium truncate">{fullName}</span>
+                              <span className="text-[11px] text-muted-foreground truncate">{fine.description}</span>
+                            </div>
+                            <span className="font-semibold tabular-nums shrink-0">{formatCurrency(fine.amount)}</span>
+                          </div>
+                        );
+                      })}
                     </div>
                     <div className="flex justify-end px-3 py-2 bg-muted/20 border-t">
                       <span className="text-xs text-muted-foreground">
@@ -937,7 +907,7 @@ export default function Docs() {
 
             {/* 3. Compra de acciones */}
             <Section
-              number={3}
+              number={2}
               title="Compra de acciones"
               icon={TrendingUp}
               badge={totalSharesQty > 0 ? { label: `${totalSharesQty} acciones`, variant: "outline" } : undefined}
@@ -981,7 +951,7 @@ export default function Docs() {
 
             {/* 4. Pagos de capital e intereses */}
             <Section
-              number={4}
+              number={3}
               title="Pago de capital e intereses"
               icon={CreditCard}
               badge={payments.length > 0 ? { label: `${payments.length} pagos`, variant: "outline" } : undefined}
@@ -1034,7 +1004,7 @@ export default function Docs() {
 
             {/* 5. Ahorristas */}
             <Section
-              number={5}
+              number={4}
               title="Gestión de ahorristas"
               icon={Wallet}
               badge={savingsWithDeposits.length > 0 ? { label: `${savingsWithDeposits.length} ahorristas`, variant: "outline" } : undefined}
@@ -1090,7 +1060,7 @@ export default function Docs() {
             <div className="border-t" />
 
             {/* 6. Operaciones realizadas */}
-            <Section number={6} title="Operaciones realizadas" icon={ArrowUpRight}>
+            <Section number={5} title="Operaciones realizadas" icon={ArrowUpRight}>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {/* Ingresos */}
                 <div className="rounded-lg border bg-card overflow-hidden">
@@ -1184,7 +1154,7 @@ export default function Docs() {
 
             {/* 7. Créditos */}
             <Section
-              number={7}
+              number={6}
               title="Aplicación y aprobación de créditos"
               icon={ClipboardCheck}
               badge={creditApplications.length > 0 ? { label: `${creditApplications.length} solicitudes`, variant: "outline" } : undefined}
@@ -1240,7 +1210,7 @@ export default function Docs() {
             <div className="border-t" />
 
             {/* 8. Arqueo de caja */}
-            <Section number={8} title="Arqueo de caja" icon={Wallet}>
+            <Section number={7} title="Arqueo de caja" icon={Wallet}>
               {cashBalance ? (
                 <div className="rounded-lg border bg-card overflow-hidden">
                   <div className="grid grid-cols-3 divide-x">

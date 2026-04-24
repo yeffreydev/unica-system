@@ -201,12 +201,6 @@ export default function Operations() {
   const allOperations = useMemo<UnifiedOperation[]>(() => {
     const list: UnifiedOperation[] = [];
 
-    deposits.forEach(d => list.push({
-      id: d.id || '', category: 'ingreso', type: 'deposit',
-      date: new Date(d.date), amount: d.amount,
-      user: d.user?.name || d.user?.lastname || 'Desconocido',
-      description: 'Depósito', raw: d
-    }));
     funds.forEach(f => list.push({
       id: f.id || '', category: 'ingreso', type: 'fund',
       date: new Date(f.date), amount: f.amount,
@@ -221,23 +215,11 @@ export default function Operations() {
       description: o.description || 'Otro Ingreso', raw: o
     }));
 
-    withdrawals.forEach(w => list.push({
-      id: w.id.toString(), category: 'egreso', type: 'withdrawal',
-      date: new Date(w.date), amount: w.amount,
-      user: w.user?.name || w.user?.lastname || 'Desconocido',
-      description: 'Retiro', raw: w
-    }));
     administrativeExpenses.forEach(a => list.push({
       id: a.id || '', category: 'egreso', type: 'administrative',
       date: new Date(a.date), amount: a.amount,
       user: '-',
       description: a.description || 'Gasto Administrativo', raw: a
-    }));
-    payouts.forEach(p => list.push({
-      id: p.id.toString(), category: 'egreso', type: 'payout',
-      date: new Date(p.date), amount: p.amount,
-      user: p.user?.name || p.user?.lastname || 'Desconocido',
-      description: 'Pago a Ahorrista', raw: p
     }));
     socialFundsExpenses.forEach(s => list.push({
       id: s.id.toString(), category: 'egreso', type: 'social-expense',
@@ -308,9 +290,6 @@ export default function Operations() {
                     Ingresos
                   </DropdownMenuSubTrigger>
                   <DropdownMenuSubContent>
-                    <DropdownMenuItem onClick={() => { setActiveDialog('deposit'); setOpenDialog(true); }}>
-                      Depósito
-                    </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => { setActiveDialog('fund'); setOpenDialog(true); }}>
                       Fondo Social
                     </DropdownMenuItem>
@@ -325,14 +304,8 @@ export default function Operations() {
                     Egresos
                   </DropdownMenuSubTrigger>
                   <DropdownMenuSubContent>
-                    <DropdownMenuItem onClick={() => { setActiveDialog('withdrawal'); setOpenDialog(true); }}>
-                      Retiro
-                    </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => { setActiveDialog('administrative'); setOpenDialog(true); }}>
                       Gasto Administrativo
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => { setActiveDialog('payout'); setOpenDialog(true); }}>
-                      Pago a Ahorrista
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => { setActiveDialog('social-expense'); setOpenDialog(true); }}>
                       Gasto Social
@@ -480,7 +453,7 @@ export default function Operations() {
                       {/* Actions */}
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" className="h-8 w-8 p-0 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Button variant="ghost" className="h-8 w-8 p-0 shrink-0">
                             <MoreVertical className="h-3.5 w-3.5" />
                           </Button>
                         </DropdownMenuTrigger>

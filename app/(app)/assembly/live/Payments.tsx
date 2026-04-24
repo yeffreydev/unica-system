@@ -7,8 +7,9 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Check, CreditCard, Info, Search, Banknote } from "lucide-react";
+import { Check, CreditCard, Info, Search, Banknote, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
+import { sileo } from "sileo";
 import { IUser } from "@/types/IUser";
 import { IAssemblyScheduleRun, ILoanPayment, IPaymentData } from "../types";
 import { apiGetAssemblyRun, apiGetPaymentsData, apiRecordPayment } from "../api";
@@ -36,6 +37,8 @@ export default function Payments() {
   const [userInstallments, setUserInstallments] = useState<ILoanInstallment[]>([]);
   const [editedAmounts, setEditedAmounts] = useState<Record<string, { capital: string; interest: string; description: string }>>({});
   const [searchQuery, setSearchQuery] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [payingUserId, setPayingUserId] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -109,6 +112,10 @@ export default function Payments() {
     setDetailsModalOpen(true);
   };
 
+  const partnersWithLoans = paymentsData.partners.filter((user) =>
+    currentMonthInstallments.some((inst) => inst.user?.id === user.id && inst.isAssemblyMonth)
+  );
+
   const calculateTotals = () => {
     const totalInstallment = paymentsData.installments.reduce((sum, inst) => sum + Number(inst.amount || 0), 0);
     const totalCapital = paymentsData.payments.reduce((sum, payment) => sum + Number(payment.amount || 0), 0);
@@ -120,47 +127,67 @@ export default function Payments() {
   };
 
   const confirmPayment = async () => {
-    if (!selectedUser) return;
+    if (!selectedUser || isSubmitting) return;
+    setIsSubmitting(true);
+    setPayingUserId(selectedUser.id);
 
     const selectedInstallmentsData = userInstallments.filter(inst =>
       selectedInstallments.includes(inst.id || '')
     );
 
-    for (const inst of selectedInstallmentsData) {
-      const edited = editedAmounts[inst.id || ''];
-      const capital = parseFloat(edited?.capital) || 0;
-      const interest = parseFloat(edited?.interest) || 0;
-      const instDescription = edited?.description || '';
+    try {
+      // Procesamos secuencialmente para aprovechar la idempotencia del backend (findFirst + update por installmentId).
+      // Si la red falla en medio, reintentar la misma acción no duplica pagos.
+      for (const inst of selectedInstallmentsData) {
+        const edited = editedAmounts[inst.id || ''];
+        const capital = parseFloat(edited?.capital) || 0;
+        const interest = parseFloat(edited?.interest) || 0;
+        const instDescription = edited?.description || '';
 
-      await apiRecordPayment(assemblyRun!.id, {
-        userId: selectedUser.id,
-        amount: capital,
-        interest: interest,
-        date: assemblyRun?.startAt ?? new Date(),
-        description: instDescription || undefined,
-        installmentId: inst.id,
+        await apiRecordPayment(assemblyRun!.id, {
+          userId: selectedUser.id,
+          amount: capital,
+          interest: interest,
+          date: assemblyRun?.startAt ?? new Date(),
+          description: instDescription || undefined,
+          installmentId: inst.id,
+        });
+      }
+
+      try {
+        const data = await apiGetPaymentsData(assemblyRun!.id);
+        setPaymentsData(data);
+      } catch (error) {
+        console.error("Error refreshing payments data:", error);
+      }
+
+      try {
+        const response = await apiClient.get(`/schedules/assembly/run/${assemblyRun!.id}/installments`);
+        setCurrentMonthInstallments(response.data);
+      } catch (error) {
+        console.error("Error refreshing installments:", error);
+      }
+
+      sileo.success({
+        title: "Pago registrado",
+        description: `Cuotas de ${selectedUser.name} actualizadas correctamente.`,
       });
-    }
 
-    try {
-      const data = await apiGetPaymentsData(assemblyRun!.id);
-      setPaymentsData(data);
+      setModalOpen(false);
+      setSelectedUser(null);
+      setSelectedInstallments([]);
+      setUserInstallments([]);
+      setEditedAmounts({});
     } catch (error) {
-      console.error("Error refreshing payments data:", error);
+      console.error("Error confirming payment:", error);
+      sileo.error({
+        title: "Error al registrar el pago",
+        description: "Revisa tu conexión e intenta de nuevo. No se duplicarán pagos ya realizados.",
+      });
+    } finally {
+      setIsSubmitting(false);
+      setPayingUserId(null);
     }
-
-    try {
-      const response = await apiClient.get(`/schedules/assembly/run/${assemblyRun!.id}/installments`);
-      setCurrentMonthInstallments(response.data);
-    } catch (error) {
-      console.error("Error refreshing installments:", error);
-    }
-
-    setModalOpen(false);
-    setSelectedUser(null);
-    setSelectedInstallments([]);
-    setUserInstallments([]);
-    setEditedAmounts({});
   };
 
   const totals = calculateTotals();
@@ -177,7 +204,7 @@ export default function Payments() {
           <CardTitle className="text-base font-semibold">Recolectar Intereses</CardTitle>
           <Badge variant="outline" className="text-xs font-medium gap-1">
             <Banknote className="w-3 h-3" />
-            {paymentsData.partners.length} socios
+            {partnersWithLoans.length} socios
           </Badge>
         </div>
 
@@ -242,7 +269,7 @@ export default function Payments() {
 
             {/* Partners List */}
             <div className="px-5 pb-5 space-y-1.5 max-h-[500px] overflow-y-auto">
-              {[...paymentsData.partners]
+              {[...partnersWithLoans]
                 .filter((user) => {
                   if (!searchQuery.trim()) return true;
                   const fullName = `${user.lastname} ${user.name}`.toLowerCase();
@@ -343,16 +370,21 @@ export default function Payments() {
                         size="sm"
                         variant={hasPaid ? "outline" : "default"}
                         className="gap-1.5 h-8 text-xs shrink-0 opacity-80 group-hover:opacity-100 transition-opacity"
+                        disabled={payingUserId === user.id}
                       >
-                        <CreditCard className="w-3.5 h-3.5" />
+                        {payingUserId === user.id ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <CreditCard className="w-3.5 h-3.5" />
+                        )}
                         {hasPaid ? "Editar" : "Pagar"}
                       </Button>
                     </div>
                   );
                 })}
-              {paymentsData.partners.length === 0 && (
+              {partnersWithLoans.length === 0 && (
                 <div className="py-8 text-center text-sm text-muted-foreground">
-                  No hay usuarios disponibles
+                  No hay socios con préstamos en esta asamblea
                 </div>
               )}
             </div>
@@ -361,7 +393,7 @@ export default function Payments() {
       </CardContent>
 
       {/* Payment Modal */}
-      <Dialog open={modalOpen} onOpenChange={setModalOpen}>
+      <Dialog open={modalOpen} onOpenChange={(open) => { if (!isSubmitting) setModalOpen(open); }}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Registrar Pago de Cuotas</DialogTitle>
@@ -516,11 +548,15 @@ export default function Payments() {
             )}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setModalOpen(false)}>
+            <Button variant="outline" onClick={() => setModalOpen(false)} disabled={isSubmitting}>
               Cancelar
             </Button>
-            <Button onClick={confirmPayment}>
-              Registrar Pago
+            <Button onClick={confirmPayment} disabled={isSubmitting}>
+              {isSubmitting ? (
+                <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Registrando...</>
+              ) : (
+                "Registrar Pago"
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

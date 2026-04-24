@@ -36,9 +36,10 @@ import { getExpensesSum } from "../../reports/expenses/utils";
 type LoanReq = { id: string; dni: string; name: string; amount: number; months: number; status: "Pendiente" | "Aprobado" | "Rechazado"; loanType?: string };
 
 export default function Loans() {
-  const { users } = useContext(AppContext);
+  const { users, bank } = useContext(AppContext);
   const [creditApplications, setCreditApplications] = useState<ICreditApplication[]>([]);
   const { assembly, updateCashBalance } = useAssembly();
+  const configuredLoanRate = bank?.bank?.loanInterestRate ?? 0.02;
   const [lastMonthBalance, setLastMonthBalance] = useState<{
      incomes: {
         deposits: IDeposit[],
@@ -246,13 +247,13 @@ export default function Loans() {
         return false;
       }
 
-      // Prepare loan data for approval
+      // Prepare loan data for approval (usar tasa configurada en settings/platform)
       const loanData = {
-        userId: creditApp.userId, // Use the actual user ID from the credit application
+        userId: creditApp.userId,
         amount: form.amount,
-        interestRate: 0.02, // Default interest rate, you may want to make this configurable
+        interestRate: configuredLoanRate,
         initalInstallments: form.installments,
-        loanTypeId: loanTypeSelected?.id || '', // Assuming loanTypeSelected has an id
+        loanTypeId: loanTypeSelected?.id || '',
         date: assemblyRun?.startAt ?? new Date(),
         paymentFrecuency: "monthly"
       };
@@ -687,6 +688,10 @@ export default function Loans() {
                   setForm((p) => ({ ...p, installments: val === '' ? 0 : Number(val) || 0 }));
                 }}
               />
+              <div className="p-3 rounded-md bg-muted/40 border text-xs text-muted-foreground">
+                Tasa de interés aplicada: <strong className="text-foreground">{(configuredLoanRate * 100).toFixed(2)}% mensual</strong>
+                {" "}(configurable en Ajustes → Plataforma)
+              </div>
             </>
           )}
           {approvalStep === 2 && (

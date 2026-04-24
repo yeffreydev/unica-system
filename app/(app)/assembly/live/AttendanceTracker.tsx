@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Users, CheckCircle, XCircle, DollarSign, UserPlus, Trash2, Search, Clock, CircleDot, Banknote } from "lucide-react";
+import { Users, CheckCircle, XCircle, DollarSign, UserPlus, Trash2, Search, Clock, CircleDot, Banknote, AlertTriangle, Loader2 } from "lucide-react";
 import { sileo } from "sileo";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { apiGetAssemblyRun, apiUpdateParticipantStatusInAssemblyRun, apiCreateOtherIncomesTransaction, apiGetOtherIncomesByScheduleRun, apiDeleteOtherIncomesTransactionAssembly, apiUpdateParticipantInAssemblyRun } from "../api";
+import { apiGetAssemblyRun, apiUpdateParticipantStatusInAssemblyRun, apiCreateOtherIncomesTransaction, apiGetOtherIncomesByScheduleRun, apiDeleteOtherIncomesTransactionAssembly, apiUpdateParticipantInAssemblyRun, apiGetFinesConfig, IFinesConfig } from "../api";
 import { useAssembly } from "../AssemblyContext";
 import { IAssemblyScheduleRun, ParticipantStatusTypes } from "../types";
 import { translateParticipantStatus } from "../utils";
@@ -56,6 +56,26 @@ export function AttendanceTracker() {
   const [confirmDeletePayment, setConfirmDeletePayment] = useState<string | null>(null);
   const [confirmRemoveParticipant, setConfirmRemoveParticipant] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [fines, setFines] = useState<IFinesConfig>({
+    lateFineAmount: 5,
+    absenceFineAmount: 20,
+    consecutiveAbsencesLimit: 3,
+    consecutiveAbsencesFine: 50,
+  });
+  const [payingId, setPayingId] = useState<string | null>(null);
+  const [deletingPaymentId, setDeletingPaymentId] = useState<string | null>(null);
+  const [updatingStatusId, setUpdatingStatusId] = useState<string | null>(null);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const cfg = await apiGetFinesConfig();
+        if (cfg) setFines(cfg);
+      } catch (error) {
+        console.error("Error fetching fines config:", error);
+      }
+    })();
+  }, []);
 
   useEffect(() => {
     (async () => {
@@ -103,7 +123,9 @@ export function AttendanceTracker() {
   }
 
   const handleStatusChange = async (participantId: string, status: ParticipantStatusTypes) => {
+    if (updatingStatusId) return;
     const participant = assemblyRun?.participants.find((p) => p.id === participantId);
+    setUpdatingStatusId(participantId);
     try {
       const paymentData = payments[participantId];
       if (paymentData?.amount > 0 && paymentData.transactionIds.length > 0) {
@@ -137,11 +159,15 @@ export function AttendanceTracker() {
         title: "Error",
         description: "No se pudo actualizar el estado del participante.",
       });
+    } finally {
+      setUpdatingStatusId(null);
     }
   };
 
   const handleDeletePayment = async (participantId: string) => {
+    if (deletingPaymentId) return;
     const participant = assemblyRun?.participants.find((p) => p.id === participantId);
+    setDeletingPaymentId(participantId);
     try {
       const paymentData = payments[participantId];
       if (paymentData?.transactionIds.length > 0) {
@@ -158,6 +184,8 @@ export function AttendanceTracker() {
     } catch (error) {
       console.error("Error deleting payment:", error);
       sileo.error({ title: "Error", description: "No se pudo eliminar el pago." });
+    } finally {
+      setDeletingPaymentId(null);
     }
   };
 
@@ -209,6 +237,8 @@ export function AttendanceTracker() {
 
   const handlePayment = async (attendee: IAssemblyScheduleRun["participants"][0]) => {
     if (!attendee.user?.id) return;
+    if (payingId) return;
+    setPayingId(attendee.id);
     try {
       const description = attendee.status === ParticipantStatusTypes.LATE ? "Pago por tardanza en asamblea" : "Pago por falta en asamblea";
       const data = await apiCreateOtherIncomesTransaction({
@@ -233,8 +263,20 @@ export function AttendanceTracker() {
       });
     } catch (error) {
       console.error("Error creating payment:", error);
-      sileo.error({ title: "Error", description: "No se pudo registrar el pago." });
+      sileo.error({ title: "Error", description: "No se pudo registrar el pago. Revisa tu conexión e intenta de nuevo." });
+    } finally {
+      setPayingId(null);
     }
+  };
+
+  const suggestedFineFor = (attendee: IAssemblyScheduleRun["participants"][0]) => {
+    if (attendee.status === ParticipantStatusTypes.LATE) return fines.lateFineAmount;
+    if (attendee.status === ParticipantStatusTypes.ABSENT) {
+      const consecutive = (attendee.consecutiveAbsencesCount ?? 0) + 1;
+      if (consecutive >= fines.consecutiveAbsencesLimit) return fines.consecutiveAbsencesFine;
+      return fines.absenceFineAmount;
+    }
+    return 0;
   };
 
   const availableUsers =
@@ -381,8 +423,18 @@ export function AttendanceTracker() {
                 .map((attendee) => {
                   const config = getStatusConfig(attendee.status);
                   const hasPaid = payments[attendee.id]?.amount > 0;
+                  const rowBg =
+                    attendee.status === ParticipantStatusTypes.ATTENDED
+                      ? "bg-emerald-50 border-emerald-200 dark:bg-emerald-950/30 dark:border-emerald-900"
+                      : attendee.status === ParticipantStatusTypes.LATE
+                      ? "bg-amber-50 border-amber-200 dark:bg-amber-950/30 dark:border-amber-900"
+                      : attendee.status === ParticipantStatusTypes.ABSENT
+                      ? "bg-red-50 border-red-200 dark:bg-red-950/30 dark:border-red-900"
+                      : "bg-card";
+                  const consecutive = attendee.consecutiveAbsencesCount ?? 0;
+                  const consecutiveAtRisk = consecutive >= fines.consecutiveAbsencesLimit - 1 && consecutive > 0;
                   return (
-                    <div key={attendee.id} className="group flex items-center gap-3 p-3 rounded-xl border bg-card hover:shadow-sm transition-all">
+                    <div key={attendee.id} className={`group flex items-center gap-3 p-3 rounded-xl border hover:shadow-sm transition-all ${rowBg}`}>
                       {/* Avatar */}
                       <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/10 text-primary text-xs font-bold shrink-0">
                         {attendee.user?.name?.[0]}
@@ -394,10 +446,23 @@ export function AttendanceTracker() {
                         <div className="font-medium text-sm truncate">
                           {attendee.user?.name} {attendee.user?.lastname}
                         </div>
-                        <Badge variant="outline" className={`mt-0.5 text-[10px] px-1.5 py-0 h-5 gap-1 font-medium border ${config.color}`}>
-                          {config.icon}
-                          {translateParticipantStatus(attendee.status)}
-                        </Badge>
+                        <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                          <Badge variant="outline" className={`text-[10px] px-1.5 py-0 h-5 gap-1 font-medium border ${config.color}`}>
+                            {config.icon}
+                            {translateParticipantStatus(attendee.status)}
+                          </Badge>
+                          {(attendee.absencesCount ?? 0) > 0 && (
+                            <span className="text-[10px] text-muted-foreground">
+                              Total faltas: {attendee.absencesCount}
+                            </span>
+                          )}
+                          {consecutive > 0 && (
+                            <span className={`text-[10px] flex items-center gap-0.5 ${consecutiveAtRisk ? "text-red-600 dark:text-red-400" : "text-muted-foreground"}`}>
+                              {consecutiveAtRisk && <AlertTriangle className="w-2.5 h-2.5" />}
+                              Consecutivas: {consecutive}
+                            </span>
+                          )}
+                        </div>
                       </div>
 
                       {/* Payment Badge */}
@@ -420,7 +485,7 @@ export function AttendanceTracker() {
                               variant="outline"
                               className="h-8 w-8 p-0 shrink-0"
                               onClick={() => {
-                                setAmount(attendee.status === ParticipantStatusTypes.LATE ? 5 : 20);
+                                setAmount(suggestedFineFor(attendee));
                                 setOpenModal(attendee.id);
                               }}
                             >
@@ -437,12 +502,27 @@ export function AttendanceTracker() {
                               </DialogDescription>
                             </DialogHeader>
                             <div className="space-y-4 pt-2">
+                              {attendee.status === ParticipantStatusTypes.ABSENT && ((attendee.consecutiveAbsencesCount ?? 0) + 1) >= fines.consecutiveAbsencesLimit && (
+                                <div className="flex items-start gap-2 p-2.5 rounded-md bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 text-xs text-red-700 dark:text-red-400">
+                                  <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+                                  <span>
+                                    Este socio ha acumulado {(attendee.consecutiveAbsencesCount ?? 0) + 1} faltas consecutivas. Se sugiere aplicar la multa por faltas consecutivas (S/ {fines.consecutiveAbsencesFine.toFixed(2)}).
+                                  </span>
+                                </div>
+                              )}
                               <div className="space-y-2">
                                 <label className="text-sm font-medium">Monto (S/)</label>
-                                <Input type="number" value={amount} onChange={(e) => setAmount(Number(e.target.value))} />
+                                <Input type="number" value={amount} onChange={(e) => setAmount(Number(e.target.value))} disabled={payingId === attendee.id} />
+                                <p className="text-[11px] text-muted-foreground">
+                                  Sugerencia según configuración: S/ {suggestedFineFor(attendee).toFixed(2)}
+                                </p>
                               </div>
-                              <Button onClick={() => handlePayment(attendee)} className="w-full">
-                                Confirmar Cobro
+                              <Button onClick={() => handlePayment(attendee)} className="w-full" disabled={payingId === attendee.id}>
+                                {payingId === attendee.id ? (
+                                  <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Registrando...</>
+                                ) : (
+                                  "Confirmar Cobro"
+                                )}
                               </Button>
                             </div>
                           </DialogContent>
@@ -453,6 +533,7 @@ export function AttendanceTracker() {
                       <div className="flex gap-1 shrink-0">
                         <StatusButton
                           active={attendee.status === ParticipantStatusTypes.ATTENDED}
+                          disabled={updatingStatusId === attendee.id}
                           activeColor="bg-emerald-600 hover:bg-emerald-700 text-white border-emerald-600"
                           onClick={() => {
                             if (attendee.status === ParticipantStatusTypes.ATTENDED) return;
@@ -463,10 +544,11 @@ export function AttendanceTracker() {
                             }
                           }}
                         >
-                          <CheckCircle className="w-3.5 h-3.5" />
+                          {updatingStatusId === attendee.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle className="w-3.5 h-3.5" />}
                         </StatusButton>
                         <StatusButton
                           active={attendee.status === ParticipantStatusTypes.LATE}
+                          disabled={updatingStatusId === attendee.id}
                           activeColor="bg-amber-500 hover:bg-amber-600 text-white border-amber-500"
                           onClick={() => {
                             if (attendee.status === ParticipantStatusTypes.LATE) return;
@@ -481,6 +563,7 @@ export function AttendanceTracker() {
                         </StatusButton>
                         <StatusButton
                           active={attendee.status === ParticipantStatusTypes.ABSENT}
+                          disabled={updatingStatusId === attendee.id}
                           activeColor="bg-red-600 hover:bg-red-700 text-white border-red-600"
                           onClick={() => {
                             if (attendee.status === ParticipantStatusTypes.ABSENT) return;
@@ -543,10 +626,11 @@ export function AttendanceTracker() {
                       if (confirmDeletePayment) handleDeletePayment(confirmDeletePayment);
                     }}
                     className="flex-1"
+                    disabled={!!deletingPaymentId}
                   >
-                    Eliminar Pago
+                    {deletingPaymentId ? (<><Loader2 className="w-4 h-4 mr-2 animate-spin" />Eliminando...</>) : "Eliminar Pago"}
                   </Button>
-                  <Button variant="outline" onClick={() => setConfirmDeletePayment(null)} className="flex-1">
+                  <Button variant="outline" onClick={() => setConfirmDeletePayment(null)} className="flex-1" disabled={!!deletingPaymentId}>
                     Cancelar
                   </Button>
                 </div>
@@ -595,11 +679,12 @@ function CounterPill({ count, label, dotColor }: { count: number; label: string;
   );
 }
 
-function StatusButton({ active, activeColor, onClick, children }: { active: boolean; activeColor: string; onClick: () => void; children: React.ReactNode }) {
+function StatusButton({ active, activeColor, onClick, children, disabled }: { active: boolean; activeColor: string; onClick: () => void; children: React.ReactNode; disabled?: boolean }) {
   return (
     <button
       onClick={onClick}
-      className={`flex items-center justify-center w-8 h-8 rounded-lg border transition-all ${
+      disabled={disabled}
+      className={`flex items-center justify-center w-8 h-8 rounded-lg border transition-all disabled:opacity-60 disabled:cursor-not-allowed ${
         active ? activeColor : "border-border text-muted-foreground hover:text-foreground hover:border-foreground/30 hover:bg-muted/50"
       }`}
     >

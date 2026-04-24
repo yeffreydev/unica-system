@@ -3,7 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { useContext, useEffect, useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { toast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import {
@@ -31,6 +31,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Loader2 } from "lucide-react";
 import { IUser } from "@/types/IUser";
 import { AppContext } from "@/context/AppContext";
 import {
@@ -51,6 +54,63 @@ const assemblyFormSchema = z.object({
 });
 
 type AssemblyFormValues = z.infer<typeof assemblyFormSchema>;
+
+const numberMsg = { message: "Ingresa un número válido" };
+const finesFormSchema = z.object({
+  lateFineAmount: z.number(numberMsg).min(0, "No puede ser negativo"),
+  absenceFineAmount: z.number(numberMsg).min(0, "No puede ser negativo"),
+  consecutiveAbsencesLimit: z.number(numberMsg).int("Debe ser entero").min(1, "Mínimo 1"),
+  consecutiveAbsencesFine: z.number(numberMsg).min(0, "No puede ser negativo"),
+});
+
+type FinesFormValues = z.infer<typeof finesFormSchema>;
+
+type NumberInputProps = Omit<React.ComponentProps<typeof Input>, "value" | "onChange" | "type"> & {
+  value: number | null | undefined;
+  onChange: (n: number) => void;
+  integer?: boolean;
+};
+
+function NumberInput({ value, onChange, integer, onBlur, ...rest }: NumberInputProps) {
+  const toText = (v: number | null | undefined) =>
+    v === null || v === undefined || (typeof v === "number" && Number.isNaN(v)) ? "" : String(v);
+  const [text, setText] = useState<string>(toText(value));
+
+  useEffect(() => {
+    const current = text === "" || text === "." || text === "-" ? NaN : Number(text);
+    const valIsEmpty = value === null || value === undefined || (typeof value === "number" && Number.isNaN(value));
+    const curIsEmpty = Number.isNaN(current);
+    if (valIsEmpty && curIsEmpty) return;
+    if (current !== value) {
+      setText(toText(value));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [value]);
+
+  const pattern = integer ? /^\d*$/ : /^\d*\.?\d*$/;
+
+  return (
+    <Input
+      {...rest}
+      type="text"
+      inputMode={integer ? "numeric" : "decimal"}
+      value={text}
+      onChange={(e) => {
+        const v = e.target.value;
+        if (v === "" || pattern.test(v)) {
+          setText(v);
+          if (v === "" || v === ".") {
+            onChange(NaN);
+          } else {
+            const n = Number(v);
+            if (!isNaN(n)) onChange(n);
+          }
+        }
+      }}
+      onBlur={onBlur}
+    />
+  );
+}
 
 const weekOccurrences = [
   { value: "first", label: "Primero" },
@@ -87,6 +147,17 @@ export function AssemblyConfigForm({ onConfigSaved }: { onConfigSaved?: () => vo
     mode: "onChange",
   });
 
+  const finesForm = useForm<FinesFormValues>({
+    resolver: zodResolver(finesFormSchema),
+    defaultValues: {
+      lateFineAmount: 5,
+      absenceFineAmount: 20,
+      consecutiveAbsencesLimit: 3,
+      consecutiveAbsencesFine: 50,
+    },
+    mode: "onChange",
+  });
+
   const [confirmDialog, setConfirmDialog] = useState<{
     open: boolean;
     user: IUser | null;
@@ -97,7 +168,10 @@ export function AssemblyConfigForm({ onConfigSaved }: { onConfigSaved?: () => vo
   const [loading, setLoading] = useState(false);
   const [updating, setUpdating] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [savingFines, setSavingFines] = useState(false);
+  const [finesLoading, setFinesLoading] = useState(true);
   const [successDialog, setSuccessDialog] = useState(false);
+  const [finesSuccessDialog, setFinesSuccessDialog] = useState(false);
 
   const loadConfig = async () => {
     try {
@@ -107,6 +181,27 @@ export function AssemblyConfigForm({ onConfigSaved }: { onConfigSaved?: () => vo
       }
     } catch (error) {
       console.error('Error loading config:', error);
+    }
+  };
+
+  const applyFinesToForm = (d: any) => {
+    finesForm.reset({
+      lateFineAmount: Number(d?.lateFineAmount ?? 5),
+      absenceFineAmount: Number(d?.absenceFineAmount ?? 20),
+      consecutiveAbsencesLimit: Number(d?.consecutiveAbsencesLimit ?? 3),
+      consecutiveAbsencesFine: Number(d?.consecutiveAbsencesFine ?? 50),
+    });
+  };
+
+  const loadFinesConfig = async () => {
+    setFinesLoading(true);
+    try {
+      const res = await apiClient.get('/settings/fines');
+      if (res.data) applyFinesToForm(res.data);
+    } catch (error) {
+      console.error('Error loading fines config:', error);
+    } finally {
+      setFinesLoading(false);
     }
   };
 
@@ -120,11 +215,10 @@ export function AssemblyConfigForm({ onConfigSaved }: { onConfigSaved?: () => vo
     }
   };
 
-  // Load data on mount
   useEffect(() => {
     const loadData = async () => {
       setLoading(true);
-      await Promise.all([loadConfig(), loadParticipants()]);
+      await Promise.all([loadConfig(), loadParticipants(), loadFinesConfig()]);
       setLoading(false);
     };
 
@@ -132,7 +226,6 @@ export function AssemblyConfigForm({ onConfigSaved }: { onConfigSaved?: () => vo
   }, []);
 
   const handleConfirm = async () => {
-    console.log('Confirming action:', confirmDialog);
     if (!confirmDialog.user) return;
 
     try {
@@ -173,12 +266,10 @@ export function AssemblyConfigForm({ onConfigSaved }: { onConfigSaved?: () => vo
   };
 
   async function onSubmit(data: AssemblyFormValues) {
-    console.log('Form submitted with data:', data);
     setSaving(true);
     try {
-      console.log('Submitting config data:', data);
       await apiClient.post('/settings/assembly/config', data);
-      await loadConfig(); // Reload config to reflect changes
+      await loadConfig();
       setSuccessDialog(true);
       onConfigSaved?.();
     } catch (error) {
@@ -193,16 +284,38 @@ export function AssemblyConfigForm({ onConfigSaved }: { onConfigSaved?: () => vo
     }
   }
 
+  async function onSubmitFines(data: FinesFormValues) {
+    setSavingFines(true);
+    try {
+      const res = await apiClient.put('/settings/fines', data);
+      applyFinesToForm(res.data ?? data);
+      setFinesSuccessDialog(true);
+      toast({
+        title: "Multas actualizadas",
+        description: "La configuración de multas se guardó correctamente.",
+      });
+    } catch (error) {
+      console.error('Error saving fines:', error);
+      toast({
+        title: "Error",
+        description: "No se pudo guardar la configuración de multas.",
+        variant: "destructive",
+      });
+    } finally {
+      setSavingFines(false);
+    }
+  }
+
   return (
     <Tabs defaultValue="frequency" className="w-full">
-      <TabsList className="grid w-full grid-cols-2">
+      <TabsList className="grid w-full grid-cols-3">
         <TabsTrigger value="frequency">Frecuencia</TabsTrigger>
+        <TabsTrigger value="fines">Multas</TabsTrigger>
         <TabsTrigger value="participants">Participantes</TabsTrigger>
       </TabsList>
       <TabsContent value="frequency" className="mt-6 space-y-8">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            {/* Frequency Type */}
             <FormField
               control={form.control}
               name="frequencyType"
@@ -228,7 +341,6 @@ export function AssemblyConfigForm({ onConfigSaved }: { onConfigSaved?: () => vo
               )}
             />
 
-            {/* Day of Month for Simple Monthly */}
             {form.watch("frequencyType") === "simple" && (
               <FormField
                 control={form.control}
@@ -236,8 +348,8 @@ export function AssemblyConfigForm({ onConfigSaved }: { onConfigSaved?: () => vo
                 render={({ field }) => (
                   <FormItem className="space-y-3">
                     <FormLabel>Día del Mes</FormLabel>
-                    <Select 
-                      onValueChange={(value) => field.onChange(parseInt(value))} 
+                    <Select
+                      onValueChange={(value) => field.onChange(parseInt(value))}
                       value={field.value?.toString() || ""}
                     >
                       <FormControl>
@@ -260,7 +372,6 @@ export function AssemblyConfigForm({ onConfigSaved }: { onConfigSaved?: () => vo
               />
             )}
 
-          {/* Advanced Frequency Options - Conditional */}
           {form.watch("frequencyType") === "advanced" && (
           <div className="space-y-4 p-4 border rounded-md">
             <FormField
@@ -312,7 +423,6 @@ export function AssemblyConfigForm({ onConfigSaved }: { onConfigSaved?: () => vo
           </div>
         )}
 
-        {/* Time Configuration */}
         <div className="grid grid-cols-2 gap-4">
           <FormField
             control={form.control}
@@ -366,14 +476,124 @@ export function AssemblyConfigForm({ onConfigSaved }: { onConfigSaved?: () => vo
         </div>
 
         <Button type="submit" disabled={saving}>
+          {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
           {saving ? "Guardando..." : "Guardar Configuración"}
         </Button>
           </form>
         </Form>
       </TabsContent>
 
+      <TabsContent value="fines" className="mt-6 space-y-6">
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Configuración de Multas</CardTitle>
+            <CardDescription>
+              Define los montos que se cobran por tardanza, falta e inasistencias consecutivas.
+              Estos valores se aplicarán automáticamente al registrar asistencia en la asamblea en vivo.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {finesLoading ? (
+              <div className="flex items-center justify-center py-8 text-muted-foreground">
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <span className="text-sm">Cargando configuración de multas...</span>
+              </div>
+            ) : (
+            <Form {...finesForm}>
+              <form onSubmit={finesForm.handleSubmit(onSubmitFines)} className="space-y-4">
+                <FormField
+                  control={finesForm.control}
+                  name="lateFineAmount"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Monto de multa por tardanza (S/)</FormLabel>
+                      <FormControl>
+                        <NumberInput
+                          value={field.value}
+                          onChange={field.onChange}
+                          onBlur={field.onBlur}
+                          name={field.name}
+                        />
+                      </FormControl>
+                      <FormDescription>Se sugiere al cobrar tardanzas en el control de asistencia.</FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={finesForm.control}
+                  name="absenceFineAmount"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Monto de multa por falta (S/)</FormLabel>
+                      <FormControl>
+                        <NumberInput
+                          value={field.value}
+                          onChange={field.onChange}
+                          onBlur={field.onBlur}
+                          name={field.name}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={finesForm.control}
+                    name="consecutiveAbsencesLimit"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Faltas consecutivas</FormLabel>
+                        <FormControl>
+                          <NumberInput
+                            integer
+                            value={field.value}
+                            onChange={field.onChange}
+                            onBlur={field.onBlur}
+                            name={field.name}
+                          />
+                        </FormControl>
+                        <FormDescription>Cantidad a partir de la cual se aplica multa extra.</FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={finesForm.control}
+                    name="consecutiveAbsencesFine"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Monto multa consecutiva (S/)</FormLabel>
+                        <FormControl>
+                          <NumberInput
+                            value={field.value}
+                            onChange={field.onChange}
+                            onBlur={field.onBlur}
+                            name={field.name}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <Button type="submit" disabled={savingFines}>
+                  {savingFines && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {savingFines ? "Guardando..." : "Guardar Multas"}
+                </Button>
+              </form>
+            </Form>
+            )}
+          </CardContent>
+        </Card>
+      </TabsContent>
+
       <TabsContent value="participants" className="mt-6 space-y-4">
-        {/* Participants List */}
         <div className="space-y-4">
           <div className="text-sm font-medium">Participantes de la Asamblea</div>
           <div className="text-sm text-muted-foreground">
@@ -408,7 +628,6 @@ export function AssemblyConfigForm({ onConfigSaved }: { onConfigSaved?: () => vo
           )}
         </div>
 
-        {/* Confirmation Dialog */}
         <Dialog open={confirmDialog.open} onOpenChange={() => setConfirmDialog({ open: false, user: null, action: "add" })}>
           <DialogContent>
             <DialogHeader>
@@ -433,7 +652,6 @@ export function AssemblyConfigForm({ onConfigSaved }: { onConfigSaved?: () => vo
         </Dialog>
       </TabsContent>
 
-      {/* Success Dialog */}
       <Dialog open={successDialog} onOpenChange={setSuccessDialog}>
         <DialogContent>
           <DialogHeader>
@@ -444,6 +662,22 @@ export function AssemblyConfigForm({ onConfigSaved }: { onConfigSaved?: () => vo
           </DialogHeader>
           <DialogFooter>
             <Button onClick={() => setSuccessDialog(false)}>
+              Aceptar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={finesSuccessDialog} onOpenChange={setFinesSuccessDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Multas Guardadas</DialogTitle>
+            <DialogDescription>
+              La configuración de multas se guardó correctamente.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button onClick={() => setFinesSuccessDialog(false)}>
               Aceptar
             </Button>
           </DialogFooter>
