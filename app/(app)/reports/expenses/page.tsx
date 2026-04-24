@@ -108,8 +108,8 @@ function ExpensesReportTable() {
 
   const fetchExpenses = async (monthValue: string) => {
     const [year, month] = monthValue.split('-').map(Number);
-    const startOfMonth = new Date(year, month, 1);
-    const endOfMonth = new Date(year, month + 1, 0, 23, 59, 59);
+    const startOfMonth = new Date(year, month, 1, 0, 0, 0, 0);
+    const endOfMonth = new Date(year, month + 1, 0, 23, 59, 59, 999);
     const startOfDate = startOfMonth.toISOString();
     const endOfDate = endOfMonth.toISOString();
     const res = await apiClient.get(`/reports/expenses?startOfDate=${startOfDate}&endOfDate=${endOfDate}`)

@@ -744,8 +744,15 @@ export default function Loans() {
                   <TableBody>
                     {Array.from({ length: form.installments }, (_, i) => {
                       const { capital, interest } = getPreviewInstallment(i);
-                      const date = new Date();
-                      date.setMonth(date.getMonth() + i + 1);
+                      // Preservar día original; si el mes destino no tiene ese día,
+                      // clampear al último día real para no saltar de 31 → 1 del mes siguiente.
+                      const start = new Date();
+                      const originalDay = start.getDate();
+                      const targetMonthIndex = start.getMonth() + i + 1;
+                      const targetYear = start.getFullYear() + Math.floor(targetMonthIndex / 12);
+                      const targetMonth = ((targetMonthIndex % 12) + 12) % 12;
+                      const lastDay = new Date(targetYear, targetMonth + 1, 0).getDate();
+                      const date = new Date(targetYear, targetMonth, Math.min(originalDay, lastDay));
                       return (
                         <TableRow key={i}>
                           <TableCell>{i + 1}</TableCell>

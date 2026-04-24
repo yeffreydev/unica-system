@@ -71,8 +71,8 @@ export default function DividendsPage() {
     setIsLoading(true);
     const [startYear, startMon] = startMonth.split('-').map(Number);
     const [endYear, endMon] = endMonth.split('-').map(Number);
-    const startOfDate = new Date(startYear, startMon, 1).toISOString();
-    const endOfDate = new Date(endYear, endMon + 1, 0, 23, 59, 59).toISOString();
+    const startOfDate = new Date(startYear, startMon, 1, 0, 0, 0, 0).toISOString();
+    const endOfDate = new Date(endYear, endMon + 1, 0, 23, 59, 59, 999).toISOString();
     try {
       const res = await apiClient.get(`/profits?startOfDate=${startOfDate}&endOfDate=${endOfDate}`);
       if (res.data) {
