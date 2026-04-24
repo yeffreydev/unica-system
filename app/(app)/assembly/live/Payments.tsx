@@ -20,11 +20,15 @@ import { ILoanInstallment } from "@/types/ILoan";
 import apiClient from "@/config/apiClient";
 import { Checkbox } from "@/components/ui/checkbox";
 
+type LoanInterestRoundingMode = "NORMAL" | "UP" | "DOWN";
+type LoanInterestRoundingConfig = {
+  mode: LoanInterestRoundingMode;
+  digits: number;
+};
+
 export default function Payments() {
   const { assembly } = useAssembly();
   const { bank } = useContext(AppContext);
-  const configuredRoundingMode = bank?.bank?.loanInterestRoundingMode ?? "NORMAL";
-  const configuredRoundingDigits = bank?.bank?.loanInterestRoundingDigits ?? 2;
 
   const [assemblyRun, setAssemblyRun] = useState<IAssemblyScheduleRun | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
@@ -43,19 +47,56 @@ export default function Payments() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [payingUserId, setPayingUserId] = useState<string | null>(null);
+  const [roundingConfig, setRoundingConfig] = useState<LoanInterestRoundingConfig>({
+    mode: bank?.bank?.loanInterestRoundingMode ?? "NORMAL",
+    digits: bank?.bank?.loanInterestRoundingDigits ?? 2,
+  });
 
-  const roundConfiguredInterest = (value: number) => {
-    const factor = 10 ** configuredRoundingDigits;
-    if (configuredRoundingMode === "UP") return Math.ceil(value * factor - Number.EPSILON) / factor;
-    if (configuredRoundingMode === "DOWN") return Math.floor(value * factor + Number.EPSILON) / factor;
+  const normalizeRoundingConfig = (config: Partial<LoanInterestRoundingConfig>): LoanInterestRoundingConfig => ({
+    mode: config.mode === "UP" || config.mode === "DOWN" || config.mode === "NORMAL" ? config.mode : "NORMAL",
+    digits: Number.isInteger(config.digits) ? Math.min(Math.max(Number(config.digits), 0), 4) : 2,
+  });
+
+  const fetchRoundingConfig = async () => {
+    try {
+      const response = await apiClient.get("/banks");
+      const freshConfig = normalizeRoundingConfig({
+        mode: response.data?.bank?.loanInterestRoundingMode,
+        digits: response.data?.bank?.loanInterestRoundingDigits,
+      });
+      setRoundingConfig(freshConfig);
+      return freshConfig;
+    } catch (error) {
+      console.error("Error fetching rounding config:", error);
+      return roundingConfig;
+    }
+  };
+
+  const roundConfiguredInterest = (value: number, config: LoanInterestRoundingConfig = roundingConfig) => {
+    const factor = 10 ** config.digits;
+    if (config.mode === "UP") return Math.ceil(value * factor - Number.EPSILON) / factor;
+    if (config.mode === "DOWN") return Math.floor(value * factor + Number.EPSILON) / factor;
     return Math.round(value * factor) / factor;
   };
 
-  const getInstallmentInterest = (installment: ILoanInstallment) => {
-    const paidInterest = installment.paymentInterest;
-    if (paidInterest !== null && paidInterest !== undefined) return Number(paidInterest);
-    return roundConfiguredInterest(Number(installment.interest || 0));
+  const getInstallmentInterest = (installment: ILoanInstallment, config: LoanInterestRoundingConfig = roundingConfig) => {
+    const rawInterest = installment.paymentInterest !== null && installment.paymentInterest !== undefined
+      ? Number(installment.paymentInterest)
+      : Number(installment.interest || 0);
+    return roundConfiguredInterest(rawInterest, config);
   };
+
+  useEffect(() => {
+    setRoundingConfig(normalizeRoundingConfig({
+      mode: bank?.bank?.loanInterestRoundingMode,
+      digits: bank?.bank?.loanInterestRoundingDigits,
+    }));
+  }, [bank]);
+
+  useEffect(() => {
+    fetchRoundingConfig();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     (async () => {
@@ -91,7 +132,8 @@ export default function Payments() {
     fetchAssemblyMonthInstallments();
   }, [assemblyRun?.id]);
 
-  const handlePayInterest = (user: IUser) => {
+  const handlePayInterest = async (user: IUser) => {
+    const config = await fetchRoundingConfig();
     setSelectedUser(user);
 
     const installmentsForUser = currentMonthInstallments.filter(
@@ -106,13 +148,14 @@ export default function Payments() {
     installmentsForUser.forEach(inst => {
       if (inst.id) {
         if (inst.paymentAmount !== null && inst.paymentAmount !== undefined) {
+          const roundedInterest = getInstallmentInterest(inst, config);
           initialAmounts[inst.id] = {
             capital: inst.paymentAmount.toString(),
-            interest: (inst.paymentInterest || 0).toString(),
+            interest: roundedInterest.toString(),
             description: inst.paymentDescription || ''
           };
         } else {
-          const roundedInterest = getInstallmentInterest(inst);
+          const roundedInterest = getInstallmentInterest(inst, config);
           initialAmounts[inst.id] = {
             capital: '0',
             interest: roundedInterest.toString(),
