@@ -10,10 +10,10 @@ import {
   Wallet, ArrowUpRight, ArrowDownLeft, ClipboardCheck, CheckCircle,
   Loader2, XCircle, AlertCircle, UserCheck, UserX, Timer, Download
 } from "lucide-react";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import jsPDF from "jspdf";
 import { formatCurrency } from "@/lib/utils";
-import { loanTypesData, LoanTypesEnum } from "@/constants";
+import { loanTypesData, LoanTypesEnum, socialFundsData } from "@/constants";
 import { useAssembly } from "../AssemblyContext";
 import {
   apiGetAssemblyRun,
@@ -21,7 +21,7 @@ import {
   apiGetPaymentsData,
   apiGetCreditApplicationsWithLoans,
   apiGetSavingsData,
-  apiGetOtherIncomesByScheduleRun,
+  apiGetAssemblyActaSummary,
 } from "../api";
 import apiClient from "@/config/apiClient";
 import {
@@ -32,15 +32,28 @@ import {
   ISavingsPartner,
   ParticipantStatusTypes,
 } from "../types";
-import { IDeposit } from "../../incomes/deposits/types";
 import { ISocialFundsTransaction } from "@/types/ISocialFunds";
 import { IOtherIncome } from "../../incomes/others/types";
-import { IWithdrawal } from "../../expenses/withdrawls/types";
 import { IAdministrativeExpense } from "../../expenses/administrative/types";
-import { IPayout } from "../../expenses/payouts/types";
 import { ISocialFundsExpenseTransaction } from "../../expenses/social/types";
 import { IOtherExpense } from "../../expenses/others/types";
 import { IDividendsWithdraw } from "../../expenses/dividends/types";
+
+type ActaOperation = {
+  id: string;
+  category: "ingreso" | "egreso";
+  label: string;
+  description: string;
+  amount: number;
+  date: Date;
+  user?: string;
+};
+
+const getUserName = (user?: { name?: string | null; lastname?: string | null } | null) => {
+  if (!user) return undefined;
+  const fullName = [user.lastname, user.name].filter(Boolean).join(", ");
+  return fullName || undefined;
+};
 
 // Section wrapper for consistent styling
 function Section({ number, title, icon: Icon, children, badge }: {
@@ -68,7 +81,7 @@ function Section({ number, title, icon: Icon, children, badge }: {
 }
 
 export default function Docs() {
-  const { assembly, cashBalance } = useAssembly();
+  const { assembly } = useAssembly();
 
   const [assemblyRun, setAssemblyRun] = useState<IAssemblyScheduleRun | null>(null);
   const [loading, setLoading] = useState(true);
@@ -81,14 +94,12 @@ export default function Docs() {
   const [paymentsData, setPaymentsData] = useState<IPaymentData | null>(null);
   const [creditApplications, setCreditApplications] = useState<ICreditApplication[]>([]);
   const [savingsPartners, setSavingsPartners] = useState<ISavingsPartner[]>([]);
+  const [finesIncomes, setFinesIncomes] = useState<IOtherIncome[]>([]);
   const [otherIncomes, setOtherIncomes] = useState<IOtherIncome[]>([]);
 
   // Operations data
-  const [deposits, setDeposits] = useState<IDeposit[]>([]);
   const [funds, setFunds] = useState<ISocialFundsTransaction[]>([]);
-  const [withdrawals, setWithdrawals] = useState<IWithdrawal[]>([]);
   const [administrativeExpenses, setAdministrativeExpenses] = useState<IAdministrativeExpense[]>([]);
-  const [payouts, setPayouts] = useState<IPayout[]>([]);
   const [socialFundsExpenses, setSocialFundsExpenses] = useState<ISocialFundsExpenseTransaction[]>([]);
   const [otherExpenses, setOtherExpenses] = useState<IOtherExpense[]>([]);
   const [dividends, setDividends] = useState<IDividendsWithdraw[]>([]);
@@ -110,19 +121,16 @@ export default function Docs() {
       setLoading(true);
       try {
         const [
-          sharesRes, paymentsRes, creditsRes, savingsRes, otherIncomesRes,
-          depRes, fundsRes, withdrawRes, adminRes, payoutRes, socialExpRes, otherExpRes, dividendsRes
+          sharesRes, paymentsRes, creditsRes, savingsRes, actaSummaryRes,
+          fundsRes, adminRes, socialExpRes, otherExpRes, dividendsRes
         ] = await Promise.all([
           apiGetPartnersWithShares(assemblyRun.id),
           apiGetPaymentsData(assemblyRun.id),
           apiGetCreditApplicationsWithLoans(assemblyRun.id),
           apiGetSavingsData(assemblyRun.id),
-          apiGetOtherIncomesByScheduleRun(assemblyRun.id),
-          apiClient.get(`/deposits/schedule-run/${assemblyRun.id}`),
+          apiGetAssemblyActaSummary(assemblyRun.id),
           apiClient.get(`/incomes/social-funds/schedule-run/${assemblyRun.id}`),
-          apiClient.get(`/withdrawals/schedule-run/${assemblyRun.id}`),
           apiClient.get(`/expenses/administrative/schedule-run/${assemblyRun.id}`),
-          apiClient.get(`/payouts/schedule-run/${assemblyRun.id}`),
           apiClient.get(`/expenses/social-funds/schedule-run/${assemblyRun.id}`),
           apiClient.get(`/expenses/others/schedule-run/${assemblyRun.id}`),
           apiClient.get(`/expenses/dividends/schedule-run/${assemblyRun.id}`),
@@ -132,12 +140,10 @@ export default function Docs() {
         setPaymentsData(paymentsRes);
         setCreditApplications(creditsRes);
         setSavingsPartners(savingsRes);
-        setOtherIncomes(otherIncomesRes);
-        setDeposits(depRes.data || []);
+        setFinesIncomes(actaSummaryRes?.fines || []);
+        setOtherIncomes(actaSummaryRes?.otherIncomes || []);
         setFunds(fundsRes.data || []);
-        setWithdrawals(withdrawRes.data || []);
         setAdministrativeExpenses(adminRes.data || []);
-        setPayouts(payoutRes.data || []);
         setSocialFundsExpenses(socialExpRes.data || []);
         setOtherExpenses(otherExpRes.data || []);
         setDividends(dividendsRes.data || []);
@@ -168,28 +174,109 @@ export default function Docs() {
   const totalInterest = payments.reduce((sum, p) => sum + Number(p.interest || 0), 0);
   const totalPayments = totalCapital + totalInterest;
 
-  const finesIncomes = otherIncomes.filter((inc: IOtherIncome) => (inc as IOtherIncome & { tag?: string }).tag === 'ASSEMBLY_FEE' || (inc as IOtherIncome & { tag?: string }).tag === 'ABSENCE_FEE' || (inc as IOtherIncome & { tag?: string }).tag === 'LATE_FEE');
   const totalFines = finesIncomes.reduce((sum: number, inc: IOtherIncome) => sum + inc.amount, 0);
 
   const approvedCredits = creditApplications.filter(c => c.status === 'approved');
+  const totalApprovedCreditAmount = approvedCredits.reduce((sum, c) => sum + Number(c.loan?.amount ?? c.amount ?? 0), 0);
 
-  const savingsWithDeposits = savingsPartners.filter(p => p.deposits.length > 0 || p.payouts.length > 0);
+  const savingsWithDeposits = savingsPartners.filter(p => p.deposits.length > 0 || p.payouts.length > 0 || (p.withdrawals ?? []).length > 0);
   const totalSavingsDeposits = savingsPartners.reduce((sum, p) => sum + p.deposits.reduce((s, d) => s + d.amount, 0), 0);
   const totalSavingsPayouts = savingsPartners.reduce((sum, p) => sum + p.payouts.reduce((s, d) => s + d.amount, 0), 0);
+  const totalSavingsWithdrawals = savingsPartners.reduce((sum, p) => sum + (p.withdrawals ?? []).reduce((s, d) => s + d.amount, 0), 0);
 
   // Operations totals
-  const totalDepositsAmount = deposits.reduce((sum, d) => sum + d.amount, 0);
   const totalFundsAmount = funds.reduce((sum, f) => sum + f.amount, 0);
   const totalOtherIncomesAmount = otherIncomes.reduce((sum: number, o: IOtherIncome) => sum + o.amount, 0);
-  const totalIncomeOps = totalDepositsAmount + totalFundsAmount + totalOtherIncomesAmount;
+  const totalIncomeOps = totalFundsAmount + totalOtherIncomesAmount;
 
-  const totalWithdrawalsAmount = withdrawals.reduce((sum, w) => sum + w.amount, 0);
   const totalAdminAmount = administrativeExpenses.reduce((sum, a) => sum + a.amount, 0);
-  const totalPayoutsAmount = payouts.reduce((sum, p) => sum + p.amount, 0);
   const totalSocialExpAmount = socialFundsExpenses.reduce((sum, s) => sum + s.amount, 0);
   const totalOtherExpAmount = otherExpenses.reduce((sum, o) => sum + o.amount, 0);
   const totalDividendsAmount = dividends.reduce((sum, d) => sum + d.amount, 0);
-  const totalExpenseOps = totalWithdrawalsAmount + totalAdminAmount + totalPayoutsAmount + totalSocialExpAmount + totalOtherExpAmount + totalDividendsAmount;
+  const totalExpenseOps = totalAdminAmount + totalSocialExpAmount + totalOtherExpAmount + totalDividendsAmount + totalApprovedCreditAmount;
+  const totalActaIncome = totalFines + totalSharesAmount + totalPayments + totalSavingsDeposits + totalIncomeOps;
+  const totalActaExpenses = totalSavingsWithdrawals + totalSavingsPayouts + totalExpenseOps;
+  const actaCashBalance = {
+    currentBalance: totalActaIncome,
+    totalExpenses: totalActaExpenses,
+    availableBalance: totalActaIncome - totalActaExpenses,
+  };
+
+  const operationRows = useMemo<ActaOperation[]>(() => {
+    const rows: ActaOperation[] = [];
+
+    funds.forEach((fund) => rows.push({
+      id: `fund-${fund.id}`,
+      category: "ingreso",
+      label: "Fondo social",
+      description: fund.socialFunds?.name ? (socialFundsData[fund.socialFunds.name as keyof typeof socialFundsData] || fund.socialFunds.name) : (fund.description || "Fondo social"),
+      amount: fund.amount,
+      date: new Date(fund.date),
+      user: getUserName(fund.user),
+    }));
+
+    otherIncomes.forEach((income) => rows.push({
+      id: `other-income-${income.id}`,
+      category: "ingreso",
+      label: "Otro ingreso",
+      description: income.description || "Otro ingreso",
+      amount: income.amount,
+      date: new Date(income.date),
+      user: getUserName(income.user),
+    }));
+
+    administrativeExpenses.forEach((expense) => rows.push({
+      id: `admin-${expense.id}`,
+      category: "egreso",
+      label: "Gasto administrativo",
+      description: expense.description || "Gasto administrativo",
+      amount: expense.amount,
+      date: new Date(expense.date),
+      user: getUserName(expense.user),
+    }));
+
+    socialFundsExpenses.forEach((expense) => rows.push({
+      id: `social-expense-${expense.id}`,
+      category: "egreso",
+      label: "Gasto fondo social",
+      description: expense.description || "Gasto fondo social",
+      amount: expense.amount,
+      date: new Date(expense.date),
+      user: getUserName(expense.user),
+    }));
+
+    otherExpenses.forEach((expense) => rows.push({
+      id: `other-expense-${expense.id}`,
+      category: "egreso",
+      label: "Otro egreso",
+      description: expense.description || "Otro egreso",
+      amount: expense.amount,
+      date: new Date(expense.date),
+      user: getUserName(expense.user),
+    }));
+
+    dividends.forEach((dividend) => rows.push({
+      id: `dividend-${dividend.id}`,
+      category: "egreso",
+      label: "Dividendos",
+      description: dividend.description || "Pago de dividendos",
+      amount: dividend.amount,
+      date: new Date(dividend.date),
+      user: getUserName(dividend.user),
+    }));
+
+    approvedCredits.forEach((credit) => rows.push({
+      id: `credit-${credit.id}`,
+      category: "egreso",
+      label: "Crédito aprobado",
+      description: credit.purpose || "Desembolso de crédito",
+      amount: Number(credit.loan?.amount ?? credit.amount ?? 0),
+      date: new Date(credit.loan?.date ?? credit.createdAt),
+      user: getUserName(credit.user),
+    }));
+
+    return rows.sort((a, b) => b.date.getTime() - a.date.getTime());
+  }, [funds, otherIncomes, administrativeExpenses, socialFundsExpenses, otherExpenses, dividends, approvedCredits]);
 
   const formatDate = (date: Date) => {
     return new Date(date).toLocaleDateString('es-PE', {
@@ -481,6 +568,7 @@ export default function Docs() {
         checkPage(7);
         const depTotal = partner.deposits.reduce((s, d) => s + d.amount, 0);
         const payTotal = partner.payouts.reduce((s, p) => s + p.amount, 0);
+        const withdrawTotal = (partner.withdrawals ?? []).reduce((s, w) => s + w.amount, 0);
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(8);
         doc.setTextColor(...colors.dark);
@@ -491,9 +579,17 @@ export default function Docs() {
         }
         if (payTotal > 0) {
           doc.setTextColor(...colors.red);
-          doc.text(`-${fmtCurrency(payTotal)}`, pageWidth - margin, y + 2, { align: 'right' });
+          doc.text(`Intereses: -${fmtCurrency(payTotal)}`, pageWidth - margin, y + 2, { align: 'right' });
+        } else if (withdrawTotal > 0) {
+          doc.setTextColor(...colors.red);
+          doc.text(`Retiros: -${fmtCurrency(withdrawTotal)}`, pageWidth - margin, y + 2, { align: 'right' });
         }
         y += 6;
+        if (payTotal > 0 && withdrawTotal > 0) {
+          doc.setTextColor(...colors.red);
+          doc.text(`Retiros: -${fmtCurrency(withdrawTotal)}`, pageWidth - margin, y + 2, { align: 'right' });
+          y += 6;
+        }
       });
       drawLine(y - 1);
       doc.setFont('helvetica', 'bold');
@@ -501,7 +597,7 @@ export default function Docs() {
       doc.setTextColor(...colors.green);
       doc.text(`Depósitos: ${fmtCurrency(totalSavingsDeposits)}`, margin + 13, y + 3);
       doc.setTextColor(...colors.red);
-      doc.text(`Retiros: ${fmtCurrency(totalSavingsPayouts)}`, pageWidth - margin, y + 3, { align: 'right' });
+      doc.text(`Retiros: ${fmtCurrency(totalSavingsWithdrawals)} | Intereses: ${fmtCurrency(totalSavingsPayouts)}`, pageWidth - margin, y + 3, { align: 'right' });
       y += 8;
     } else {
       doc.setFont('helvetica', 'normal');
@@ -516,74 +612,51 @@ export default function Docs() {
     // ===== 6. OPERACIONES =====
     sectionTitle(5, 'Operaciones realizadas');
 
-    const incomeItems: [string, number][] = [];
-    if (deposits.length > 0) incomeItems.push([`Depósitos (${deposits.length})`, totalDepositsAmount]);
-    if (funds.length > 0) incomeItems.push([`Fondos sociales (${funds.length})`, totalFundsAmount]);
-    if (otherIncomes.length > 0) incomeItems.push([`Otros ingresos (${otherIncomes.length})`, totalOtherIncomesAmount]);
+    if (operationRows.length > 0) {
+      checkPage(14);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(7);
+      doc.setTextColor(...colors.muted);
+      doc.text('Tipo', margin + 13, y + 2);
+      doc.text('Detalle', margin + 44, y + 2);
+      doc.text('Monto', pageWidth - margin, y + 2, { align: 'right' });
+      y += 5;
+      drawLine(y - 1);
 
-    const expenseItems: [string, number][] = [];
-    if (withdrawals.length > 0) expenseItems.push([`Retiros (${withdrawals.length})`, totalWithdrawalsAmount]);
-    if (administrativeExpenses.length > 0) expenseItems.push([`Administrativos (${administrativeExpenses.length})`, totalAdminAmount]);
-    if (payouts.length > 0) expenseItems.push([`Pagos intereses (${payouts.length})`, totalPayoutsAmount]);
-    if (socialFundsExpenses.length > 0) expenseItems.push([`Fondos sociales (${socialFundsExpenses.length})`, totalSocialExpAmount]);
-    if (dividends.length > 0) expenseItems.push([`Dividendos (${dividends.length})`, totalDividendsAmount]);
-    if (otherExpenses.length > 0) expenseItems.push([`Otros egresos (${otherExpenses.length})`, totalOtherExpAmount]);
+      operationRows.forEach((op) => {
+        checkPage(9);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(7);
+        doc.setTextColor(op.category === 'ingreso' ? colors.green[0] : colors.red[0], op.category === 'ingreso' ? colors.green[1] : colors.red[1], op.category === 'ingreso' ? colors.green[2] : colors.red[2]);
+        doc.text(op.label, margin + 13, y + 2);
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(...colors.dark);
+        doc.text(doc.splitTextToSize(op.description, 78)[0] || '-', margin + 44, y + 2);
+        doc.setFont('helvetica', 'bold');
+        doc.text(`${op.category === 'ingreso' ? '+' : '-'}${fmtCurrency(op.amount)}`, pageWidth - margin, y + 2, { align: 'right' });
+        y += 4;
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(6);
+        doc.setTextColor(...colors.muted);
+        doc.text(`${fmtDate(op.date)}${op.user ? ` | ${op.user}` : ''}`, margin + 44, y + 1);
+        y += 5;
+      });
 
-    const maxRows = Math.max(incomeItems.length, expenseItems.length, 1);
-    checkPage(12 + maxRows * 6 + 10);
-
-    const colWidth = (contentWidth - 10) / 2 - 2;
-    const col1X = margin + 10;
-    const col2X = margin + 10 + colWidth + 4;
-
-    // Income header
-    doc.setFillColor(22, 163, 74);
-    doc.setGState(doc.GState({ opacity: 0.1 }));
-    doc.roundedRect(col1X, y - 1, colWidth, 7, 1, 1, 'F');
-    doc.setGState(doc.GState({ opacity: 1 }));
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(7);
-    doc.setTextColor(...colors.green);
-    doc.text('INGRESOS', col1X + 3, y + 3);
-
-    // Expense header
-    doc.setFillColor(220, 38, 38);
-    doc.setGState(doc.GState({ opacity: 0.1 }));
-    doc.roundedRect(col2X, y - 1, colWidth, 7, 1, 1, 'F');
-    doc.setGState(doc.GState({ opacity: 1 }));
-    doc.setTextColor(...colors.red);
-    doc.text('EGRESOS', col2X + 3, y + 3);
-    y += 9;
-
-    for (let i = 0; i < maxRows; i++) {
+      drawLine(y - 1);
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(7);
+      doc.setTextColor(...colors.green);
+      doc.text(`Ingresos operativos: ${fmtCurrency(totalIncomeOps)}`, margin + 13, y + 3);
+      doc.setTextColor(...colors.red);
+      doc.text(`Egresos operativos: ${fmtCurrency(totalExpenseOps)}`, pageWidth - margin, y + 3, { align: 'right' });
+      y += 8;
+    } else {
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(8);
-      if (incomeItems[i]) {
-        doc.setTextColor(...colors.muted);
-        doc.text(incomeItems[i][0], col1X + 3, y + 2);
-        doc.setFont('helvetica', 'bold');
-        doc.setTextColor(...colors.dark);
-        doc.text(fmtCurrency(incomeItems[i][1]), col1X + colWidth - 3, y + 2, { align: 'right' });
-      }
-      if (expenseItems[i]) {
-        doc.setFont('helvetica', 'normal');
-        doc.setTextColor(...colors.muted);
-        doc.text(expenseItems[i][0], col2X + 3, y + 2);
-        doc.setFont('helvetica', 'bold');
-        doc.setTextColor(...colors.dark);
-        doc.text(fmtCurrency(expenseItems[i][1]), col2X + colWidth - 3, y + 2, { align: 'right' });
-      }
-      y += 6;
+      doc.setTextColor(...colors.muted);
+      doc.text('No se registraron operaciones fuera de ahorros.', margin + 13, y + 2);
+      y += 8;
     }
-
-    // Totals
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(8);
-    doc.setTextColor(...colors.green);
-    doc.text(fmtCurrency(totalIncomeOps), col1X + colWidth - 3, y + 2, { align: 'right' });
-    doc.setTextColor(...colors.red);
-    doc.text(fmtCurrency(totalExpenseOps), col2X + colWidth - 3, y + 2, { align: 'right' });
-    y += 8;
 
     drawLine(y); y += 6;
 
@@ -640,36 +713,34 @@ export default function Docs() {
     // ===== 8. ARQUEO DE CAJA =====
     sectionTitle(7, 'Arqueo de caja');
 
-    if (cashBalance) {
-      checkPage(14);
-      const boxW = (contentWidth - 10) / 3;
-      const boxX = margin + 10;
+    checkPage(14);
+    const boxW = (contentWidth - 10) / 3;
+    const boxX = margin + 10;
 
-      const boxes = [
-        { label: 'INGRESOS', value: fmtCurrency(cashBalance.currentBalance), color: colors.green },
-        { label: 'EGRESOS', value: fmtCurrency(cashBalance.totalExpenses), color: colors.red },
-        { label: 'SALDO NETO', value: fmtCurrency(cashBalance.availableBalance), color: cashBalance.availableBalance >= 0 ? colors.green : colors.red },
-      ];
+    const boxes = [
+      { label: 'INGRESOS', value: fmtCurrency(actaCashBalance.currentBalance), color: colors.green },
+      { label: 'EGRESOS', value: fmtCurrency(actaCashBalance.totalExpenses), color: colors.red },
+      { label: 'SALDO NETO', value: fmtCurrency(actaCashBalance.availableBalance), color: actaCashBalance.availableBalance >= 0 ? colors.green : colors.red },
+    ];
 
-      boxes.forEach((box, i) => {
-        const bx = boxX + i * boxW;
-        doc.setFillColor(...colors.light);
-        if (i === 2) doc.setFillColor(colors.primary[0], colors.primary[1], colors.primary[2]);
-        doc.setGState(doc.GState({ opacity: i === 2 ? 0.08 : 1 }));
-        doc.roundedRect(bx + 1, y - 1, boxW - 2, 14, 1.5, 1.5, 'F');
-        doc.setGState(doc.GState({ opacity: 1 }));
+    boxes.forEach((box, i) => {
+      const bx = boxX + i * boxW;
+      doc.setFillColor(...colors.light);
+      if (i === 2) doc.setFillColor(colors.primary[0], colors.primary[1], colors.primary[2]);
+      doc.setGState(doc.GState({ opacity: i === 2 ? 0.08 : 1 }));
+      doc.roundedRect(bx + 1, y - 1, boxW - 2, 14, 1.5, 1.5, 'F');
+      doc.setGState(doc.GState({ opacity: 1 }));
 
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(6);
-        doc.setTextColor(...colors.muted);
-        doc.text(box.label, bx + boxW / 2, y + 3, { align: 'center' });
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(9);
-        doc.setTextColor(...box.color);
-        doc.text(box.value, bx + boxW / 2, y + 9.5, { align: 'center' });
-      });
-      y += 18;
-    }
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(6);
+      doc.setTextColor(...colors.muted);
+      doc.text(box.label, bx + boxW / 2, y + 3, { align: 'center' });
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9);
+      doc.setTextColor(...box.color);
+      doc.text(box.value, bx + boxW / 2, y + 9.5, { align: 'center' });
+    });
+    y += 18;
 
     // ===== RESUMEN FINANCIERO =====
     checkPage(30);
@@ -690,33 +761,37 @@ export default function Docs() {
       { label: 'Acciones', value: totalSharesAmount },
       { label: 'Recuperación', value: totalPayments },
       { label: 'Ahorros', value: totalSavingsDeposits },
+      { label: 'Operaciones', value: totalIncomeOps },
+      { label: 'Egresos', value: totalActaExpenses },
     ];
-    const totalRecaudado = totalFines + totalSharesAmount + totalPayments + totalSavingsDeposits;
+    const totalRecaudado = totalActaIncome;
 
-    const itemW = (contentWidth - 8) / 5;
+    const itemW = (contentWidth - 8) / 4;
     summaryItems.forEach((item, i) => {
-      const ix = margin + 4 + i * itemW;
+      const ix = margin + 4 + (i % 4) * itemW;
+      const iy = y + Math.floor(i / 4) * 11;
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(6);
       doc.setTextColor(...colors.muted);
-      doc.text(item.label.toUpperCase(), ix, y + 2);
+      doc.text(item.label.toUpperCase(), ix, iy + 2);
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(9);
       doc.setTextColor(...colors.dark);
-      doc.text(fmtCurrency(item.value), ix, y + 8);
+      doc.text(fmtCurrency(item.value), ix, iy + 8);
     });
 
     // Total
-    const tx = margin + 4 + 4 * itemW;
+    const tx = margin + 4 + 2 * itemW;
+    const ty = y + 11;
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(6);
     doc.setTextColor(...colors.primary);
-    doc.text('TOTAL RECAUDADO', tx, y + 2);
+    doc.text('SALDO NETO', tx, ty + 2);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(11);
-    doc.setTextColor(...colors.primary);
-    doc.text(fmtCurrency(totalRecaudado), tx, y + 9);
-    y += 16;
+    doc.setTextColor(...(actaCashBalance.availableBalance >= 0 ? colors.green : colors.red));
+    doc.text(fmtCurrency(totalRecaudado - totalActaExpenses), tx, ty + 9);
+    y += 27;
 
     // ===== FIRMA / CONFIRMACIÓN =====
     checkPage(30);
@@ -751,12 +826,11 @@ export default function Docs() {
     sharesWithPurchases, totalSharesAmount, totalSharesQty, partnerShares,
     payments, paymentsData, totalCapital, totalInterest, totalPayments,
     finesIncomes, totalFines, otherIncomes,
-    savingsWithDeposits, totalSavingsDeposits, totalSavingsPayouts, savingsPartners,
-    deposits, funds, withdrawals, administrativeExpenses, payouts, socialFundsExpenses,
-    dividends, otherExpenses, totalDepositsAmount, totalFundsAmount, totalOtherIncomesAmount,
-    totalIncomeOps, totalWithdrawalsAmount, totalAdminAmount, totalPayoutsAmount,
+    savingsWithDeposits, totalSavingsDeposits, totalSavingsPayouts, totalSavingsWithdrawals, savingsPartners,
+    funds, administrativeExpenses, socialFundsExpenses, dividends, otherExpenses, operationRows,
+    totalFundsAmount, totalOtherIncomesAmount, totalIncomeOps, totalAdminAmount,
     totalSocialExpAmount, totalOtherExpAmount, totalDividendsAmount, totalExpenseOps,
-    creditApplications, cashBalance, isConfirmed, approvedCredits, getLoanTypeDisplay]);
+    totalActaIncome, totalActaExpenses, actaCashBalance, creditApplications, isConfirmed, approvedCredits, getLoanTypeDisplay]);
 
   if (!assemblyRun || loading) {
     return (
@@ -1016,6 +1090,7 @@ export default function Docs() {
                       {savingsWithDeposits.map((partner) => {
                         const depositsTotal = partner.deposits.reduce((s, d) => s + d.amount, 0);
                         const payoutsTotal = partner.payouts.reduce((s, p) => s + p.amount, 0);
+                        const withdrawalsTotal = (partner.withdrawals ?? []).reduce((s, w) => s + w.amount, 0);
                         return (
                           <div key={partner.id} className="flex items-center justify-between px-3 py-2.5">
                             <div className="flex items-center gap-2">
@@ -1032,7 +1107,12 @@ export default function Docs() {
                               )}
                               {payoutsTotal > 0 && (
                                 <span className="text-xs text-rose-600 dark:text-rose-400 font-medium">
-                                  -{formatCurrency(payoutsTotal)}
+                                  Intereses -{formatCurrency(payoutsTotal)}
+                                </span>
+                              )}
+                              {withdrawalsTotal > 0 && (
+                                <span className="text-xs text-rose-600 dark:text-rose-400 font-medium">
+                                  Retiros -{formatCurrency(withdrawalsTotal)}
                                 </span>
                               )}
                             </div>
@@ -1045,7 +1125,10 @@ export default function Docs() {
                         Depósitos: <span className="font-bold text-emerald-600 dark:text-emerald-400">{formatCurrency(totalSavingsDeposits)}</span>
                       </span>
                       <span className="text-muted-foreground">
-                        Retiros: <span className="font-bold text-rose-600 dark:text-rose-400">{formatCurrency(totalSavingsPayouts)}</span>
+                        Retiros: <span className="font-bold text-rose-600 dark:text-rose-400">{formatCurrency(totalSavingsWithdrawals)}</span>
+                      </span>
+                      <span className="text-muted-foreground">
+                        Intereses: <span className="font-bold text-rose-600 dark:text-rose-400">{formatCurrency(totalSavingsPayouts)}</span>
                       </span>
                     </div>
                   </div>
@@ -1061,93 +1144,48 @@ export default function Docs() {
 
             {/* 6. Operaciones realizadas */}
             <Section number={5} title="Operaciones realizadas" icon={ArrowUpRight}>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {/* Ingresos */}
+              {operationRows.length > 0 ? (
                 <div className="rounded-lg border bg-card overflow-hidden">
-                  <div className="px-3 py-2 bg-emerald-50 dark:bg-emerald-950/20 border-b flex items-center gap-1.5">
-                    <ArrowDownLeft className="w-3.5 h-3.5 text-emerald-600" />
-                    <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-400">Ingresos</span>
+                  <div className="divide-y">
+                    {operationRows.map((op) => (
+                      <div key={op.id} className="px-3 py-2.5 flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <Badge
+                              variant="outline"
+                              className={`text-[10px] px-1.5 py-0 h-5 ${op.category === "ingreso" ? "text-emerald-700 border-emerald-200 bg-emerald-50 dark:bg-emerald-950/20 dark:text-emerald-400" : "text-rose-700 border-rose-200 bg-rose-50 dark:bg-rose-950/20 dark:text-rose-400"}`}
+                            >
+                              {op.label}
+                            </Badge>
+                            <span className="text-sm font-medium">{op.description}</span>
+                          </div>
+                          <div className="mt-1 text-[11px] text-muted-foreground">
+                            {op.user && <span>{op.user} · </span>}
+                            {op.date.toLocaleDateString("es-PE", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "UTC" })}
+                          </div>
+                        </div>
+                        <span className={`text-sm font-semibold tabular-nums shrink-0 ${op.category === "ingreso" ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}`}>
+                          {op.category === "ingreso" ? "+" : "-"}{formatCurrency(op.amount)}
+                        </span>
+                      </div>
+                    ))}
                   </div>
-                  <div className="divide-y text-sm">
-                    {deposits.length > 0 && (
-                      <div className="flex justify-between px-3 py-2">
-                        <span className="text-muted-foreground">Depósitos ({deposits.length})</span>
-                        <span className="font-medium tabular-nums">{formatCurrency(totalDepositsAmount)}</span>
-                      </div>
-                    )}
-                    {funds.length > 0 && (
-                      <div className="flex justify-between px-3 py-2">
-                        <span className="text-muted-foreground">Fondos sociales ({funds.length})</span>
-                        <span className="font-medium tabular-nums">{formatCurrency(totalFundsAmount)}</span>
-                      </div>
-                    )}
-                    {otherIncomes.length > 0 && (
-                      <div className="flex justify-between px-3 py-2">
-                        <span className="text-muted-foreground">Otros ingresos ({otherIncomes.length})</span>
-                        <span className="font-medium tabular-nums">{formatCurrency(totalOtherIncomesAmount)}</span>
-                      </div>
-                    )}
-                    {totalIncomeOps === 0 && (
-                      <div className="px-3 py-2 text-muted-foreground text-xs">Sin ingresos registrados</div>
-                    )}
-                  </div>
-                  <div className="flex justify-end px-3 py-2 bg-emerald-50/50 dark:bg-emerald-950/10 border-t">
-                    <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400">{formatCurrency(totalIncomeOps)}</span>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 border-t bg-muted/20 text-xs">
+                    <div className="px-3 py-2 flex justify-between">
+                      <span className="text-muted-foreground">Ingresos operativos</span>
+                      <span className="font-bold text-emerald-600 dark:text-emerald-400">{formatCurrency(totalIncomeOps)}</span>
+                    </div>
+                    <div className="px-3 py-2 flex justify-between sm:border-l">
+                      <span className="text-muted-foreground">Egresos operativos</span>
+                      <span className="font-bold text-rose-600 dark:text-rose-400">{formatCurrency(totalExpenseOps)}</span>
+                    </div>
                   </div>
                 </div>
-
-                {/* Egresos */}
-                <div className="rounded-lg border bg-card overflow-hidden">
-                  <div className="px-3 py-2 bg-rose-50 dark:bg-rose-950/20 border-b flex items-center gap-1.5">
-                    <ArrowUpRight className="w-3.5 h-3.5 text-rose-600" />
-                    <span className="text-xs font-semibold text-rose-700 dark:text-rose-400">Egresos</span>
-                  </div>
-                  <div className="divide-y text-sm">
-                    {withdrawals.length > 0 && (
-                      <div className="flex justify-between px-3 py-2">
-                        <span className="text-muted-foreground">Retiros ({withdrawals.length})</span>
-                        <span className="font-medium tabular-nums">{formatCurrency(totalWithdrawalsAmount)}</span>
-                      </div>
-                    )}
-                    {administrativeExpenses.length > 0 && (
-                      <div className="flex justify-between px-3 py-2">
-                        <span className="text-muted-foreground">Administrativos ({administrativeExpenses.length})</span>
-                        <span className="font-medium tabular-nums">{formatCurrency(totalAdminAmount)}</span>
-                      </div>
-                    )}
-                    {payouts.length > 0 && (
-                      <div className="flex justify-between px-3 py-2">
-                        <span className="text-muted-foreground">Pagos de intereses ({payouts.length})</span>
-                        <span className="font-medium tabular-nums">{formatCurrency(totalPayoutsAmount)}</span>
-                      </div>
-                    )}
-                    {socialFundsExpenses.length > 0 && (
-                      <div className="flex justify-between px-3 py-2">
-                        <span className="text-muted-foreground">Fondos sociales ({socialFundsExpenses.length})</span>
-                        <span className="font-medium tabular-nums">{formatCurrency(totalSocialExpAmount)}</span>
-                      </div>
-                    )}
-                    {dividends.length > 0 && (
-                      <div className="flex justify-between px-3 py-2">
-                        <span className="text-muted-foreground">Dividendos ({dividends.length})</span>
-                        <span className="font-medium tabular-nums">{formatCurrency(totalDividendsAmount)}</span>
-                      </div>
-                    )}
-                    {otherExpenses.length > 0 && (
-                      <div className="flex justify-between px-3 py-2">
-                        <span className="text-muted-foreground">Otros egresos ({otherExpenses.length})</span>
-                        <span className="font-medium tabular-nums">{formatCurrency(totalOtherExpAmount)}</span>
-                      </div>
-                    )}
-                    {totalExpenseOps === 0 && (
-                      <div className="px-3 py-2 text-muted-foreground text-xs">Sin egresos registrados</div>
-                    )}
-                  </div>
-                  <div className="flex justify-end px-3 py-2 bg-rose-50/50 dark:bg-rose-950/10 border-t">
-                    <span className="text-xs font-bold text-rose-600 dark:text-rose-400">{formatCurrency(totalExpenseOps)}</span>
-                  </div>
+              ) : (
+                <div className="rounded-lg bg-muted/30 p-3 text-sm text-muted-foreground">
+                  No se registraron operaciones fuera de ahorros.
                 </div>
-              </div>
+              )}
             </Section>
 
             <div className="border-t" />
@@ -1211,34 +1249,28 @@ export default function Docs() {
 
             {/* 8. Arqueo de caja */}
             <Section number={7} title="Arqueo de caja" icon={Wallet}>
-              {cashBalance ? (
-                <div className="rounded-lg border bg-card overflow-hidden">
-                  <div className="grid grid-cols-3 divide-x">
-                    <div className="p-3 text-center">
-                      <div className="text-[10px] text-muted-foreground uppercase tracking-wide mb-1">Ingresos</div>
-                      <div className="text-sm font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">
-                        {formatCurrency(cashBalance.currentBalance)}
-                      </div>
+              <div className="rounded-lg border bg-card overflow-hidden">
+                <div className="grid grid-cols-3 divide-x">
+                  <div className="p-3 text-center">
+                    <div className="text-[10px] text-muted-foreground uppercase tracking-wide mb-1">Ingresos</div>
+                    <div className="text-sm font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">
+                      {formatCurrency(actaCashBalance.currentBalance)}
                     </div>
-                    <div className="p-3 text-center">
-                      <div className="text-[10px] text-muted-foreground uppercase tracking-wide mb-1">Egresos</div>
-                      <div className="text-sm font-bold text-rose-600 dark:text-rose-400 tabular-nums">
-                        {formatCurrency(cashBalance.totalExpenses)}
-                      </div>
+                  </div>
+                  <div className="p-3 text-center">
+                    <div className="text-[10px] text-muted-foreground uppercase tracking-wide mb-1">Egresos</div>
+                    <div className="text-sm font-bold text-rose-600 dark:text-rose-400 tabular-nums">
+                      {formatCurrency(actaCashBalance.totalExpenses)}
                     </div>
-                    <div className="p-3 text-center bg-muted/20">
-                      <div className="text-[10px] text-muted-foreground uppercase tracking-wide mb-1">Saldo Neto</div>
-                      <div className={`text-sm font-bold tabular-nums ${cashBalance.availableBalance >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
-                        {formatCurrency(cashBalance.availableBalance)}
-                      </div>
+                  </div>
+                  <div className="p-3 text-center bg-muted/20">
+                    <div className="text-[10px] text-muted-foreground uppercase tracking-wide mb-1">Saldo Neto</div>
+                    <div className={`text-sm font-bold tabular-nums ${actaCashBalance.availableBalance >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                      {formatCurrency(actaCashBalance.availableBalance)}
                     </div>
                   </div>
                 </div>
-              ) : (
-                <div className="rounded-lg bg-muted/30 p-3 text-sm text-muted-foreground">
-                  No se realizó el arqueo de caja.
-                </div>
-              )}
+              </div>
             </Section>
           </div>
         </CardContent>
@@ -1253,7 +1285,7 @@ export default function Docs() {
           </div>
         </CardHeader>
         <CardContent className="px-5 pb-5">
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-7 gap-3">
             <div className="rounded-lg bg-muted/30 p-3 space-y-1">
               <div className="text-[10px] text-muted-foreground uppercase tracking-wide">Multas</div>
               <div className="text-lg font-bold tabular-nums">{formatCurrency(totalFines)}</div>
@@ -1270,10 +1302,18 @@ export default function Docs() {
               <div className="text-[10px] text-muted-foreground uppercase tracking-wide">Ahorros</div>
               <div className="text-lg font-bold tabular-nums">{formatCurrency(totalSavingsDeposits)}</div>
             </div>
+            <div className="rounded-lg bg-muted/30 p-3 space-y-1">
+              <div className="text-[10px] text-muted-foreground uppercase tracking-wide">Operaciones</div>
+              <div className="text-lg font-bold tabular-nums">{formatCurrency(totalIncomeOps)}</div>
+            </div>
+            <div className="rounded-lg bg-muted/30 p-3 space-y-1">
+              <div className="text-[10px] text-muted-foreground uppercase tracking-wide">Egresos</div>
+              <div className="text-lg font-bold text-rose-600 dark:text-rose-400 tabular-nums">{formatCurrency(totalActaExpenses)}</div>
+            </div>
             <div className="rounded-lg bg-primary/5 border border-primary/20 p-3 space-y-1">
-              <div className="text-[10px] text-primary/70 uppercase tracking-wide font-medium">Total Recaudado</div>
-              <div className="text-xl font-bold text-primary tabular-nums">
-                {formatCurrency(totalFines + totalSharesAmount + totalPayments + totalSavingsDeposits)}
+              <div className="text-[10px] text-primary/70 uppercase tracking-wide font-medium">Saldo Neto</div>
+              <div className={`text-xl font-bold tabular-nums ${actaCashBalance.availableBalance >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}`}>
+                {formatCurrency(actaCashBalance.availableBalance)}
               </div>
             </div>
           </div>
@@ -1354,8 +1394,14 @@ export default function Docs() {
                 <span className="font-medium">{approvedCredits.length}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Total recaudado</span>
-                <span className="font-bold text-primary">{formatCurrency(totalFines + totalSharesAmount + totalPayments + totalSavingsDeposits)}</span>
+                <span className="text-muted-foreground">Ingresos validados</span>
+                <span className="font-bold text-primary">{formatCurrency(totalActaIncome)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Saldo neto</span>
+                <span className={`font-bold ${actaCashBalance.availableBalance >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-rose-600 dark:text-rose-400"}`}>
+                  {formatCurrency(actaCashBalance.availableBalance)}
+                </span>
               </div>
             </div>
           </div>
