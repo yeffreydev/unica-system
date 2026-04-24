@@ -8,12 +8,13 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Check, CreditCard, Info, Search, Banknote, Loader2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { sileo } from "sileo";
 import { IUser } from "@/types/IUser";
 import { IAssemblyScheduleRun, ILoanPayment, IPaymentData } from "../types";
 import { apiGetAssemblyRun, apiGetPaymentsData, apiRecordPayment } from "../api";
 import { useAssembly } from "../AssemblyContext";
+import { AppContext } from "@/context/AppContext";
 
 import { ILoanInstallment } from "@/types/ILoan";
 import apiClient from "@/config/apiClient";
@@ -21,6 +22,9 @@ import { Checkbox } from "@/components/ui/checkbox";
 
 export default function Payments() {
   const { assembly } = useAssembly();
+  const { bank } = useContext(AppContext);
+  const configuredRoundingMode = bank?.bank?.loanInterestRoundingMode ?? "NORMAL";
+  const configuredRoundingDigits = bank?.bank?.loanInterestRoundingDigits ?? 2;
 
   const [assemblyRun, setAssemblyRun] = useState<IAssemblyScheduleRun | null>(null);
   const [modalOpen, setModalOpen] = useState(false);
@@ -39,6 +43,19 @@ export default function Payments() {
   const [searchQuery, setSearchQuery] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [payingUserId, setPayingUserId] = useState<string | null>(null);
+
+  const roundConfiguredInterest = (value: number) => {
+    const factor = 10 ** configuredRoundingDigits;
+    if (configuredRoundingMode === "UP") return Math.ceil(value * factor - Number.EPSILON) / factor;
+    if (configuredRoundingMode === "DOWN") return Math.floor(value * factor + Number.EPSILON) / factor;
+    return Math.round(value * factor) / factor;
+  };
+
+  const getInstallmentInterest = (installment: ILoanInstallment) => {
+    const paidInterest = installment.paymentInterest;
+    if (paidInterest !== null && paidInterest !== undefined) return Number(paidInterest);
+    return roundConfiguredInterest(Number(installment.interest || 0));
+  };
 
   useEffect(() => {
     (async () => {
@@ -95,9 +112,10 @@ export default function Payments() {
             description: inst.paymentDescription || ''
           };
         } else {
+          const roundedInterest = getInstallmentInterest(inst);
           initialAmounts[inst.id] = {
             capital: '0',
-            interest: inst.interest.toString(),
+            interest: roundedInterest.toString(),
             description: ''
           };
         }
@@ -292,7 +310,7 @@ export default function Payments() {
                   const totalBalance = userAssemblyInstallments.reduce((sum, inst) => sum + (inst.loan?.balance || 0), 0);
                   const uniqueLoanIds = new Set(userAssemblyInstallments.map(inst => inst.loanId));
                   const activeLoansCount = uniqueLoanIds.size;
-                  const totalInterest = userAssemblyInstallments.reduce((sum, inst) => sum + (inst.interest || 0), 0);
+                  const totalInterest = userAssemblyInstallments.reduce((sum, inst) => sum + getInstallmentInterest(inst), 0);
                   const totalInterestPaid = userAssemblyInstallments.reduce((sum, inst) => sum + (inst.paymentInterest || 0), 0);
                   const interestFullyPaid = totalInterestPaid >= totalInterest && totalInterest > 0;
                   const needsAttention = totalInterest > 0 && !hasPaid;
@@ -631,13 +649,13 @@ export default function Payments() {
                     ) : (
                       userInstallmentsForDetail.map((installment, index) => {
                         const loan = installment.loan;
-                        const expectedCapital = installment.payment - installment.interest;
-                        const expectedInterest = installment.interest;
+                        const expectedCapital = installment.payment;
+                        const expectedInterest = getInstallmentInterest(installment);
 
                         const installmentPaidCapital = totalPaid > 0 ? expectedCapital : 0;
                         const installmentPaidInterest = totalPaid > 0 ? expectedInterest : 0;
                         const installmentPaid = installmentPaidCapital + installmentPaidInterest;
-                        const installmentTotal = installment.payment;
+                        const installmentTotal = expectedCapital + expectedInterest;
 
                         const paidPercentage = (installmentPaid / installmentTotal) * 100;
 
