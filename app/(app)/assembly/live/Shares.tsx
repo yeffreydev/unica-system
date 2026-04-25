@@ -104,7 +104,7 @@ export default function Shares() {
   return (
     <Card className="w-full overflow-hidden">
       {/* Header */}
-      <CardHeader className="pb-0 pt-5 px-5">
+      <CardHeader className="pb-0 pt-4 sm:pt-5 px-3 sm:px-5">
         <div className="flex items-center justify-between mb-4">
           <CardTitle className="text-base font-semibold">Compra de Acciones</CardTitle>
           <Badge variant="outline" className="text-xs font-medium gap-1">
@@ -137,7 +137,7 @@ export default function Shares() {
 
       <CardContent className="p-0">
         {!assemblyRun ? (
-          <div className="px-5 pb-5 space-y-1.5">
+          <div className="px-3 sm:px-5 pb-5 space-y-1.5">
             {Array.from({ length: 5 }).map((_, i) => (
               <div key={i} className="flex items-center gap-3 p-3 rounded-lg border">
                 <Skeleton className="h-9 w-9 rounded-full shrink-0" />
@@ -152,7 +152,7 @@ export default function Shares() {
         ) : (
           <>
             {/* Search */}
-            <div className="px-5 pt-1 pb-3">
+            <div className="px-3 sm:px-5 pt-1 pb-3">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -165,7 +165,7 @@ export default function Shares() {
             </div>
 
             {/* Partners List */}
-            <div className="px-5 pb-5 space-y-1.5 max-h-[500px] overflow-y-auto">
+            <div className="px-3 sm:px-5 pb-5 space-y-1.5 max-h-[500px] overflow-y-auto">
               {[...partnerShares]
                 .filter((user) => {
                   if (!searchQuery.trim()) return true;
@@ -183,17 +183,17 @@ export default function Shares() {
                   return (
                     <div
                       key={user.id}
-                      className="group flex items-center gap-3 p-3 rounded-xl border bg-card hover:shadow-sm transition-all cursor-pointer"
+                      className="group flex flex-wrap items-center gap-2 sm:gap-3 p-2.5 sm:p-3 rounded-xl border bg-card hover:shadow-sm transition-all cursor-pointer"
                       onClick={() => handleAddShares(user)}
                     >
                       {/* Avatar */}
-                      <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/10 text-primary text-xs font-bold shrink-0">
+                      <div className="flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-primary/10 text-primary text-xs font-bold shrink-0">
                         {user.name?.[0]}
                         {user.lastname?.[0]}
                       </div>
 
                       {/* Name & shares */}
-                      <div className="flex-1 min-w-0">
+                      <div className="flex-1 min-w-[140px]">
                         <div className="font-medium text-sm truncate">
                           {user.lastname}, {user.name}
                         </div>

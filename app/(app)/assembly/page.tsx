@@ -119,30 +119,30 @@ export default function Assembly() {
   };
 
     return (
-      <div className="px-2 md:px-4 lg:px-6 xl:px-8 2xl:px-10 py-8 flex flex-col gap-6">
+      <div className="flex flex-col gap-5 sm:gap-6">
         {/* Page Header */}
-        <div className="flex items-center justify-between">
-          <div className="space-y-1">
-            <h1 className="text-2xl font-bold tracking-tight">Asamblea General</h1>
-            <p className="text-muted-foreground">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+          <div className="space-y-1 min-w-0">
+            <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Asamblea General</h1>
+            <p className="text-sm sm:text-base text-muted-foreground">
               Gestiona y administra las sesiones de asamblea de la cooperativa
             </p>
-            <div className="flex items-center gap-3 pt-2">
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 pt-2">
+              <div className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground">
                 <span>Paso guardado:</span>
                 <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-primary/10 text-primary text-xs font-semibold">
                   {assemblyState.currentStep}
                 </span>
-                <span className="font-medium">{currentStepMeta?.title}</span>
+                <span className="font-medium truncate max-w-[140px] sm:max-w-none">{currentStepMeta?.title}</span>
               </div>
               {assemblyState.isActive && (
-                <div className="text-sm text-muted-foreground">
-                  • Tiempo transcurrido: {elapsed}
+                <div className="text-xs sm:text-sm text-muted-foreground">
+                  • {elapsed}
                 </div>
               )}
             </div>
           </div>
-          <Button asChild variant="outline" className="gap-2">
+          <Button asChild variant="outline" className="gap-2 w-full sm:w-auto shrink-0">
             <Link href="/settings/assembly">
               <Settings className="w-4 h-4" />
               Configuración

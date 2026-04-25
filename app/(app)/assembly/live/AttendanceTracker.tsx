@@ -292,10 +292,10 @@ export function AttendanceTracker() {
   return (
     <Card className="w-full overflow-hidden">
       {/* Header */}
-      <CardHeader className="pb-0 pt-5 px-5">
-        <div className="flex items-center justify-between mb-4">
-          <CardTitle className="text-base font-semibold">Control de Asistencia</CardTitle>
-          <Button onClick={() => setOpenAddModal(true)} size="sm" variant="outline" className="gap-1.5 h-8 text-xs">
+      <CardHeader className="pb-0 pt-4 sm:pt-5 px-3 sm:px-5">
+        <div className="flex items-center justify-between mb-4 gap-2">
+          <CardTitle className="text-sm sm:text-base font-semibold">Control de Asistencia</CardTitle>
+          <Button onClick={() => setOpenAddModal(true)} size="sm" variant="outline" className="gap-1.5 h-8 text-xs shrink-0">
             <UserPlus className="w-3.5 h-3.5" />
             Agregar
           </Button>
@@ -400,7 +400,7 @@ export function AttendanceTracker() {
         ) : (
           <>
             {/* Search */}
-            <div className="px-5 pt-1 pb-3">
+            <div className="px-3 sm:px-5 pt-1 pb-3">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -413,7 +413,7 @@ export function AttendanceTracker() {
             </div>
 
             {/* Attendees List */}
-            <div className="px-5 pb-5 space-y-1.5 max-h-[500px] overflow-y-auto">
+            <div className="px-3 sm:px-5 pb-5 space-y-1.5 max-h-[500px] overflow-y-auto">
               {assemblyRun?.participants
                 ?.filter((attendee) => {
                   if (!searchQuery.trim()) return true;
@@ -434,15 +434,15 @@ export function AttendanceTracker() {
                   const consecutive = attendee.consecutiveAbsencesCount ?? 0;
                   const consecutiveAtRisk = consecutive >= fines.consecutiveAbsencesLimit - 1 && consecutive > 0;
                   return (
-                    <div key={attendee.id} className={`group flex items-center gap-3 p-3 rounded-xl border hover:shadow-sm transition-all ${rowBg}`}>
+                    <div key={attendee.id} className={`group flex flex-wrap items-center gap-2 sm:gap-3 p-2.5 sm:p-3 rounded-xl border hover:shadow-sm transition-all ${rowBg}`}>
                       {/* Avatar */}
-                      <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/10 text-primary text-xs font-bold shrink-0">
+                      <div className="flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-primary/10 text-primary text-xs font-bold shrink-0">
                         {attendee.user?.name?.[0]}
                         {attendee.user?.lastname?.[0]}
                       </div>
 
                       {/* Name */}
-                      <div className="flex-1 min-w-0">
+                      <div className="flex-1 min-w-[140px]">
                         <div className="font-medium text-sm truncate">
                           {attendee.user?.name} {attendee.user?.lastname}
                         </div>
@@ -530,7 +530,7 @@ export function AttendanceTracker() {
                       )}
 
                       {/* Status Buttons */}
-                      <div className="flex gap-1 shrink-0">
+                      <div className="flex gap-1 shrink-0 ml-auto sm:ml-0">
                         <StatusButton
                           active={attendee.status === ParticipantStatusTypes.ATTENDED}
                           disabled={updatingStatusId === attendee.id}

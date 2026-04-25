@@ -226,7 +226,7 @@ export default function Savings() {
   return (
     <Card className="w-full overflow-hidden">
       {/* Header */}
-      <CardHeader className="pb-0 pt-5 px-5">
+      <CardHeader className="pb-0 pt-4 sm:pt-5 px-3 sm:px-5">
         <div className="flex items-center justify-between mb-4">
           <CardTitle className="text-base font-semibold">Gestión de Ahorristas</CardTitle>
           <Badge variant="outline" className="text-xs font-medium gap-1">
@@ -265,7 +265,7 @@ export default function Savings() {
 
       <CardContent className="p-0">
         {!assemblyRun ? (
-          <div className="px-5 pb-5 space-y-1.5">
+          <div className="px-3 sm:px-5 pb-5 space-y-1.5">
             {Array.from({ length: 5 }).map((_, i) => (
               <div key={i} className="flex items-center gap-3 p-3 rounded-lg border">
                 <Skeleton className="h-9 w-9 rounded-full shrink-0" />
@@ -280,7 +280,7 @@ export default function Savings() {
         ) : (
           <>
             {/* Search */}
-            <div className="px-5 pt-1 pb-3">
+            <div className="px-3 sm:px-5 pt-1 pb-3">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -293,7 +293,7 @@ export default function Savings() {
             </div>
 
             {/* Partners List */}
-            <div className="px-5 pb-5 space-y-1.5 max-h-[500px] overflow-y-auto">
+            <div className="px-3 sm:px-5 pb-5 space-y-1.5 max-h-[500px] overflow-y-auto">
               {visiblePartners
                 .map((partner) => {
                   const depositRun = partner.deposits.reduce((sum, d) => sum + d.amount, 0);
@@ -304,7 +304,7 @@ export default function Savings() {
                   return (
                     <div
                       key={partner.id}
-                      className="group flex items-center gap-3 p-3 rounded-xl border bg-gradient-to-r from-card to-blue-50/30 dark:to-blue-950/20 hover:shadow-md transition-all"
+                      className="group flex flex-wrap items-center gap-2 sm:gap-3 p-2.5 sm:p-3 rounded-xl border bg-gradient-to-r from-card to-blue-50/30 dark:to-blue-950/20 hover:shadow-md transition-all"
                     >
                       {/* Avatar */}
                       <div className="flex items-center justify-center w-11 h-11 rounded-full text-xs font-bold shrink-0 bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-400 ring-2 ring-blue-200/50 dark:ring-blue-900/50">

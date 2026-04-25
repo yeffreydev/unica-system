@@ -138,34 +138,48 @@ export default function Loans() {
     fetchLastMonthBalance();
   },[assemblyRun])
 
-  const handleCreateCreditApplication = async () => {
-    if (isSubmitting) return; // Prevent duplicate submissions
-
+  const handleCreateAndApproveLoan = async () => {
+    if (isSubmitting) return;
     if (!assemblyRun) {
-      throw new Error("No active assembly run");
+      console.error("No active assembly run");
+      return;
     }
-    if (!userSelected || form.amount <= 0) return false;
+    if (!userSelected || form.amount <= 0 || !loanTypeSelected || form.installments <= 0) return;
 
     setIsSubmitting(true);
     try {
-      const data = await apiCreateCreditApplication({
+      const created = await apiCreateCreditApplication({
         userId: userSelected.id,
         amount: form.amount,
-        purpose: form.purpose || 'Crédito solicitado en asamblea',
+        purpose: form.purpose || 'Crédito otorgado en asamblea',
         scheduleRunId: assemblyRun.id || ''
       });
-      if (data) {
-       setCreditApplications((prev) => [data, ...prev]);
-       setIsModalOpen(false);
-       setUserSelected(null);
-       setForm({ amount: 0, installments: 6, purpose: '' });
-      }
+      if (!created) return;
+
+      await apiApproveCreditApplication(created.id, {
+        userId: userSelected.id,
+        amount: form.amount,
+        interestRate: configuredLoanRate,
+        initalInstallments: form.installments,
+        loanTypeId: loanTypeSelected.id || '',
+        date: assemblyRun?.startAt ?? new Date(),
+        paymentFrecuency: "monthly",
+      });
+
+      const refreshed = await apiGetCreditApplicationsWithLoans(assemblyRun.id);
+      setCreditApplications(refreshed);
+      await fetchLastMonthBalance();
+
+      setIsModalOpen(false);
+      setUserSelected(null);
+      setLoanTypeSelected(null);
+      setForm({ amount: 0, installments: 6, purpose: '' });
     } catch (error) {
-      console.error("Error creating credit application:", error);
+      console.error("Error creating+approving loan:", error);
     } finally {
       setIsSubmitting(false);
     }
-   }
+  };
 
   const handleDeleteCreditApplication = async () => {
     if (!applicationToDelete || isDeleting) return;
@@ -387,7 +401,7 @@ export default function Loans() {
    <div className="flex flex-col gap-4">
     {/* Arqueo de Caja */}
     <Card className="w-full overflow-hidden">
-      <CardHeader className="pb-0 pt-5 px-5">
+      <CardHeader className="pb-0 pt-4 sm:pt-5 px-3 sm:px-5">
         <div className="flex items-center justify-between mb-4">
           <CardTitle className="text-base font-semibold">Arqueo de Caja</CardTitle>
           <Badge variant="outline" className="text-xs font-medium">Resumen del mes</Badge>
@@ -417,8 +431,8 @@ export default function Loans() {
       </CardHeader>
 
       <CardContent className="p-0">
-        <div className="px-5 pb-5">
-          <div className="rounded-lg border bg-muted/20 overflow-hidden">
+        <div className="px-3 sm:px-5 pb-5 overflow-x-auto">
+          <div className="rounded-lg border bg-muted/20 overflow-hidden min-w-[480px]">
             <Table className="w-full">
               <TableBody>
                 <TableRow className="hover:bg-transparent">
@@ -448,12 +462,12 @@ export default function Loans() {
 
     {/* Credit Applications */}
     <Card className="w-full overflow-hidden">
-      <CardHeader className="pb-0 pt-5 px-5">
+      <CardHeader className="pb-0 pt-4 sm:pt-5 px-3 sm:px-5">
         <div className="flex items-center justify-between mb-4">
-          <CardTitle className="text-base font-semibold">Solicitudes de Crédito</CardTitle>
-          <Button onClick={() => setIsModalOpen(true)} size="sm" className="gap-1.5 h-8 text-xs">
+          <CardTitle className="text-base font-semibold">Préstamos</CardTitle>
+          <Button onClick={() => setIsModalOpen(true)} size="sm" className="gap-1.5 h-8 text-xs bg-emerald-600 hover:bg-emerald-700">
             <ClipboardCheck className="w-3.5 h-3.5" />
-            Agregar
+            Nuevo Préstamo
           </Button>
         </div>
 
@@ -479,7 +493,7 @@ export default function Loans() {
 
       <CardContent className="p-0">
         {/* Applications List */}
-        <div className="px-5 pb-5 space-y-1.5 max-h-[500px] overflow-y-auto">
+        <div className="px-3 sm:px-5 pb-5 space-y-1.5 max-h-[500px] overflow-y-auto">
           {creditApplications.map((it) => {
             const statusConfig: Record<string, { color: string; label: string }> = {
               'approved': { color: 'bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800', label: 'Aprobado' },
@@ -489,7 +503,7 @@ export default function Loans() {
             const sc = statusConfig[it.status] || statusConfig['pending'];
 
             return (
-              <div key={it.id} className="group flex items-center gap-3 p-3 rounded-xl border bg-card hover:shadow-sm transition-all">
+              <div key={it.id} className="group flex flex-wrap items-center gap-2 sm:gap-3 p-2.5 sm:p-3 rounded-xl border bg-card hover:shadow-sm transition-all">
                 {/* Avatar */}
                 <div className={`flex items-center justify-center w-10 h-10 rounded-full text-xs font-bold shrink-0 ${
                   it.status === 'approved'
@@ -503,7 +517,7 @@ export default function Loans() {
                 </div>
 
                 {/* Info */}
-                <div className="flex-1 min-w-0">
+                <div className="flex-1 min-w-[140px]">
                   <div className="font-medium text-sm truncate">
                     {it.user.lastname}, {it.user.name}
                   </div>
@@ -540,19 +554,21 @@ export default function Loans() {
 
                 {/* Actions */}
                 <div className="flex items-center gap-1 shrink-0">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      setSelectedLoan({ id: it.id, dni: it.user.dni ?? "", name: it.user.name, amount: it.amount, months: it.loan?.initalInstallments || 6, status: it.status as "Pendiente" | "Aprobado" | "Rechazado" });
-                      setApproveConfirmOpen(true);
-                      setDropdownOpen(null);
-                    }}
-                    className="h-7 px-2 text-xs bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-950/30 dark:border-emerald-800 dark:text-emerald-400"
-                  >
-                    <CheckCircle className="w-3.5 h-3.5 mr-1" />
-                    Aprobar
-                  </Button>
+                  {it.status === 'pending' && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setSelectedLoan({ id: it.id, dni: it.user.dni ?? "", name: it.user.name, amount: it.amount, months: it.loan?.initalInstallments || 6, status: it.status as "Pendiente" | "Aprobado" | "Rechazado" });
+                        setApproveConfirmOpen(true);
+                        setDropdownOpen(null);
+                      }}
+                      className="h-7 px-2 text-xs bg-emerald-50 border-emerald-200 text-emerald-700 hover:bg-emerald-100 dark:bg-emerald-950/30 dark:border-emerald-800 dark:text-emerald-400"
+                    >
+                      <CheckCircle className="w-3.5 h-3.5 mr-1" />
+                      Aprobar
+                    </Button>
+                  )}
 
                   <DropdownMenu
                     open={dropdownOpen === it.id}
@@ -616,53 +632,249 @@ export default function Loans() {
         </div>
       </CardContent>
     </Card>
-    <Dialog open={isModalOpen} onOpenChange={(open) => { setIsModalOpen(open); if (!open) { setUserSelected(null); setForm({ amount: 0, installments: 6,purpose:''}); } }} modal={false}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Agregar Solicitud de Préstamo</DialogTitle>
+    <Dialog
+      open={isModalOpen}
+      onOpenChange={(open) => {
+        setIsModalOpen(open);
+        if (!open) {
+          setUserSelected(null);
+          setLoanTypeSelected(null);
+          setForm({ amount: 0, installments: 6, purpose: '' });
+        }
+      }}
+      modal={false}
+    >
+      <DialogContent className="max-w-3xl p-0 overflow-hidden">
+        <DialogHeader className="px-6 pt-6 pb-4 border-b bg-gradient-to-br from-emerald-50 to-blue-50 dark:from-emerald-950/30 dark:to-blue-950/30">
+          <DialogTitle className="flex items-center gap-2 text-lg">
+            <CheckCircle className="w-5 h-5 text-emerald-600" />
+            Nuevo Préstamo
+          </DialogTitle>
+          <p className="text-xs text-muted-foreground mt-1">
+            Registra y aprueba el préstamo en un solo paso.
+          </p>
         </DialogHeader>
-        <div className="space-y-4">
-           <div className="space-y-2">
-             <Label htmlFor="user-select">Seleccionar Usuario</Label>
-             <ComboBoxUsers users={users} controller={{ userSelected, setUserSelected }} />
-           </div>
 
-           <div className="space-y-2">
-             <Label htmlFor="loan-amount">Monto del Préstamo</Label>
-             <Input
-               id="loan-amount"
-               type="number"
-               placeholder="Ingrese el monto"
-               value={form.amount || ''}
-               onChange={(e) => {
-                 const val = e.target.value;
-                 setForm((p) => ({ ...p, amount: val === '' ? 0 : Number(val) || 0 }));
-               }}
-             />
-           </div>
+        <div className="grid grid-cols-1 md:grid-cols-5 max-h-[70vh] overflow-y-auto">
+          {/* Form column */}
+          <div className="md:col-span-3 p-6 space-y-5 border-r">
+            {/* Borrower */}
+            <section className="space-y-2">
+              <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                1. Socio
+              </Label>
+              <ComboBoxUsers users={users} controller={{ userSelected, setUserSelected }} />
+              {userSelected && (
+                <div className="flex items-center gap-3 p-3 rounded-lg border bg-muted/30">
+                  <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/10 text-primary text-xs font-bold shrink-0">
+                    {userSelected.name?.[0]}{userSelected.lastname?.[0]}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium truncate">
+                      {userSelected.lastname}, {userSelected.name}
+                    </div>
+                    <div className="text-[11px] text-muted-foreground flex gap-3">
+                      <span>DNI: {userSelected.dni || '-'}</span>
+                      <span>
+                        Préstamos activos: {creditApplications.filter(a => a.user.dni === userSelected.dni && a.status === 'approved').length}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </section>
 
-           <div className="space-y-2">
-             <Label htmlFor="loan-purpose">Propósito del Préstamo</Label>
-             <Input
-               id="loan-purpose"
-               type="text"
-               placeholder="Describa el propósito del préstamo"
-               value={form.purpose || ''}
-               onChange={(e) => {
-                 const val = e.target.value;
-                 setForm((p) => ({ ...p, purpose: val }));
-               }}
-             />
-           </div>
+            {/* Amount + purpose */}
+            <section className="space-y-2">
+              <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                2. Monto y propósito
+              </Label>
+              <div className="space-y-2">
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">S/</span>
+                  <Input
+                    id="loan-amount"
+                    type="number"
+                    inputMode="decimal"
+                    placeholder="0.00"
+                    className="pl-10 h-11 text-base font-semibold tabular-nums"
+                    value={form.amount || ''}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setForm((p) => ({ ...p, amount: val === '' ? 0 : Number(val) || 0 }));
+                    }}
+                  />
+                </div>
+                <div className="flex gap-1.5 flex-wrap">
+                  {[100, 500, 1000, 2000, 5000].map((v) => (
+                    <Button
+                      key={v}
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-7 text-xs"
+                      onClick={() => setForm((p) => ({ ...p, amount: v }))}
+                    >
+                      S/ {v.toLocaleString()}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+              <Input
+                id="loan-purpose"
+                type="text"
+                placeholder="Propósito (opcional)"
+                value={form.purpose || ''}
+                onChange={(e) => setForm((p) => ({ ...p, purpose: e.target.value }))}
+              />
+            </section>
 
-           <Button
-             onClick={handleCreateCreditApplication}
-             className="w-full"
-             disabled={isSubmitting}
-           >
-             {isSubmitting ? "Guardando..." : "Guardar Solicitud"}
-           </Button>
-         </div>
+            {/* Type + installments */}
+            <section className="space-y-2">
+              <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                3. Condiciones
+              </Label>
+              <ComboboxLoanTypes
+                loanTypes={loanTypes}
+                controller={{ loanTypeSelected, setLoanTypeSelected }}
+              />
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="installments" className="text-xs text-muted-foreground">
+                    Cuotas
+                  </Label>
+                  <span className="text-sm font-semibold tabular-nums">{form.installments || 0}</span>
+                </div>
+                <div className="flex gap-1.5">
+                  {[3, 6, 9, 12, 18, 24].map((m) => (
+                    <Button
+                      key={m}
+                      type="button"
+                      variant={form.installments === m ? "default" : "outline"}
+                      size="sm"
+                      className="h-7 text-xs flex-1"
+                      onClick={() => setForm((p) => ({ ...p, installments: m }))}
+                    >
+                      {m}
+                    </Button>
+                  ))}
+                </div>
+                <Input
+                  id="installments"
+                  type="number"
+                  min={1}
+                  className="h-9"
+                  value={form.installments || ''}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setForm((p) => ({ ...p, installments: val === '' ? 0 : Number(val) || 0 }));
+                  }}
+                />
+              </div>
+              <div className="text-[11px] text-muted-foreground p-2 rounded bg-muted/40 border">
+                Tasa: <strong className="text-foreground">{(configuredLoanRate * 100).toFixed(2)}% mensual</strong>
+                {" · "}Redondeo {roundingModeLabels[configuredRoundingMode]} a {configuredRoundingDigits} decimales
+              </div>
+            </section>
+          </div>
+
+          {/* Summary column */}
+          <div className="md:col-span-2 p-6 bg-muted/30 space-y-4">
+            <div>
+              <div className="text-[10px] uppercase font-semibold text-muted-foreground tracking-wide">Capital</div>
+              <div className="text-2xl font-bold tabular-nums">{formatCurrency(form.amount)}</div>
+            </div>
+
+            {form.amount > 0 && form.installments > 0 && loanTypeSelected ? (
+              <>
+                {(() => {
+                  const previews = Array.from({ length: form.installments }, (_, i) => getPreviewInstallment(i));
+                  const totalInterest = previews.reduce((s, p) => s + p.interest, 0);
+                  const totalPay = form.amount + totalInterest;
+                  return (
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="p-2 rounded border bg-card">
+                        <div className="text-[10px] uppercase text-muted-foreground">Interés total</div>
+                        <div className="text-sm font-semibold tabular-nums text-amber-600 dark:text-amber-400">
+                          {formatCurrency(totalInterest)}
+                        </div>
+                      </div>
+                      <div className="p-2 rounded border bg-card">
+                        <div className="text-[10px] uppercase text-muted-foreground">A pagar</div>
+                        <div className="text-sm font-semibold tabular-nums text-emerald-600 dark:text-emerald-400">
+                          {formatCurrency(totalPay)}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })()}
+
+                <div>
+                  <div className="text-[10px] uppercase font-semibold text-muted-foreground tracking-wide mb-1">
+                    Cronograma ({form.installments} cuotas)
+                  </div>
+                  <div className="rounded-md border bg-card max-h-[220px] overflow-y-auto">
+                    <Table>
+                      <TableHeader className="sticky top-0 bg-card">
+                        <TableRow>
+                          <TableHead className="h-8 text-[10px]">#</TableHead>
+                          <TableHead className="h-8 text-[10px]">Capital</TableHead>
+                          <TableHead className="h-8 text-[10px]">Interés</TableHead>
+                          <TableHead className="h-8 text-[10px] text-right">Total</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {Array.from({ length: form.installments }, (_, i) => {
+                          const { capital, interest } = getPreviewInstallment(i);
+                          return (
+                            <TableRow key={i}>
+                              <TableCell className="py-1.5 text-xs">{i + 1}</TableCell>
+                              <TableCell className="py-1.5 text-xs tabular-nums">{capital.toFixed(2)}</TableCell>
+                              <TableCell className="py-1.5 text-xs tabular-nums">{interest.toFixed(configuredRoundingDigits)}</TableCell>
+                              <TableCell className="py-1.5 text-xs tabular-nums text-right font-medium">
+                                {(capital + interest).toFixed(2)}
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="p-4 rounded-md border border-dashed text-xs text-muted-foreground text-center">
+                Completa monto, tipo y cuotas para ver el cronograma.
+              </div>
+            )}
+          </div>
+        </div>
+
+        <DialogFooter className="px-6 py-4 border-t bg-card">
+          <div className="flex items-center justify-between w-full gap-3">
+            <p className="text-[11px] text-muted-foreground hidden sm:block">
+              Al confirmar se crea la solicitud y se aprueba como préstamo activo.
+            </p>
+            <div className="flex gap-2 ml-auto">
+              <Button variant="outline" onClick={() => setIsModalOpen(false)} disabled={isSubmitting}>
+                Cancelar
+              </Button>
+              <Button
+                onClick={handleCreateAndApproveLoan}
+                disabled={
+                  isSubmitting ||
+                  !userSelected ||
+                  form.amount <= 0 ||
+                  !loanTypeSelected ||
+                  form.installments <= 0
+                }
+                className="bg-emerald-600 hover:bg-emerald-700 min-w-[180px]"
+              >
+                {isSubmitting ? "Procesando..." : "Crear y aprobar préstamo"}
+              </Button>
+            </div>
+          </div>
+        </DialogFooter>
       </DialogContent>
     </Dialog>
     <Dialog open={approvalModalOpen} onOpenChange={(open) => { setApprovalModalOpen(open); if (!open) { setApprovalStep(0); setSelectedLoan(null); setLoanTypeSelected(null); setForm({ amount: 0, installments: 6, purpose: '' }); setSendMessage(false); } }} modal={false}>

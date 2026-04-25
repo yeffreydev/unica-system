@@ -271,7 +271,7 @@ export default function Operations() {
     <>
       <Card className="w-full overflow-hidden">
         {/* Header */}
-        <CardHeader className="pb-0 pt-5 px-5">
+        <CardHeader className="pb-0 pt-4 sm:pt-5 px-3 sm:px-5">
           <div className="flex items-center justify-between mb-4">
             <CardTitle className="text-base font-semibold">Operaciones del Día</CardTitle>
             <DropdownMenu>
@@ -357,7 +357,7 @@ export default function Operations() {
 
         <CardContent className="p-0">
           {!assemblyRun ? (
-            <div className="px-5 pb-5 space-y-1.5">
+            <div className="px-3 sm:px-5 pb-5 space-y-1.5">
               {Array.from({ length: 5 }).map((_, i) => (
                 <div key={i} className="flex items-center gap-3 p-3 rounded-lg border">
                   <Skeleton className="h-5 w-16 rounded-full shrink-0" />
@@ -372,7 +372,7 @@ export default function Operations() {
           ) : (
             <>
               {/* Filter Tabs */}
-              <div className="px-5 pt-1 pb-3 flex items-center justify-between">
+              <div className="px-3 sm:px-5 pt-1 pb-3 flex items-center justify-between">
                 <div className="flex items-center gap-1">
                   <Button
                     variant={filterCategory === 'all' ? 'secondary' : 'ghost'}
@@ -406,7 +406,7 @@ export default function Operations() {
               </div>
 
               {/* Operations List */}
-              <div className="px-5 pb-5 space-y-1.5 max-h-[500px] overflow-y-auto">
+              <div className="px-3 sm:px-5 pb-5 space-y-1.5 max-h-[500px] overflow-y-auto">
                 {filteredOperations.length === 0 ? (
                   <div className="py-8 text-center text-sm text-muted-foreground">
                     <Receipt className="w-8 h-8 mx-auto mb-2 text-muted-foreground/50" />
@@ -416,10 +416,10 @@ export default function Operations() {
                   filteredOperations.map((op) => (
                     <div
                       key={`${op.type}-${op.id}`}
-                      className="group flex items-center gap-3 p-3 rounded-xl border bg-card hover:shadow-sm transition-all"
+                      className="group flex flex-wrap items-center gap-2 sm:gap-3 p-2.5 sm:p-3 rounded-xl border bg-card hover:shadow-sm transition-all"
                     >
                       {/* Category Icon */}
-                      <div className={`flex items-center justify-center w-10 h-10 rounded-full text-xs font-bold shrink-0 ${
+                      <div className={`flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-full text-xs font-bold shrink-0 ${
                         op.category === 'ingreso'
                           ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400'
                           : 'bg-rose-100 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400'
@@ -431,7 +431,7 @@ export default function Operations() {
                       </div>
 
                       {/* Info */}
-                      <div className="flex-1 min-w-0">
+                      <div className="flex-1 min-w-[140px]">
                         <div className="flex items-center gap-2 mb-0.5">
                           <span className="font-medium text-sm truncate">{op.description}</span>
                           {getTypeBadge(op.type)}

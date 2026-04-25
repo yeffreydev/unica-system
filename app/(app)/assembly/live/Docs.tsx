@@ -835,7 +835,7 @@ export default function Docs() {
   if (!assemblyRun || loading) {
     return (
       <Card className="w-full overflow-hidden">
-        <CardHeader className="pb-0 pt-5 px-5">
+        <CardHeader className="pb-0 pt-4 sm:pt-5 px-3 sm:px-5">
           <Skeleton className="h-6 w-48 mb-2" />
           <Skeleton className="h-4 w-72" />
         </CardHeader>
@@ -856,7 +856,7 @@ export default function Docs() {
     <div className="flex flex-col gap-4">
       {/* Header Card */}
       <Card className="w-full overflow-hidden">
-        <CardHeader className="pb-0 pt-5 px-5">
+        <CardHeader className="pb-0 pt-4 sm:pt-5 px-3 sm:px-5">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-2">
               <FileText className="w-5 h-5 text-primary" />
@@ -908,7 +908,7 @@ export default function Docs() {
           </div>
         </CardHeader>
 
-        <CardContent className="px-5 pb-5">
+        <CardContent className="px-3 sm:px-5 pb-5">
           <div className="space-y-6">
 
             {/* 1. Asistencia */}
@@ -1278,13 +1278,13 @@ export default function Docs() {
 
       {/* Financial Summary Card */}
       <Card className="w-full overflow-hidden">
-        <CardHeader className="pb-0 pt-5 px-5">
+        <CardHeader className="pb-0 pt-4 sm:pt-5 px-3 sm:px-5">
           <div className="flex items-center justify-between mb-4">
             <CardTitle className="text-base font-semibold">Resumen Financiero</CardTitle>
             <Badge variant="outline" className="text-xs font-medium">Esta reunión</Badge>
           </div>
         </CardHeader>
-        <CardContent className="px-5 pb-5">
+        <CardContent className="px-3 sm:px-5 pb-5">
           <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-7 gap-3">
             <div className="rounded-lg bg-muted/30 p-3 space-y-1">
               <div className="text-[10px] text-muted-foreground uppercase tracking-wide">Multas</div>
