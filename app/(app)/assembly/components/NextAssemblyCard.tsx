@@ -1,11 +1,11 @@
-import { CalendarDays, MapPin, CalendarClock, Loader2 } from "lucide-react";
+import { CalendarDays, MapPin, CalendarClock, Loader2, ArrowRight, ArrowLeft, Info } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { assemblySteps } from "../steps";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { apiRescheduleNextAssembly } from "../api";
 import { sileo } from "sileo";
 
@@ -33,13 +33,36 @@ export function NextAssemblyCard({
   const [date, setDate] = useState(upcomingISO ? upcomingISO.slice(0, 10) : "");
   const [time, setTime] = useState(upcomingISO ? upcomingISO.slice(11, 16) : "19:00");
 
+  // Calcular el desfase en días entre la fecha actual de la próxima asamblea
+  // y la fecha seleccionada en el diálogo. Permite mostrar al usuario cuántos
+  // días está adelantando o posponiendo la sesión.
+  const shiftInfo = useMemo(() => {
+    if (!upcomingISO || !date) return null;
+    const original = new Date(upcomingISO);
+    const target = new Date(`${date}T${time || "19:00"}:00`);
+    if (Number.isNaN(target.getTime())) return null;
+
+    const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+    const diffDays = Math.round((startOfDay(target) - startOfDay(original)) / 86400000);
+
+    return {
+      diffDays,
+      direction: diffDays === 0 ? "same" : diffDays > 0 ? "forward" : "backward",
+      originalLabel: original.toLocaleDateString("es-PE", { day: "2-digit", month: "long", year: "numeric" }),
+      targetLabel: target.toLocaleDateString("es-PE", { day: "2-digit", month: "long", year: "numeric" }),
+    } as const;
+  }, [upcomingISO, date, time]);
+
   const handleSubmit = async () => {
     if (!date) return;
     setSubmitting(true);
     try {
       const dt = new Date(`${date}T${time || "19:00"}:00`);
       await apiRescheduleNextAssembly(dt);
-      sileo.success({ title: "Asamblea reprogramada" });
+      const msg = shiftInfo && shiftInfo.diffDays !== 0
+        ? `Asamblea ${shiftInfo.direction === "forward" ? "pospuesta" : "adelantada"} ${Math.abs(shiftInfo.diffDays)} día${Math.abs(shiftInfo.diffDays) === 1 ? "" : "s"}`
+        : "Asamblea reprogramada";
+      sileo.success({ title: msg });
       setOpen(false);
       onRescheduled?.();
     } catch (err) {
@@ -124,6 +147,44 @@ export function NextAssemblyCard({
               <Input type="time" value={time} onChange={(e) => setTime(e.target.value)} />
             </div>
           </div>
+
+          {shiftInfo && (
+            <div
+              className={
+                "flex items-start gap-2 rounded-md border p-3 text-sm " +
+                (shiftInfo.direction === "forward"
+                  ? "bg-amber-50 border-amber-200 text-amber-800"
+                  : shiftInfo.direction === "backward"
+                  ? "bg-sky-50 border-sky-200 text-sky-800"
+                  : "bg-muted/40 border-muted text-muted-foreground")
+              }
+            >
+              {shiftInfo.direction === "forward" ? (
+                <ArrowRight className="w-4 h-4 mt-0.5" />
+              ) : shiftInfo.direction === "backward" ? (
+                <ArrowLeft className="w-4 h-4 mt-0.5" />
+              ) : (
+                <Info className="w-4 h-4 mt-0.5" />
+              )}
+              <div className="flex-1">
+                {shiftInfo.diffDays === 0 ? (
+                  <div className="font-medium">Sin cambio en días (mismo día).</div>
+                ) : (
+                  <div className="font-medium">
+                    {shiftInfo.direction === "forward" ? "Posponiendo" : "Adelantando"}{" "}
+                    {Math.abs(shiftInfo.diffDays)} día{Math.abs(shiftInfo.diffDays) === 1 ? "" : "s"}
+                  </div>
+                )}
+                <div className="text-xs mt-0.5">
+                  {shiftInfo.originalLabel} → {shiftInfo.targetLabel}
+                </div>
+                <div className="text-[11px] mt-1 opacity-80">
+                  Solo afecta la próxima asamblea. Las siguientes seguirán la configuración asignada.
+                </div>
+              </div>
+            </div>
+          )}
+
           <DialogFooter>
             <Button variant="outline" onClick={() => setOpen(false)} disabled={submitting}>Cancelar</Button>
             <Button onClick={handleSubmit} disabled={submitting || !date}>
