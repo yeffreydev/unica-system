@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { ChevronDown, LayoutDashboard, Users, TrendingUp, Banknote, BarChart3, Receipt, PiggyBank, Plus, TrendingDown, ArrowDown, HandCoins, Building, Share2, Shield, Minus, FileBarChart, Settings } from "lucide-react";
+import { ChevronDown, LayoutDashboard, Users, TrendingUp, Banknote, BarChart3, Receipt, PiggyBank, Plus, TrendingDown, ArrowDown, HandCoins, Building, Share2, Shield, Minus, FileBarChart, Settings, ClipboardCheck, Wallet, FileSpreadsheet } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const mainItems = [
@@ -30,11 +30,14 @@ const expensesItems =[
 ]
 
 const reportsItems = [
-  // { title: "Prestamos Acumulados", href: "/reports/acc-loans", icon: Calculator },
-  { title: "Reporte de Utilidades", href: "/reports/dividends", icon: BarChart3 },
-  { title: "reporte de ingresos", href: "/reports/incomes", icon: TrendingUp },
-  { title: "reporte de egresos", href: "/reports/expenses", icon: TrendingDown },
-  // { title: "Arqueos de Caja", href: "/reports/cash-count", icon: Wallet },
+  { title: "Asistencia", href: "/reports/attendance", icon: ClipboardCheck },
+  { title: "Ahorros", href: "/reports/savings", icon: PiggyBank },
+  { title: "Prestamos", href: "/reports/loans", icon: HandCoins },
+  { title: "Acciones", href: "/reports/stocks", icon: BarChart3 },
+  { title: "Otros Movimientos", href: "/reports/other-movements", icon: FileSpreadsheet },
+  { title: "Utilidades", href: "/reports/dividends", icon: Wallet },
+  { title: "Ingresos", href: "/reports/incomes", icon: TrendingUp },
+  { title: "Egresos", href: "/reports/expenses", icon: TrendingDown },
 ]
 
 const otherItems = [
