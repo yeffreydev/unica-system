@@ -38,6 +38,7 @@ import {
 } from "@/components/ui/table";
 import { LoansContext } from "./LoansProvider";
 import { ILoan } from "@/types/ILoan";
+import { formatCurrency } from "@/lib/utils";
 import { InstallmentInterface } from "./utils/installments";
 import apiClient from "@/config/apiClient";
 import { LoansInstallments } from "./LoansInstallments";
@@ -170,12 +171,12 @@ export function LoansTable() {
     {
       accessorKey: "amount",
       header: "Monto",
-      cell: ({ row }) => <div>S/. {row.original.amount}</div>,
+      cell: ({ row }) => <div>{formatCurrency(row.original.amount || 0)}</div>,
     },
     {
       accessorKey: "balance",
       header: "Balance",
-      cell: ({ row }) => <div>S/. {row.original.balance || 0}</div>,
+      cell: ({ row }) => <div>{formatCurrency(row.original.balance || 0)}</div>,
     },
     {
       accessorKey: "status",

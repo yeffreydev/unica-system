@@ -15,3 +15,8 @@ export const apiDeleteLoanPayment = async (id: string) => {
     const response = await apiClient.delete(`/incomes/loan-payments/${id}`);
     return response.data;
 }
+
+export const apiUpdateLoanPayment = async (id: string, data: ILoanPayment) => {
+    const response = await apiClient.patch<ILoanPayment>(`/incomes/loan-payments/${id}`, data);
+    return response.data;
+}

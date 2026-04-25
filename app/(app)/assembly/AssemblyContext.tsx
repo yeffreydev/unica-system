@@ -105,15 +105,18 @@ export function AssemblyProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const startAssembly = async() => {
-   const res = await apiStartAssemblySchedule();
-    if (res.statusText === "OK") {
-      // Reset al primer paso de la asamblea recién iniciada
-      setAssemblyState({ ...initialState, currentStep: 1, stepStartTime: Date.now() });
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('assembly-current-step', JSON.stringify({ currentStep: 1 }));
+    try {
+      const res = await apiStartAssemblySchedule();
+      if (res.status >= 200 && res.status < 300) {
+        setAssemblyState({ ...initialState, currentStep: 1, stepStartTime: Date.now() });
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('assembly-current-step', JSON.stringify({ currentStep: 1 }));
+        }
+        await refetchAssembly();
+        router.push("/assembly/live");
       }
-      await refetchAssembly();
-      router.push("/assembly/live");
+    } catch (error) {
+      console.error('Error starting assembly:', error);
     }
   };
 

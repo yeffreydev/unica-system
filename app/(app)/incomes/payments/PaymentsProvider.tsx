@@ -14,6 +14,7 @@ interface PaymentsContextType {
   setPayments?: (payments: ILoanPayment[]) => void;
   removePayment?: (id: string) => void;
   addPayment?: (payment: ILoanPayment) => void;
+  updatePayment?: (payment: ILoanPayment) => void;
 }
 
 const initialState: PaymentsContextType = {
@@ -21,6 +22,7 @@ const initialState: PaymentsContextType = {
   setPayments: () => {},
   addPayment: () => {},
   removePayment: () => {},
+  updatePayment: () => {},
 };
 
 export const PaymentsContext = createContext<PaymentsContextType>(initialState);
@@ -42,6 +44,9 @@ export const PaymentsProvider: React.FC<PaymentsProviderProps> = ({
   };
   const removePayment = (id: string) => {
     setPayments(payments.filter((payment) => payment.id !== id));
+  }
+  const updatePayment = (payment: ILoanPayment) => {
+    setPayments(payments.map((p) => (p.id === payment.id ? payment : p)));
   }
   const fetchPayments = async () => {
     try {
@@ -65,6 +70,7 @@ export const PaymentsProvider: React.FC<PaymentsProviderProps> = ({
         payments,
         addPayment,
         removePayment,
+        updatePayment,
       }}
     >
       {children}

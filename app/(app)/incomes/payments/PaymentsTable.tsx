@@ -12,12 +12,13 @@ import {
   useReactTable,
   TableMeta,
 } from "@tanstack/react-table";
-import { ArrowUpDown, MoreHorizontal, Trash } from "lucide-react";
+import { ArrowUpDown, MoreHorizontal, Trash, Edit } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
@@ -29,6 +30,14 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatCurrency } from "@/lib/utils";
 import { PaymentsContext } from "./PaymentsProvider";
@@ -38,16 +47,53 @@ import { usePayment } from "./usePayment";
 import { ILoanPayment } from "./types";
 import { apiDeleteLoanPayment } from "./api";
 
+interface PaymentsTableMeta extends TableMeta<ILoanPayment> {
+  onDelete: (p: ILoanPayment) => void;
+  onEdit: (p: ILoanPayment) => void;
+}
+
 export function PaymentsTable() {
   const [sorting, setSorting] = useState<SortingState>([]);
-  const { payments ,removePayment} = useContext(PaymentsContext);
+  const { payments, removePayment } = useContext(PaymentsContext);
   const { openDialog, setOpenDialog } = usePayment();
   const [loading, setLoading] = useState(true);
+  const [editingPayment, setEditingPayment] = useState<ILoanPayment | null>(null);
+  const [paymentToDelete, setPaymentToDelete] = useState<ILoanPayment | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
-    const timer = setTimeout(() => setLoading(false), 1000); // Show skeleton for 1 second to handle loading delay
+    const timer = setTimeout(() => setLoading(false), 1000);
     return () => clearTimeout(timer);
   }, []);
+
+  const handleEditClick = (payment: ILoanPayment) => {
+    setEditingPayment(payment);
+    setOpenDialog(true);
+  };
+
+  const handleDeleteClick = (payment: ILoanPayment) => {
+    setPaymentToDelete(payment);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!paymentToDelete?.id) return;
+    setIsDeleting(true);
+    try {
+      await apiDeleteLoanPayment(paymentToDelete.id);
+      removePayment?.(paymentToDelete.id);
+      setPaymentToDelete(null);
+    } catch (e) {
+      console.error(e);
+      alert("No se pudo eliminar. Intenta nuevamente.");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const handleDialogChange = (open: boolean) => {
+    setOpenDialog(open);
+    if (!open) setEditingPayment(null);
+  };
 
   const columns: ColumnDef<ILoanPayment>[] = [
     {
@@ -63,19 +109,6 @@ export function PaymentsTable() {
         </div>
       ),
     },
-    // {
-    //   header: "Cuota",
-    //   cell: ({ row }) => (
-    //     <div>
-    //       {/* {(row.original.user?.name
-    //         ? row.original.user.name[0]?.toUpperCase() ?? ""
-    //         : "") +
-    //         (row.original?.installment_number ?? "") +
-    //         "-" +
-    //         row.original?.loan?.amount} */}
-    //     </div>
-    //   ),
-    // },
     {
       id: "userName",
       accessorFn: (row) => `${row.user?.name ?? ''} ${row.user?.lastname ?? ''}`,
@@ -98,14 +131,14 @@ export function PaymentsTable() {
       accessorKey: "payment",
       header: "Abono capital",
       cell: ({ row }) => {
-        return <div>S/. {formatCurrency(row.original.amount)}</div>;
+        return <div>{formatCurrency(row.original.amount)}</div>;
       },
     },
     {
       id: "interest",
       header: "Interés",
       cell: ({ row }) => {
-        return <div>S/. {formatCurrency(row.original.interest)}</div>;
+        return <div>{formatCurrency(row.original.interest)}</div>;
       },
     },
     {
@@ -114,7 +147,7 @@ export function PaymentsTable() {
       cell: ({ row }) => {
         return (
           <div>
-            S/. {formatCurrency(row.original.amount + row.original.interest)}
+            {formatCurrency(row.original.amount + row.original.interest)}
           </div>
         );
       },
@@ -122,24 +155,30 @@ export function PaymentsTable() {
     {
       id: "actions",
       header: "Opciones",
-      cell: ({ table, row }) => (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
-              <span className="sr-only">Abrir menú</span>
-              <MoreHorizontal />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            <DropdownMenuItem
-              onClick={() => (table.options.meta as TableMeta<ILoanPayment> & { onDelete?: (p: ILoanPayment) => void })?.onDelete?.(row.original)}
-            >
-              <Trash />
-              Eliminar
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      ),
+      cell: ({ table, row }) => {
+        const meta = table.options.meta as PaymentsTableMeta | undefined;
+        return (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="h-8 w-8 p-0">
+                <span className="sr-only">Abrir menú</span>
+                <MoreHorizontal />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => meta?.onEdit(row.original)}>
+                <Edit className="mr-2 h-4 w-4" />
+                Editar
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => meta?.onDelete(row.original)}>
+                <Trash className="mr-2 h-4 w-4" />
+                Eliminar
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        );
+      },
     },
   ];
 
@@ -155,20 +194,9 @@ export function PaymentsTable() {
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
     meta: {
-      onDelete: async (payment: ILoanPayment) => {
-        if (!payment.id) return;
-        const confirmDelete = window.confirm("¿Eliminar este pago?");
-        if (!confirmDelete) return;
-        try {
-         const res = await apiDeleteLoanPayment(payment.id);
-         console.log("Delete response:", res);
-         removePayment?.(payment.id);
-        } catch (e) {
-          console.error(e);
-          alert("No se pudo eliminar. Intenta nuevamente.");
-        }
-      },
-    } as TableMeta<ILoanPayment> & { onDelete: (p: ILoanPayment) => Promise<void> },
+      onDelete: handleDeleteClick,
+      onEdit: handleEditClick,
+    } as PaymentsTableMeta,
   });
 
   return (
@@ -183,8 +211,16 @@ export function PaymentsTable() {
           className="max-w-sm mr-auto bg-background border-border"
         />
 
-        <PaymentDialog open={openDialog} onOpenChange={setOpenDialog}>
-          <CapitalAndInterestForm setOpenDialog={setOpenDialog} />
+        <PaymentDialog
+          open={openDialog}
+          onOpenChange={handleDialogChange}
+          isEdit={!!editingPayment}
+        >
+          <CapitalAndInterestForm
+            setOpenDialog={handleDialogChange}
+            editingPayment={editingPayment}
+            onClose={() => setEditingPayment(null)}
+          />
         </PaymentDialog>
       </div>
       <div className="">
@@ -205,7 +241,6 @@ export function PaymentsTable() {
           </TableHeader>
           <TableBody cy-data="payments-table-body">
             {loading ? (
-              // Skeleton rows
               Array.from({ length: 5 }).map((_, index) => (
                 <TableRow key={index}>
                   <TableCell><Skeleton className="h-4 w-20" /></TableCell>
@@ -260,6 +295,47 @@ export function PaymentsTable() {
           Siguiente
         </Button>
       </div>
+
+      <Dialog
+        open={!!paymentToDelete}
+        onOpenChange={(o) => !isDeleting && !o && setPaymentToDelete(null)}
+      >
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Eliminar pago</DialogTitle>
+            <DialogDescription>
+              ¿Estás seguro de que deseas eliminar el pago de{" "}
+              <strong>
+                {paymentToDelete?.user?.name} {paymentToDelete?.user?.lastname}
+              </strong>
+              ? Esta acción no se puede deshacer.
+            </DialogDescription>
+          </DialogHeader>
+          {paymentToDelete && (
+            <div className="text-sm space-y-1">
+              <div>Capital: <span className="font-medium">{formatCurrency(paymentToDelete.amount)}</span></div>
+              <div>Interés: <span className="font-medium">{formatCurrency(paymentToDelete.interest)}</span></div>
+              <div>Total: <span className="font-medium">{formatCurrency(paymentToDelete.amount + paymentToDelete.interest)}</span></div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setPaymentToDelete(null)}
+              disabled={isDeleting}
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={handleDeleteConfirm}
+              disabled={isDeleting}
+            >
+              {isDeleting ? "Eliminando..." : "Eliminar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

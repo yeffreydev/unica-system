@@ -2,12 +2,14 @@ import apiClient from "@/config/apiClient";
 import { ILoan, ILoanInstallment } from "@/types/ILoan";
 import { IUser } from "@/types/IUser";
 import { useEffect, useState } from "react";
+import { ILoanPayment } from "./types";
 
 export const usePayment = () => {
   const [openDialog, setOpenDialog] = useState(false);
   const [loans, setLoans] = useState<ILoan[]>([]);
   const [selectedUser, setSelectedUser] = useState<IUser | null>(null);
   const [selectedLoan, setSelectedLoan] = useState<ILoan | null>(null);
+  const [editingPayment, setEditingPayment] = useState<ILoanPayment | null>(null);
   const [payment, setPayment] = useState({
     amount: 0,
     interest: 0,
@@ -97,5 +99,7 @@ export const usePayment = () => {
     payments,
     setPayments,
     addPayment,
+    editingPayment,
+    setEditingPayment,
   };
 };
