@@ -5,225 +5,216 @@ import { Input } from "@/components/ui/input";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import {
-  Table, TableBody, TableCell, TableFooter, TableHead, TableHeader, TableRow,
-} from "@/components/ui/table";
 import apiClient from "@/config/apiClient";
 import { AppContext } from "@/context/AppContext";
 import { exportToExcel, exportToPDF, ReportColumn } from "@/lib/reportExport";
+import {
+  defaultRange, fmtCurrency, generateMonthOptions, monthShort, monthValToISO, rangeLabel,
+} from "@/lib/reportRange";
 import { FileSpreadsheet, FileText } from "lucide-react";
 import { useContext, useEffect, useMemo, useState } from "react";
 
-interface IMovementRow {
-  id: string;
-  date: string;
-  type: string;
-  category: string;
-  flow: string;
-  description: string;
-  userId: string | null;
-  name: string;
-  lastname: string;
+interface ICell {
   amount: number;
+  descriptions: string[];
 }
 
-interface IMovementsResp {
-  rows: IMovementRow[];
-  totals: {
-    incomes: number; expenses: number;
-    legalIn: number; legalOut: number;
-    socialIn: number; socialOut: number;
-  };
+interface IRow {
+  category: string;
+  type: string;
+  flow: string;
+  byMonth: Record<string, ICell>;
 }
 
-const months = [
-  "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
-  "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
-];
-
-const generateMonthOptions = () => {
-  const options: { value: string; label: string }[] = [];
-  const startYear = 2024;
-  const now = new Date();
-  for (let y = startYear; y <= now.getFullYear(); y++) {
-    const endM = y === now.getFullYear() ? now.getMonth() : 11;
-    for (let m = 0; m <= endM; m++) options.push({ value: `${y}-${m}`, label: `${months[m]} ${y}` });
-  }
-  return options;
-};
-
-const fmt = (n: number) =>
-  `S/. ${n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+interface IData {
+  months: string[];
+  rows: IRow[];
+}
 
 const typeLabel = (t: string) => {
   if (t === "LEGAL") return "Reserva Legal";
   if (t === "SOCIAL") return "Fondo Social";
+  if (t === "OTRO") return "Otros";
+  if (t === "FINE") return "Multa";
+  if (t === "LATE_FEE") return "Tardanza";
+  if (t === "ABSENCE_FEE") return "Falta";
+  if (t === "DONATION") return "Donacion";
+  if (t === "OPERATIONS") return "Operaciones";
+  if (t === "UNCLASSIFIED") return "Sin Clasif.";
   return t;
 };
 
 export default function OtherMovementsReportPage() {
   const { bank } = useContext(AppContext);
-  const now = new Date();
-  const [month, setMonth] = useState(`${now.getFullYear()}-${now.getMonth()}`);
+  const init = defaultRange();
+  const [startMonth, setStartMonth] = useState(init.startVal);
+  const [endMonth, setEndMonth] = useState(init.endVal);
   const [search, setSearch] = useState("");
-  const [data, setData] = useState<IMovementsResp>({
-    rows: [],
-    totals: { incomes: 0, expenses: 0, legalIn: 0, legalOut: 0, socialIn: 0, socialOut: 0 },
-  });
+  const [data, setData] = useState<IData>({ months: [], rows: [] });
 
   useEffect(() => {
-    const [y, m] = month.split("-").map(Number);
-    const ref = new Date(y, m, 15).toISOString();
-    apiClient.get(`/reports/other-movements/month?date=${ref}`).then(r => setData(r.data)).catch(() => {});
-  }, [month]);
+    apiClient
+      .get(`/reports/other-movements/range?startDate=${monthValToISO(startMonth)}&endDate=${monthValToISO(endMonth, true)}`)
+      .then(r => setData(r.data))
+      .catch(() => {});
+  }, [startMonth, endMonth]);
 
-  const monthLabel = useMemo(() => {
-    const [y, m] = month.split("-").map(Number);
-    return `${months[m]} ${y}`;
-  }, [month]);
-
-  const filtered = data.rows.filter(r => {
-    const q = search.toLowerCase();
-    return (
-      `${r.name} ${r.lastname}`.toLowerCase().includes(q) ||
-      r.description.toLowerCase().includes(q) ||
-      r.type.toLowerCase().includes(q)
-    );
-  });
-
-  const subtotals = filtered.reduce(
-    (acc, r) => {
-      if (r.flow === "INGRESO") acc.incomes += r.amount;
-      else acc.expenses += r.amount;
-      return acc;
-    },
-    { incomes: 0, expenses: 0 },
+  const filtered = useMemo(
+    () => data.rows.filter(r => `${r.category} ${typeLabel(r.type)} ${r.flow}`.toLowerCase().includes(search.toLowerCase())),
+    [data.rows, search],
   );
 
-  const exportRows = filtered.map(r => ({
-    ...r,
-    typeLabel: typeLabel(r.type),
-  }));
+  const period = rangeLabel(startMonth, endMonth);
+  const monthOptions = generateMonthOptions();
+
+  const summary = filtered.map(r => {
+    const total = data.months.reduce((a, m) => a + (r.byMonth[m]?.amount ?? 0), 0);
+    return { ...r, total };
+  });
 
   const columns: ReportColumn[] = [
-    { header: "Fecha", key: "date", format: "date" },
     { header: "Categoria", key: "category" },
     { header: "Tipo", key: "typeLabel" },
     { header: "Flujo", key: "flow" },
-    { header: "Apellidos", key: "lastname" },
-    { header: "Nombres", key: "name" },
-    { header: "Descripcion", key: "description" },
-    { header: "Monto", key: "amount", format: "currency", align: "right" },
+    ...data.months.map<ReportColumn>(m => ({ header: monthShort(m), key: m, format: "currency", align: "right" })),
+    { header: "Total", key: "total", format: "currency", align: "right" },
+    { header: "Descripciones", key: "descriptions" },
   ];
 
-  const totalsRow = {
-    date: "",
-    category: "",
-    typeLabel: "TOTAL",
-    flow: `Ingresos ${fmt(subtotals.incomes)} | Egresos ${fmt(subtotals.expenses)}`,
-    lastname: "",
-    name: "",
-    description: "Neto",
-    amount: subtotals.incomes - subtotals.expenses,
+  const exportRows = summary.map(r => {
+    const monthCols: Record<string, number> = {};
+    const allDesc: string[] = [];
+    for (const m of data.months) {
+      monthCols[m] = r.byMonth[m]?.amount ?? 0;
+      if (r.byMonth[m]?.descriptions?.length) allDesc.push(...r.byMonth[m].descriptions);
+    }
+    return {
+      category: r.category, typeLabel: typeLabel(r.type), flow: r.flow,
+      ...monthCols,
+      total: r.total,
+      descriptions: Array.from(new Set(allDesc)).slice(0, 8).join(" | "),
+    };
+  });
+
+  const grandIngresos = summary.filter(r => r.flow === "INGRESO").reduce((a, r) => a + r.total, 0);
+  const grandEgresos = summary.filter(r => r.flow === "EGRESO").reduce((a, r) => a + r.total, 0);
+
+  const totalsRow: Record<string, unknown> = {
+    category: "TOTAL", typeLabel: "", flow: `In ${fmtCurrency(grandIngresos)} | Eg ${fmtCurrency(grandEgresos)}`,
+    total: grandIngresos - grandEgresos, descriptions: "",
   };
+  for (const m of data.months) {
+    totalsRow[m] = summary.reduce((a, r) => a + (r.byMonth[m]?.amount ?? 0) * (r.flow === "INGRESO" ? 1 : -1), 0);
+  }
 
   const meta = {
     title: "Reporte de Otros Movimientos",
     subtitle: "Fondo Social, Reserva Legal y Otros",
     bankName: bank?.bank?.name,
-    period: monthLabel,
-    fileName: `reporte-otros-movimientos-${month}`,
+    period,
+    fileName: `reporte-otros-movimientos-${startMonth}_a_${endMonth}`,
   };
 
   return (
-    <div className="space-y-6 py-5">
+    <div className="space-y-4 p-3 md:p-5">
       <Card>
-        <CardHeader>
-          <div className="flex justify-between items-center flex-wrap gap-3">
+        <CardHeader className="pb-3">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
             <div>
-              <CardTitle>Reporte de Otros Movimientos</CardTitle>
-              <p className="text-sm text-muted-foreground">Fondo Social, Reserva Legal, otros tipos y descripciones</p>
+              <CardTitle className="text-xl">Reporte de Otros Movimientos</CardTitle>
+              <p className="text-xs md:text-sm text-muted-foreground">Fondo Social, Reserva Legal y otros tipos. Pivote por tipo y mes.</p>
             </div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <Select value={month} onValueChange={setMonth}>
-                <SelectTrigger className="w-[200px]"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {generateMonthOptions().map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}
-                </SelectContent>
+            <div className="grid grid-cols-2 md:flex md:flex-wrap items-center gap-2">
+              <Select value={startMonth} onValueChange={setStartMonth}>
+                <SelectTrigger className="w-full md:w-[170px]"><SelectValue placeholder="Desde" /></SelectTrigger>
+                <SelectContent>{monthOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent>
               </Select>
-              <Input placeholder="Buscar..." value={search} onChange={e => setSearch(e.target.value)} className="w-[200px]" />
+              <Select value={endMonth} onValueChange={setEndMonth}>
+                <SelectTrigger className="w-full md:w-[170px]"><SelectValue placeholder="Hasta" /></SelectTrigger>
+                <SelectContent>{monthOptions.map(o => <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent>
+              </Select>
+              <Input placeholder="Buscar..." value={search} onChange={e => setSearch(e.target.value)} className="col-span-2 md:w-[180px]" />
               <Button onClick={() => exportToPDF(meta, columns, exportRows, totalsRow)} className="bg-red-600 hover:bg-red-700 text-white">
-                <FileText className="w-4 h-4 mr-2" />PDF
+                <FileText className="w-4 h-4 mr-1" />PDF
               </Button>
               <Button onClick={() => exportToExcel(meta, columns, exportRows, totalsRow)} className="bg-green-600 hover:bg-green-700 text-white">
-                <FileSpreadsheet className="w-4 h-4 mr-2" />Excel
+                <FileSpreadsheet className="w-4 h-4 mr-1" />Excel
               </Button>
             </div>
           </div>
         </CardHeader>
       </Card>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card><CardContent className="pt-4">
-          <p className="text-sm text-muted-foreground">Reserva Legal</p>
-          <p className="text-sm">Ingresos: <span className="font-medium">{fmt(data.totals.legalIn)}</span></p>
-          <p className="text-sm">Egresos: <span className="font-medium">{fmt(data.totals.legalOut)}</span></p>
-        </CardContent></Card>
-        <Card><CardContent className="pt-4">
-          <p className="text-sm text-muted-foreground">Fondo Social</p>
-          <p className="text-sm">Ingresos: <span className="font-medium">{fmt(data.totals.socialIn)}</span></p>
-          <p className="text-sm">Egresos: <span className="font-medium">{fmt(data.totals.socialOut)}</span></p>
-        </CardContent></Card>
-        <Card><CardContent className="pt-4">
-          <p className="text-sm text-muted-foreground">Total</p>
-          <p className="text-sm">Ingresos: <span className="font-medium">{fmt(data.totals.incomes)}</span></p>
-          <p className="text-sm">Egresos: <span className="font-medium">{fmt(data.totals.expenses)}</span></p>
-        </CardContent></Card>
-      </div>
-
       <Card>
-        <CardContent>
+        <CardContent className="p-0 md:p-2">
           <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Fecha</TableHead>
-                  <TableHead>Categoria</TableHead>
-                  <TableHead>Tipo</TableHead>
-                  <TableHead>Flujo</TableHead>
-                  <TableHead>Apellidos</TableHead>
-                  <TableHead>Nombres</TableHead>
-                  <TableHead>Descripcion</TableHead>
-                  <TableHead className="text-right">Monto</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filtered.length === 0 ? (
-                  <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground">Sin registros</TableCell></TableRow>
-                ) : filtered.map(r => (
-                  <TableRow key={r.id}>
-                    <TableCell>{new Date(r.date).toLocaleDateString("es-PE")}</TableCell>
-                    <TableCell>{r.category}</TableCell>
-                    <TableCell>{typeLabel(r.type)}</TableCell>
-                    <TableCell>
-                      <span className={r.flow === "INGRESO" ? "text-green-600" : "text-red-600"}>{r.flow}</span>
-                    </TableCell>
-                    <TableCell>{r.lastname}</TableCell>
-                    <TableCell>{r.name}</TableCell>
-                    <TableCell className="max-w-[260px] truncate">{r.description}</TableCell>
-                    <TableCell className="text-right">{fmt(r.amount)}</TableCell>
-                  </TableRow>
+            <table className="w-full text-xs md:text-sm border-collapse">
+              <thead className="bg-muted">
+                <tr>
+                  <th className="sticky left-0 bg-muted z-20 text-left px-3 py-2 border-b min-w-[100px]">Categoria</th>
+                  <th className="text-left px-3 py-2 border-b min-w-[140px]">Tipo</th>
+                  <th className="text-left px-3 py-2 border-b min-w-[90px]">Flujo</th>
+                  {data.months.map(m => (
+                    <th key={m} className="text-right px-2 py-2 border-b min-w-[110px]">{monthShort(m)}</th>
+                  ))}
+                  <th className="text-right px-2 py-2 border-b min-w-[120px] bg-muted">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {summary.length === 0 ? (
+                  <tr><td colSpan={4 + data.months.length} className="text-center text-muted-foreground py-6">Sin registros</td></tr>
+                ) : summary.map(r => (
+                  <tr key={`${r.category}-${r.type}-${r.flow}`} className="hover:bg-muted/40">
+                    <td className="sticky left-0 bg-background z-10 px-3 py-2 border-b font-medium">{r.category}</td>
+                    <td className="px-3 py-2 border-b">{typeLabel(r.type)}</td>
+                    <td className="px-3 py-2 border-b">
+                      <span className={r.flow === "INGRESO" ? "text-green-700" : "text-red-700"}>{r.flow}</span>
+                    </td>
+                    {data.months.map(m => {
+                      const c = r.byMonth[m];
+                      if (!c || c.amount === 0) return <td key={m} className="text-right px-2 py-2 border-b text-muted-foreground">—</td>;
+                      return (
+                        <td key={m} className="text-right px-2 py-2 border-b text-[11px]" title={c.descriptions.slice(0, 5).join(" | ")}>
+                          <div className={r.flow === "INGRESO" ? "text-green-700" : "text-red-700"}>{fmtCurrency(c.amount)}</div>
+                          {c.descriptions.length > 0 && (
+                            <div className="text-[10px] text-muted-foreground truncate max-w-[120px]">
+                              {c.descriptions[0]}{c.descriptions.length > 1 ? ` (+${c.descriptions.length - 1})` : ""}
+                            </div>
+                          )}
+                        </td>
+                      );
+                    })}
+                    <td className="text-right px-2 py-2 border-b font-semibold">{fmtCurrency(r.total)}</td>
+                  </tr>
                 ))}
-              </TableBody>
-              <TableFooter>
-                <TableRow className="bg-muted">
-                  <TableCell colSpan={7} className="text-right font-medium">
-                    Ingresos: {fmt(subtotals.incomes)} | Egresos: {fmt(subtotals.expenses)}
-                  </TableCell>
-                  <TableCell className="text-right font-medium">{fmt(subtotals.incomes - subtotals.expenses)}</TableCell>
-                </TableRow>
-              </TableFooter>
-            </Table>
+              </tbody>
+              <tfoot className="bg-muted">
+                <tr>
+                  <td className="sticky left-0 bg-muted z-10 px-3 py-2 border-t font-semibold" colSpan={3}>
+                    Neto (In - Eg)
+                  </td>
+                  {data.months.map(m => {
+                    const v = summary.reduce((a, r) => a + (r.byMonth[m]?.amount ?? 0) * (r.flow === "INGRESO" ? 1 : -1), 0);
+                    return (
+                      <td key={m} className={`text-right px-2 py-2 border-t font-medium ${v >= 0 ? "text-green-700" : "text-red-700"}`}>
+                        {fmtCurrency(v)}
+                      </td>
+                    );
+                  })}
+                  <td className="text-right px-2 py-2 border-t font-bold">{fmtCurrency(grandIngresos - grandEgresos)}</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 p-3">
+            <Card><CardContent className="pt-4">
+              <p className="text-xs text-muted-foreground">Total Ingresos</p>
+              <p className="text-lg font-semibold text-green-700">{fmtCurrency(grandIngresos)}</p>
+            </CardContent></Card>
+            <Card><CardContent className="pt-4">
+              <p className="text-xs text-muted-foreground">Total Egresos</p>
+              <p className="text-lg font-semibold text-red-700">{fmtCurrency(grandEgresos)}</p>
+            </CardContent></Card>
           </div>
         </CardContent>
       </Card>
