@@ -1,19 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ArrowLeft, FileCheck, FileX, Loader2 } from "lucide-react";
-import { apiGetActaByRun } from "../../api";
+import { apiGetActaByRun } from "../api";
 import { formatCurrency } from "@/lib/utils";
-
-// Acta read-only viewer. Reproduce el resumen de la asamblea
-// (snapshot guardado en `Acta.content` o resumen vivo si no se generó).
-// Sin botones de edición.
 
 type ActaResponse = {
   confirmed?: boolean;
@@ -22,12 +18,14 @@ type ActaResponse = {
   scheduleRunId?: string;
 };
 
-export default function AssemblyViewPage() {
-  const { id } = useParams<{ id: string }>();
+function AssemblyViewInner() {
+  const searchParams = useSearchParams();
+  const id = searchParams.get("id") ?? "";
   const [data, setData] = useState<ActaResponse | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!id) { setLoading(false); return; }
     (async () => {
       try {
         const res = await apiGetActaByRun(id);
@@ -237,5 +235,13 @@ export default function AssemblyViewPage() {
         </Card>
       </div>
     </div>
+  );
+}
+
+export default function AssemblyViewPage() {
+  return (
+    <Suspense fallback={<div className="py-10 flex justify-center text-muted-foreground gap-2 text-sm"><Loader2 className="w-4 h-4 animate-spin" /> Cargando…</div>}>
+      <AssemblyViewInner />
+    </Suspense>
   );
 }

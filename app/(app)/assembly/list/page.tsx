@@ -116,7 +116,7 @@ export default function AssemblyListPage() {
                 </div>
                 <div className="flex items-center gap-2">
                   <Button asChild size="sm" variant="outline">
-                    <Link href={`/assembly/view/${r.id}`}><Eye className="w-3.5 h-3.5 mr-1" /> Ver</Link>
+                    <Link href={`/assembly/view?id=${r.id}`}><Eye className="w-3.5 h-3.5 mr-1" /> Ver</Link>
                   </Button>
                   {isCompleted && (
                     <Button
