@@ -52,6 +52,13 @@ const PlatformFormSchema = z.object({
     .refine((v) => Number.isInteger(Number(v)), { message: "Debe ser un número entero." })
     .refine((v) => Number(v) >= 0, { message: "No puede ser menor a 0." })
     .refine((v) => Number(v) <= 4, { message: "No puede ser mayor a 4." }),
+  savingsInterestRoundingMode: z.enum(["NORMAL", "UP", "DOWN"]),
+  savingsInterestRoundingDigits: z
+    .string()
+    .refine((v) => v !== "", { message: "Este campo es requerido." })
+    .refine((v) => Number.isInteger(Number(v)), { message: "Debe ser un número entero." })
+    .refine((v) => Number(v) >= 0, { message: "No puede ser menor a 0." })
+    .refine((v) => Number(v) <= 4, { message: "No puede ser mayor a 4." }),
 });
 
 type PlatformFormValues = z.infer<typeof PlatformFormSchema>;
@@ -62,6 +69,8 @@ const defaultValues: PlatformFormValues = {
   savingsInterestRate: "1",
   loanInterestRoundingMode: "NORMAL",
   loanInterestRoundingDigits: "2",
+  savingsInterestRoundingMode: "NORMAL",
+  savingsInterestRoundingDigits: "2",
 };
 
 export function PlatformForm() {
@@ -83,6 +92,8 @@ export function PlatformForm() {
         savingsInterestRate: Number(data.savingsInterestRate) / 100,
         loanInterestRoundingMode: data.loanInterestRoundingMode,
         loanInterestRoundingDigits: Number(data.loanInterestRoundingDigits),
+        savingsInterestRoundingMode: data.savingsInterestRoundingMode,
+        savingsInterestRoundingDigits: Number(data.savingsInterestRoundingDigits),
       });
 
       if (res.data) {
@@ -118,6 +129,8 @@ export function PlatformForm() {
     form.setValue("savingsInterestRate", String((bank?.bank?.savingsInterestRate ?? 0.01) * 100));
     form.setValue("loanInterestRoundingMode", bank?.bank?.loanInterestRoundingMode ?? "NORMAL");
     form.setValue("loanInterestRoundingDigits", String(bank?.bank?.loanInterestRoundingDigits ?? 2));
+    form.setValue("savingsInterestRoundingMode", bank?.bank?.savingsInterestRoundingMode ?? "NORMAL");
+    form.setValue("savingsInterestRoundingDigits", String(bank?.bank?.savingsInterestRoundingDigits ?? 2));
   }, [bank]);
 
   const roundingMode = form.watch("loanInterestRoundingMode");
@@ -236,6 +249,51 @@ export function PlatformForm() {
                     </FormControl>
                     <FormDescription>
                       Ejemplo con la configuración actual: {roundingExample}
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <FormField
+                control={form.control}
+                name="savingsInterestRoundingMode"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Redondeo de Interés de Ahorros</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Selecciona el redondeo" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="NORMAL">{roundingModeLabels.NORMAL}</SelectItem>
+                        <SelectItem value="UP">{roundingModeLabels.UP}</SelectItem>
+                        <SelectItem value="DOWN">{roundingModeLabels.DOWN}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <FormDescription>
+                      Aplica al pagar interés a los ahorristas en la asamblea.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="savingsInterestRoundingDigits"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Decimales del Interés (Ahorros)</FormLabel>
+                    <FormControl>
+                      <Input type="number" step="1" min="0" max="4" {...field} />
+                    </FormControl>
+                    <FormDescription>
+                      0 = soles enteros, 2 = céntimos, etc.
                     </FormDescription>
                     <FormMessage />
                   </FormItem>

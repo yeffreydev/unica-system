@@ -10,7 +10,7 @@ import { HistoricalSummary } from "./components/HistoricalSummary";
 import { EmptyAssemblyState } from "./components/EmptyAssemblyState";
 import { ScheduleRunStatusesTypes } from "./types";
 import { Button } from "@/components/ui/button";
-import { Settings } from "lucide-react";
+import { Settings, ListChecks } from "lucide-react";
 import Link from "next/link";
 
 
@@ -20,6 +20,7 @@ export default function Assembly() {
      assembly,
      isAssemblyNotFound,
      startAssembly,
+     refetchAssembly,
    } = useAssembly();
 
    const [elapsed, setElapsed] = useState("00:00:00");
@@ -142,12 +143,20 @@ export default function Assembly() {
               )}
             </div>
           </div>
-          <Button asChild variant="outline" className="gap-2 w-full sm:w-auto shrink-0">
-            <Link href="/settings/assembly">
-              <Settings className="w-4 h-4" />
-              Configuración
-            </Link>
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto shrink-0">
+            <Button asChild variant="outline" className="gap-2">
+              <Link href="/assembly/list">
+                <ListChecks className="w-4 h-4" />
+                Asambleas
+              </Link>
+            </Button>
+            <Button asChild variant="outline" className="gap-2">
+              <Link href="/settings/assembly">
+                <Settings className="w-4 h-4" />
+                Configuración
+              </Link>
+            </Button>
+          </div>
         </div>
         {/* {
           // if (!assemblyState.isActive && msUntil === 0
@@ -181,6 +190,8 @@ export default function Assembly() {
         daysUntil={daysUntil}
         hoursUntil={hoursUntil}
         handleStartAssembly={handleStartAssembly}
+        upcomingISO={typeof assembly.nextRun === 'string' ? assembly.nextRun : new Date(assembly.nextRun).toISOString()}
+        onRescheduled={() => { refetchAssembly(); }}
       />}
       
 

@@ -35,6 +35,7 @@ interface AssemblyContextType {
   updateTotalTime: (time: number) => void;
   getStepStatus: (stepId: number) => 'pending' | 'active' | 'completed';
   progressPercentage: number;
+  refetchAssembly: () => Promise<IAssemblySchedule | null>;
 }
 
 const AssemblyContext = createContext<AssemblyContextType | undefined>(undefined);
@@ -86,11 +87,33 @@ export function AssemblyProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
+  const refetchAssembly = useCallback(async () => {
+    try {
+      const data = await apiGetAssemblySchedule();
+      setAssembly(data);
+      setIsAssemblyNotFound(false);
+      return data;
+    } catch (error: any) {
+      if (error?.response?.status === 404) {
+        setIsAssemblyNotFound(true);
+        setAssembly(null);
+      } else {
+        console.error('Error fetching assembly:', error);
+      }
+      return null;
+    }
+  }, []);
+
   const startAssembly = async() => {
    const res = await apiStartAssemblySchedule();
     if (res.statusText === "OK") {
-      //got to page
-          router.push("/assembly/live");
+      // Reset al primer paso de la asamblea recién iniciada
+      setAssemblyState({ ...initialState, currentStep: 1, stepStartTime: Date.now() });
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('assembly-current-step', JSON.stringify({ currentStep: 1 }));
+      }
+      await refetchAssembly();
+      router.push("/assembly/live");
     }
   };
 
@@ -102,6 +125,9 @@ export function AssemblyProvider({ children }: { children: ReactNode }) {
       if (typeof window !== 'undefined') {
         localStorage.removeItem('assembly-current-step');
       }
+      // Recargar el schedule para que la próxima asamblea aparezca
+      await refetchAssembly();
+      router.push('/assembly');
     } catch (error) {
       console.error('Error finishing assembly:', error);
       throw error;
@@ -156,31 +182,14 @@ export function AssemblyProvider({ children }: { children: ReactNode }) {
     setCurrentStep,
     updateTotalTime,
     getStepStatus,
-    progressPercentage
+    progressPercentage,
+    refetchAssembly,
   };
 
   useEffect(() => {
     if (!auth.authenticated) return;
-
-    const fetchAssemblyData = async () => {
-      try {
-        const data = await apiGetAssemblySchedule();
-        console.log(data);
-        setAssembly(data);
-        setIsAssemblyNotFound(false);
-      } catch (error: any) {
-        // Handle 404 - assembly not configured
-        if (error?.response?.status === 404) {
-          setIsAssemblyNotFound(true);
-          setAssembly(null);
-        } else {
-          console.error('Error fetching assembly:', error);
-        }
-      }
-    };
-
-    fetchAssemblyData();
-  }, [auth.authenticated]);
+    refetchAssembly();
+  }, [auth.authenticated, refetchAssembly]);
 
   return (
     <AssemblyContext.Provider value={value}>

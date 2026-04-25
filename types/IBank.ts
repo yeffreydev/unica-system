@@ -8,6 +8,8 @@ export interface IBank {
     savingsInterestRate?: number;
     loanInterestRoundingMode?: "NORMAL" | "UP" | "DOWN";
     loanInterestRoundingDigits?: number;
+    savingsInterestRoundingMode?: "NORMAL" | "UP" | "DOWN";
+    savingsInterestRoundingDigits?: number;
   };
   mainStock: IStock;
 }

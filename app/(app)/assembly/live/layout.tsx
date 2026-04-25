@@ -5,7 +5,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { ChevronLeft, ChevronRight, CheckCircle, Loader2 } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { toast } from "@/hooks/use-toast";
 
@@ -18,7 +17,6 @@ export default function StepLayout({ children }: { children: React.ReactNode }) 
         setCurrentStep,
       } = useAssembly();
 
-    const router = useRouter();
     const [confirmModalOpen, setConfirmModalOpen] = useState(false);
     const [isFinishing, setIsFinishing] = useState(false);
 
@@ -40,11 +38,6 @@ export default function StepLayout({ children }: { children: React.ReactNode }) 
       try {
         await endAssembly(assembly.lastRun.id);
         setConfirmModalOpen(false);
-        
-        // Show success modal briefly before redirecting
-        setTimeout(() => {
-          router.push('/assembly');
-        }, 1500);
       } catch (error) {
         console.error('Error finishing assembly:', error);
         toast({

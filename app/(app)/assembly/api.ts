@@ -143,6 +143,47 @@ export const apiGetAssemblyActaSummary = async (runId: string) => {
   return response.data;
 };
 
+// list all assembly runs (con su acta y estado de confirmación)
+export const apiListAssemblyRuns = async () => {
+  const response = await apiClient.get(`/schedules/assembly/runs`);
+  return response.data as Array<{
+    id: string;
+    topic: string;
+    description?: string;
+    startAt: string;
+    endAt: string | null;
+    status: string;
+    acta: null | {
+      id: string;
+      generatedAt: string;
+      confirmed: boolean;
+      confirmedAt: string | null;
+      confirmedBy: string | null;
+    };
+    participants: Array<{ id: string; status: string }>;
+  }>;
+};
+
+export const apiGetActaByRun = async (runId: string) => {
+  const response = await apiClient.get(`/schedules/assembly/run/${runId}/acta`);
+  return response.data;
+};
+
+export const apiSetActaConfirmation = async (runId: string, data: { confirmed: boolean; confirmedBy?: string }) => {
+  const response = await apiClient.post(`/schedules/assembly/run/${runId}/acta/confirm`, data);
+  return response.data;
+};
+
+export const apiRescheduleAssemblyRun = async (runId: string, date: Date) => {
+  const response = await apiClient.patch(`/schedules/assembly/run/${runId}/reschedule`, { date: date.toISOString() });
+  return response.data;
+};
+
+export const apiRescheduleNextAssembly = async (date: Date) => {
+  const response = await apiClient.patch(`/schedules/assembly/reschedule-next`, { date: date.toISOString() });
+  return response.data;
+};
+
 // fines config
 export interface IFinesConfig {
   lateFineAmount: number;

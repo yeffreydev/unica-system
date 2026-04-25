@@ -60,6 +60,14 @@ export default function Savings() {
   const { assembly } = useAssembly();
   const { bank } = useContext(AppContext);
   const savingsRate = bank?.bank?.savingsInterestRate ?? 0.01;
+  const savingsRoundingMode = bank?.bank?.savingsInterestRoundingMode ?? "NORMAL";
+  const savingsRoundingDigits = bank?.bank?.savingsInterestRoundingDigits ?? 2;
+  const roundSavingsInterest = (value: number) => {
+    const factor = 10 ** savingsRoundingDigits;
+    if (savingsRoundingMode === "UP") return Math.ceil(value * factor - Number.EPSILON) / factor;
+    if (savingsRoundingMode === "DOWN") return Math.floor(value * factor + Number.EPSILON) / factor;
+    return Math.round(value * factor) / factor;
+  };
 
   const [assemblyRun, setAssemblyRun] = useState<IAssemblyScheduleRun | null>(null);
   const [savingsPartners, setSavingsPartners] = useState<ISavingsPartner[]>([]);
@@ -159,7 +167,7 @@ export default function Savings() {
   const handleOpenInterest = (partner: ISavingsPartner) => {
     setSelectedPartner(partner);
     const currentInterest = partner.payouts.reduce((sum, p) => sum + p.amount, 0);
-    const suggested = currentInterest > 0 ? currentInterest : Number((partner.savingsBalance * savingsRate).toFixed(2));
+    const suggested = currentInterest > 0 ? currentInterest : roundSavingsInterest(partner.savingsBalance * savingsRate);
     setInterestAmount(suggested);
     setInterestDescription(partner.payouts[0]?.description || "");
     setInterestModalOpen(true);
@@ -515,7 +523,7 @@ export default function Savings() {
                 disabled={isSubmitting}
               />
               <p className="text-[11px] text-muted-foreground">
-                Sugerencia: S/ {selectedPartner ? (selectedPartner.savingsBalance * savingsRate).toFixed(2) : "0.00"}
+                Sugerencia: S/ {selectedPartner ? roundSavingsInterest(selectedPartner.savingsBalance * savingsRate).toFixed(savingsRoundingDigits) : "0.00"}
               </p>
             </div>
 

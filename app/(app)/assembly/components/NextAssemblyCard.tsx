@@ -1,6 +1,13 @@
-import { CalendarDays, MapPin } from "lucide-react";
+import { CalendarDays, MapPin, CalendarClock, Loader2 } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { assemblySteps } from "../steps";
+import { useState } from "react";
+import { apiRescheduleNextAssembly } from "../api";
+import { sileo } from "sileo";
 
 interface NextAssemblyCardProps {
   upcomingDateLabel: string;
@@ -8,6 +15,8 @@ interface NextAssemblyCardProps {
   daysUntil: number;
   hoursUntil: number;
   handleStartAssembly: () => void;
+  upcomingISO?: string;
+  onRescheduled?: () => void;
 }
 
 export function NextAssemblyCard({
@@ -16,7 +25,30 @@ export function NextAssemblyCard({
   daysUntil,
   hoursUntil,
   handleStartAssembly,
+  upcomingISO,
+  onRescheduled,
 }: NextAssemblyCardProps) {
+  const [open, setOpen] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [date, setDate] = useState(upcomingISO ? upcomingISO.slice(0, 10) : "");
+  const [time, setTime] = useState(upcomingISO ? upcomingISO.slice(11, 16) : "19:00");
+
+  const handleSubmit = async () => {
+    if (!date) return;
+    setSubmitting(true);
+    try {
+      const dt = new Date(`${date}T${time || "19:00"}:00`);
+      await apiRescheduleNextAssembly(dt);
+      sileo.success({ title: "Asamblea reprogramada" });
+      setOpen(false);
+      onRescheduled?.();
+    } catch (err) {
+      console.error(err);
+      sileo.error({ title: "No se pudo reprogramar" });
+    } finally {
+      setSubmitting(false);
+    }
+  };
   return (
     <div className="w-full">
       <Card>
@@ -63,7 +95,10 @@ export function NextAssemblyCard({
               ))}
             </div>
           </div>
-          <div className="text-right">
+          <div className="flex items-center justify-end gap-3">
+            <Button variant="outline" size="sm" className="gap-2" onClick={() => setOpen(true)}>
+              <CalendarClock className="w-4 h-4" /> Reprogramar
+            </Button>
             <button
               onClick={handleStartAssembly}
               className="text-xs text-muted-foreground hover:text-primary underline"
@@ -73,6 +108,30 @@ export function NextAssemblyCard({
           </div>
         </CardContent>
       </Card>
+
+      <Dialog open={open} onOpenChange={(o) => !submitting && setOpen(o)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2"><CalendarClock className="w-5 h-5" /> Reprogramar próxima asamblea</DialogTitle>
+          </DialogHeader>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <Label className="text-xs">Fecha</Label>
+              <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Hora</Label>
+              <Input type="time" value={time} onChange={(e) => setTime(e.target.value)} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOpen(false)} disabled={submitting}>Cancelar</Button>
+            <Button onClick={handleSubmit} disabled={submitting || !date}>
+              {submitting ? <><Loader2 className="w-4 h-4 mr-1 animate-spin" /> Guardando…</> : "Guardar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
