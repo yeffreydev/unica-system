@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { ChevronDown, LayoutDashboard, Users, TrendingUp, Banknote, BarChart3, Receipt, PiggyBank, Plus, TrendingDown, ArrowDown, HandCoins, Building, Share2, Shield, Minus, FileBarChart, Settings, ClipboardCheck, Wallet, FileSpreadsheet } from "lucide-react";
+import { ChevronDown, LayoutDashboard, Users, TrendingUp, Banknote, BarChart3, Receipt, PiggyBank, Plus, TrendingDown, ArrowDown, HandCoins, Building, Share2, Shield, Minus, FileBarChart, Settings, ClipboardCheck, Wallet, FileSpreadsheet, Calculator } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const mainItems = [
@@ -38,6 +38,7 @@ const reportsItems = [
   { title: "Utilidades", href: "/reports/dividends", icon: Wallet },
   { title: "Ingresos", href: "/reports/incomes", icon: TrendingUp },
   { title: "Egresos", href: "/reports/expenses", icon: TrendingDown },
+  { title: "Cuadre de Caja", href: "/reports/cash-count", icon: Calculator },
 ]
 
 const otherItems = [

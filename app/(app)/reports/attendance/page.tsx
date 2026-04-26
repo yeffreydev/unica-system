@@ -87,8 +87,8 @@ export default function AttendanceReportPage() {
   });
 
   const columns: ReportColumn[] = [
-    { header: "Apellidos", key: "lastname" },
     { header: "Nombres", key: "name" },
+    { header: "Apellidos", key: "lastname" },
     { header: "DNI", key: "dni" },
     ...data.months.map<ReportColumn>(m => ({ header: monthShort(m), key: m, align: "center" })),
     { header: "Asist", key: "attended", align: "right", format: "number" },
@@ -102,14 +102,14 @@ export default function AttendanceReportPage() {
     for (const m of data.months) monthCols[m] = cellText(r.byMonth[m]);
     const t = summary.find(s => s.userId === r.userId)!;
     return {
-      lastname: r.lastname, name: r.name, dni: r.dni,
+      name: r.name, lastname: r.lastname, dni: r.dni,
       ...monthCols,
       attended: t.attended, late: t.late, absent: t.absent, fineAmount: t.fineAmount,
     };
   });
 
   const totalsRow: Record<string, unknown> = {
-    lastname: "TOTAL", name: "", dni: "",
+    name: "TOTAL", lastname: "", dni: "",
     attended: summary.reduce((a, s) => a + s.attended, 0),
     late: summary.reduce((a, s) => a + s.late, 0),
     absent: summary.reduce((a, s) => a + s.absent, 0),
@@ -160,8 +160,8 @@ export default function AttendanceReportPage() {
             <table className="w-full text-xs md:text-sm border-collapse">
               <thead className="bg-muted">
                 <tr>
-                  <th className="sticky left-0 bg-muted z-20 text-left px-3 py-2 border-b min-w-[140px]">Apellidos</th>
-                  <th className="text-left px-3 py-2 border-b min-w-[120px]">Nombres</th>
+                  <th className="sticky left-0 bg-muted z-20 text-left px-3 py-2 border-b min-w-[140px]">Nombres</th>
+                  <th className="text-left px-3 py-2 border-b min-w-[120px]">Apellidos</th>
                   <th className="text-left px-3 py-2 border-b min-w-[80px] hidden md:table-cell">DNI</th>
                   {data.months.map(m => (
                     <th key={m} className="text-center px-2 py-2 border-b min-w-[120px]">
@@ -180,8 +180,8 @@ export default function AttendanceReportPage() {
                   <tr><td colSpan={4 + data.months.length + 4} className="text-center text-muted-foreground py-6">Sin registros</td></tr>
                 ) : summary.map(r => (
                   <tr key={r.userId} className="hover:bg-muted/40">
-                    <td className="sticky left-0 bg-background z-10 px-3 py-2 border-b font-medium">{r.lastname}</td>
-                    <td className="px-3 py-2 border-b">{r.name}</td>
+                    <td className="sticky left-0 bg-background z-10 px-3 py-2 border-b font-medium">{r.name}</td>
+                    <td className="px-3 py-2 border-b">{r.lastname}</td>
                     <td className="px-3 py-2 border-b hidden md:table-cell">{r.dni}</td>
                     {data.months.map(m => {
                       const c = r.byMonth[m];

@@ -15,22 +15,18 @@ import { FileSpreadsheet, FileText } from "lucide-react";
 import { useContext, useEffect, useMemo, useState } from "react";
 
 interface ICell {
+  newLoans: number;
   capital: number;
   interest: number;
   balanceEnd: number;
 }
 
 interface IRow {
-  loanId: string;
-  userId: string | null;
+  userId: string;
   name: string;
   lastname: string;
   dni: string;
-  loanType: string;
-  loanAmount: number;
-  loanDate: string;
-  status: string;
-  interestRate: number;
+  loanTypes: string[];
   byMonth: Record<string, ICell>;
 }
 
@@ -55,7 +51,7 @@ export default function LoansReportPage() {
   }, [startMonth, endMonth]);
 
   const filtered = useMemo(
-    () => data.rows.filter(r => `${r.name} ${r.lastname} ${r.loanType}`.toLowerCase().includes(search.toLowerCase())),
+    () => data.rows.filter(r => `${r.name} ${r.lastname}`.toLowerCase().includes(search.toLowerCase())),
     [data.rows, search],
   );
 
@@ -67,9 +63,13 @@ export default function LoansReportPage() {
       (acc, m) => {
         const c = r.byMonth[m];
         if (!c) return acc;
-        return { capital: acc.capital + c.capital, interest: acc.interest + c.interest };
+        return {
+          newLoans: acc.newLoans + c.newLoans,
+          capital: acc.capital + c.capital,
+          interest: acc.interest + c.interest,
+        };
       },
-      { capital: 0, interest: 0 },
+      { newLoans: 0, capital: 0, interest: 0 },
     );
     const lastMonth = data.months[data.months.length - 1];
     const finalBalance = lastMonth ? r.byMonth[lastMonth]?.balanceEnd ?? 0 : 0;
@@ -77,22 +77,24 @@ export default function LoansReportPage() {
   });
 
   const columns: ReportColumn[] = [
-    { header: "Apellidos", key: "lastname" },
     { header: "Nombres", key: "name" },
-    { header: "Tipo", key: "loanType" },
-    { header: "Monto", key: "loanAmount", format: "currency", align: "right" },
+    { header: "Apellidos", key: "lastname" },
+    { header: "DNI", key: "dni" },
+    { header: "Tipos", key: "loanTypesStr" },
     ...data.months.map<ReportColumn>(m => ({ header: monthShort(m), key: m })),
-    { header: "Total Cap", key: "capital", format: "currency", align: "right" },
-    { header: "Total Int", key: "interest", format: "currency", align: "right" },
-    { header: "Saldo Final", key: "finalBalance", format: "currency", align: "right" },
+    { header: "Total Nuevos", key: "newLoans", format: "currency", align: "right" },
+    { header: "Total Cap. Pagado", key: "capital", format: "currency", align: "right" },
+    { header: "Total Int. Pagado", key: "interest", format: "currency", align: "right" },
+    { header: "Saldo Restante", key: "finalBalance", format: "currency", align: "right" },
   ];
 
   const cellText = (c: ICell | undefined) => {
     if (!c) return "";
     const lines: string[] = [];
-    if (c.capital) lines.push(`Cap ${fmtCurrency(c.capital)}`);
+    if (c.newLoans) lines.push(`Saco ${fmtCurrency(c.newLoans)}`);
     if (c.interest) lines.push(`Int ${fmtCurrency(c.interest)}`);
-    lines.push(`Sal ${fmtCurrency(c.balanceEnd)}`);
+    lines.push(`Cap ${fmtCurrency(c.capital)}`);
+    lines.push(`Saldo ${fmtCurrency(c.balanceEnd)}`);
     return lines.join("\n");
   };
 
@@ -100,14 +102,16 @@ export default function LoansReportPage() {
     const monthCols: Record<string, string> = {};
     for (const m of data.months) monthCols[m] = cellText(r.byMonth[m]);
     return {
-      lastname: r.lastname, name: r.name, loanType: r.loanType, loanAmount: r.loanAmount,
+      name: r.name, lastname: r.lastname, dni: r.dni,
+      loanTypesStr: r.loanTypes.join(", "),
       ...monthCols,
-      capital: r.capital, interest: r.interest, finalBalance: r.finalBalance,
+      newLoans: r.newLoans, capital: r.capital, interest: r.interest, finalBalance: r.finalBalance,
     };
   });
 
   const totalsRow: Record<string, unknown> = {
-    lastname: "TOTAL", name: "", loanType: "", loanAmount: "",
+    name: "TOTAL", lastname: "", dni: "", loanTypesStr: "",
+    newLoans: summary.reduce((a, s) => a + s.newLoans, 0),
     capital: summary.reduce((a, s) => a + s.capital, 0),
     interest: summary.reduce((a, s) => a + s.interest, 0),
     finalBalance: summary.reduce((a, s) => a + s.finalBalance, 0),
@@ -117,11 +121,11 @@ export default function LoansReportPage() {
       (acc, r) => {
         const c = r.byMonth[m];
         if (!c) return acc;
-        return { cap: acc.cap + c.capital, int: acc.int + c.interest };
+        return { nl: acc.nl + c.newLoans, cap: acc.cap + c.capital, int: acc.int + c.interest };
       },
-      { cap: 0, int: 0 },
+      { nl: 0, cap: 0, int: 0 },
     );
-    totalsRow[m] = `Cap ${fmtCurrency(t.cap)}\nInt ${fmtCurrency(t.int)}`;
+    totalsRow[m] = `Saco ${fmtCurrency(t.nl)}\nInt ${fmtCurrency(t.int)}\nCap ${fmtCurrency(t.cap)}`;
   }
 
   const meta = {
@@ -138,7 +142,7 @@ export default function LoansReportPage() {
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
             <div>
               <CardTitle className="text-xl">Reporte de Prestamos</CardTitle>
-              <p className="text-xs md:text-sm text-muted-foreground">Capital e interes pagado por mes (separados) + saldo restante.</p>
+              <p className="text-xs md:text-sm text-muted-foreground">Por socio. Cada mes: monto sacado, interes pagado y capital pagado (primordial). Saldo restante de todos sus prestamos al final.</p>
             </div>
             <div className="grid grid-cols-2 md:flex md:flex-wrap items-center gap-2">
               <Select value={startMonth} onValueChange={setStartMonth}>
@@ -167,40 +171,43 @@ export default function LoansReportPage() {
             <table className="w-full text-xs md:text-sm border-collapse">
               <thead className="bg-muted">
                 <tr>
-                  <th className="sticky left-0 bg-muted z-20 text-left px-3 py-2 border-b min-w-[140px]">Apellidos</th>
-                  <th className="text-left px-3 py-2 border-b min-w-[110px]">Nombres</th>
-                  <th className="text-left px-3 py-2 border-b min-w-[100px] hidden md:table-cell">Tipo</th>
-                  <th className="text-right px-3 py-2 border-b min-w-[100px] hidden md:table-cell">Monto</th>
+                  <th className="sticky left-0 bg-muted z-20 text-left px-3 py-2 border-b min-w-[140px]">Nombres</th>
+                  <th className="text-left px-3 py-2 border-b min-w-[140px]">Apellidos</th>
+                  <th className="text-left px-3 py-2 border-b min-w-[80px] hidden md:table-cell">DNI</th>
+                  <th className="text-left px-3 py-2 border-b min-w-[120px] hidden md:table-cell">Tipos</th>
                   {data.months.map(m => (
-                    <th key={m} className="text-center px-2 py-2 border-b min-w-[140px]">{monthShort(m)}</th>
+                    <th key={m} className="text-center px-2 py-2 border-b min-w-[150px]">{monthShort(m)}</th>
                   ))}
-                  <th className="text-right px-2 py-2 border-b min-w-[110px] bg-muted">Cap. Tot.</th>
-                  <th className="text-right px-2 py-2 border-b min-w-[110px] bg-muted">Int. Tot.</th>
-                  <th className="text-right px-2 py-2 border-b min-w-[120px] bg-muted">Saldo Final</th>
+                  <th className="text-right px-2 py-2 border-b min-w-[110px] bg-muted">Tot. Sacado</th>
+                  <th className="text-right px-2 py-2 border-b min-w-[110px] bg-muted">Tot. Int.</th>
+                  <th className="text-right px-2 py-2 border-b min-w-[120px] bg-muted">Tot. Cap.</th>
+                  <th className="text-right px-2 py-2 border-b min-w-[140px] bg-muted">Saldo Restante</th>
                 </tr>
               </thead>
               <tbody>
                 {summary.length === 0 ? (
-                  <tr><td colSpan={5 + data.months.length + 3} className="text-center text-muted-foreground py-6">Sin registros</td></tr>
+                  <tr><td colSpan={5 + data.months.length + 4} className="text-center text-muted-foreground py-6">Sin registros</td></tr>
                 ) : summary.map(r => (
-                  <tr key={r.loanId} className="hover:bg-muted/40">
-                    <td className="sticky left-0 bg-background z-10 px-3 py-2 border-b font-medium">{r.lastname}</td>
-                    <td className="px-3 py-2 border-b">{r.name}</td>
-                    <td className="px-3 py-2 border-b hidden md:table-cell">{r.loanType}</td>
-                    <td className="text-right px-3 py-2 border-b hidden md:table-cell">{fmtCurrency(r.loanAmount)}</td>
+                  <tr key={r.userId} className="hover:bg-muted/40">
+                    <td className="sticky left-0 bg-background z-10 px-3 py-2 border-b font-medium">{r.name}</td>
+                    <td className="px-3 py-2 border-b">{r.lastname}</td>
+                    <td className="px-3 py-2 border-b hidden md:table-cell">{r.dni}</td>
+                    <td className="px-3 py-2 border-b hidden md:table-cell text-[11px] text-muted-foreground">{r.loanTypes.join(", ")}</td>
                     {data.months.map(m => {
                       const c = r.byMonth[m];
                       return (
                         <td key={m} className="text-right px-2 py-2 border-b text-[11px] leading-tight">
-                          {c?.capital ? <div className="text-green-700">Cap {fmtCurrency(c.capital)}</div> : null}
+                          {c?.newLoans ? <div className="text-amber-700">Saco {fmtCurrency(c.newLoans)}</div> : null}
                           {c?.interest ? <div className="text-blue-700">Int {fmtCurrency(c.interest)}</div> : null}
-                          <div className="font-medium">{fmtCurrency(c?.balanceEnd ?? 0)}</div>
+                          <div className="text-green-700 font-semibold">Cap {fmtCurrency(c?.capital ?? 0)}</div>
+                          <div className="text-muted-foreground">Saldo {fmtCurrency(c?.balanceEnd ?? 0)}</div>
                         </td>
                       );
                     })}
-                    <td className="text-right px-2 py-2 border-b">{fmtCurrency(r.capital)}</td>
-                    <td className="text-right px-2 py-2 border-b">{fmtCurrency(r.interest)}</td>
-                    <td className="text-right px-2 py-2 border-b font-semibold">{fmtCurrency(r.finalBalance)}</td>
+                    <td className="text-right px-2 py-2 border-b text-amber-700">{fmtCurrency(r.newLoans)}</td>
+                    <td className="text-right px-2 py-2 border-b text-blue-700">{fmtCurrency(r.interest)}</td>
+                    <td className="text-right px-2 py-2 border-b text-green-700 font-semibold">{fmtCurrency(r.capital)}</td>
+                    <td className="text-right px-2 py-2 border-b font-bold">{fmtCurrency(r.finalBalance)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -211,18 +218,20 @@ export default function LoansReportPage() {
                     const t = summary.reduce((a, r) => {
                       const c = r.byMonth[m];
                       if (!c) return a;
-                      return { cap: a.cap + c.capital, int: a.int + c.interest };
-                    }, { cap: 0, int: 0 });
+                      return { nl: a.nl + c.newLoans, cap: a.cap + c.capital, int: a.int + c.interest };
+                    }, { nl: 0, cap: 0, int: 0 });
                     return (
                       <td key={m} className="text-right px-2 py-2 border-t text-[11px]">
-                        <div className="text-green-700">{fmtCurrency(t.cap)}</div>
+                        <div className="text-amber-700">{fmtCurrency(t.nl)}</div>
                         <div className="text-blue-700">{fmtCurrency(t.int)}</div>
+                        <div className="text-green-700 font-semibold">{fmtCurrency(t.cap)}</div>
                       </td>
                     );
                   })}
-                  <td className="text-right px-2 py-2 border-t font-semibold">{fmtCurrency(totalsRow.capital as number)}</td>
+                  <td className="text-right px-2 py-2 border-t font-semibold">{fmtCurrency(totalsRow.newLoans as number)}</td>
                   <td className="text-right px-2 py-2 border-t font-semibold">{fmtCurrency(totalsRow.interest as number)}</td>
-                  <td className="text-right px-2 py-2 border-t font-semibold">{fmtCurrency(totalsRow.finalBalance as number)}</td>
+                  <td className="text-right px-2 py-2 border-t font-semibold">{fmtCurrency(totalsRow.capital as number)}</td>
+                  <td className="text-right px-2 py-2 border-t font-bold">{fmtCurrency(totalsRow.finalBalance as number)}</td>
                 </tr>
               </tfoot>
             </table>
