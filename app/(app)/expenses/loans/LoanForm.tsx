@@ -43,7 +43,8 @@ export const LoanForm = ({
   loan?: ILoan | null;
   setIsOpenDialog?: (value: boolean) => void;
 }) => {
-  const { users, formCloseModalRef } = useContext(AppContext);
+  const { users, formCloseModalRef, bank } = useContext(AppContext);
+  const interestRate = bank?.bank?.loanInterestRate ?? 0.02;
   const { addLoan } = useContext(LoansContext);
   const [installments, setInstallments] = useState<InstallmentInterface[]>([]);
   const [userSelected, setUserSelected] = useState<IUser | null>(null);
@@ -125,14 +126,14 @@ export const LoanForm = ({
       console.log(
         loanTypeSelected.name as keyof typeof loanTypesData,
         form.getValues("amount"),
-        0.05,
+        interestRate,
         form.getValues("months"),
         new Date(form.getValues("date") + 'T00:00:00-05:00')
       );
       const installments = calculateInstallments(
         loanTypeSelected.name as keyof typeof loanTypesData,
         form.getValues("amount"),
-        0.05,
+        interestRate,
         form.getValues("months"),
         new Date(form.getValues("date") + 'T00:00:00-05:00')
       );
@@ -176,7 +177,7 @@ export const LoanForm = ({
             loanTypeId: loanTypeSelected?.id as string,
             initalInstallments: formData.months,
             date: new Date(formData.date + 'T00:00:00-05:00'),
-            interestRate: 0.05,
+            interestRate,
           };
           createLoan(data);
         })}
