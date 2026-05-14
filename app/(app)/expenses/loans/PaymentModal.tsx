@@ -14,6 +14,7 @@ import { ILoan, ILoanInstallment, ILoanType } from "@/types/ILoan";
 import apiClient from "@/config/apiClient";
 import { formatCurrency } from "@/lib/utils";
 import { ComboboxLoanTypes } from "@/components/combobox/ComboboxLoanTypes";
+import { CheckCircle2, ListPlus, Wallet, Calendar, Layers, AlertCircle } from "lucide-react";
 
 interface PaymentModalProps {
   isOpen: boolean;
@@ -151,137 +152,182 @@ export const PaymentModal = ({
     }
   }, [loan, loanTypes]);
 
+  useEffect(() => {
+    if (isOpen && loan) {
+      setPaymentAmount(loan.balance != null ? String(loan.balance) : "");
+    }
+    if (!isOpen) {
+      setPaymentAmount("");
+      setInstallments("1");
+      setInitialInstallmentDate("");
+      setPaymentType('full');
+    }
+  }, [isOpen, loan]);
+
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Pagar Préstamo</DialogTitle>
+        <DialogContent className="sm:max-w-[520px] max-h-[90vh] overflow-y-auto">
+          <DialogHeader className="space-y-1">
+            <DialogTitle className="flex items-center gap-2">
+              <Wallet className="h-5 w-5 text-primary" />
+              Regularizar Préstamo
+            </DialogTitle>
             <DialogDescription>
-              Realizar pago del préstamo de {loan?.user?.name} {loan?.user?.lastname}
+              {loan?.user?.name} {loan?.user?.lastname}
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-6">
-            <div className="p-4 bg-gray-50 rounded-lg">
-              <div className="flex justify-between items-center">
-                <span className="font-medium">Balance pendiente:</span>
-                <span className="text-lg font-bold text-red-600">
-                  {formatCurrency(balance)}
-                </span>
+          <div className="space-y-5">
+            <div className="rounded-xl border bg-muted/40 p-4">
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                Balance pendiente
+              </p>
+              <p className="text-2xl font-bold text-destructive mt-1">
+                {formatCurrency(balance)}
+              </p>
+              {loan?.amount != null && (
+                <p className="text-xs text-muted-foreground mt-2">
+                  Monto original: {formatCurrency(loan.amount)}
+                </p>
+              )}
+            </div>
+
+            <div className="space-y-3">
+              <h3 className="text-sm font-medium text-muted-foreground">
+                Selecciona una acción
+              </h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <button
+                  type="button"
+                  onClick={handlePayAllClick}
+                  disabled={isSubmitting}
+                  className={`group rounded-xl border p-4 text-left transition-all hover:border-primary hover:shadow-sm disabled:opacity-50 disabled:cursor-not-allowed ${
+                    paymentType === 'full'
+                      ? 'border-primary bg-primary/5 ring-1 ring-primary'
+                      : 'border-border bg-card'
+                  }`}
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="rounded-lg bg-green-500/10 p-2 text-green-600 dark:text-green-400">
+                      <CheckCircle2 className="h-5 w-5" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-semibold text-sm">Marcar como pagado</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        Liquida todo: {formatCurrency(balance)}
+                      </p>
+                    </div>
+                  </div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setPaymentType('partial')}
+                  disabled={isSubmitting}
+                  className={`group rounded-xl border p-4 text-left transition-all hover:border-primary hover:shadow-sm disabled:opacity-50 disabled:cursor-not-allowed ${
+                    paymentType === 'partial'
+                      ? 'border-primary bg-primary/5 ring-1 ring-primary'
+                      : 'border-border bg-card'
+                  }`}
+                >
+                  <div className="flex items-start gap-3">
+                    <div className="rounded-lg bg-primary/10 p-2 text-primary">
+                      <ListPlus className="h-5 w-5" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-semibold text-sm">Generar cuotas</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        Divide el saldo en pagos
+                      </p>
+                    </div>
+                  </div>
+                </button>
               </div>
             </div>
 
-            <div className="space-y-4">
-              <div className="text-center">
-                <h3 className="text-lg font-semibold mb-4">¿Qué tipo de acción deseas realizar?</h3>
-                <div className="flex flex-col gap-3">
-                  <Button
-                    onClick={handlePayAllClick}
-                    disabled={isSubmitting}
-                    size="lg"
-                    className="w-full h-12"
-                    variant={paymentType === 'full' ? 'default' : 'outline'}
-                  >
-                   marcar como pagado: {formatCurrency(balance)}
-                  </Button>
-                  <Button
-                    onClick={() => setPaymentType('partial')}
-                    disabled={isSubmitting}
-                    size="lg"
-                    className="w-full h-12"
-                    variant={paymentType === 'partial' ? 'default' : 'outline'}
-                  >
-                   Generar cuotas
-                  </Button>
+            {paymentType === 'partial' && (
+              <div className="rounded-xl border bg-card p-4 space-y-4">
+                <div className="flex items-center gap-2 border-b pb-3">
+                  <Layers className="h-4 w-4 text-primary" />
+                  <h4 className="text-sm font-semibold">Detalles de las cuotas</h4>
                 </div>
-              </div>
 
-              {paymentType === 'partial' && (
-                <div className="border-t pt-6 space-y-4">
-                  <h4 className="text-md font-medium text-center">Detalles para generar cuotas</h4>
-                  <div className="grid grid-cols-1 gap-4">
-                    <div>
-                      <Label htmlFor="payment-amount">Balance restante</Label>
-                      <Input
-                        id="payment-amount"
-                        type="number"
-                        placeholder="Ingrese el monto"
-                        value={paymentAmount || (currentInstallment ? currentInstallment.payment.toString() : "")}
-                        onChange={(e) => setPaymentAmount(e.target.value)}
-                        max={balance}
-                        min={0}
-                        step="0.01"
-                        className="text-lg"
-                      />
-                      <p className="text-sm text-gray-500 mt-1">
-                        Máximo: {formatCurrency(balance)}
-                        {currentInstallment && (
-                          <span className="block text-blue-600">
-                            Cuota actual: {formatCurrency(currentInstallment.payment)}
-                          </span>
-                        )}
-                      </p>
-                    </div>
-                    <div>
-                      <Label htmlFor="installments">Número de cuotas.</Label>
+                <div className="space-y-3">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="payment-amount" className="text-xs font-medium">
+                      Balance del préstamo
+                    </Label>
+                    <Input
+                      id="payment-amount"
+                      type="number"
+                      placeholder="0.00"
+                      value={paymentAmount}
+                      onChange={(e) => setPaymentAmount(e.target.value)}
+                      max={balance}
+                      min={0}
+                      step="0.01"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Máximo: {formatCurrency(balance)}
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="installments" className="text-xs font-medium">
+                        Nº de cuotas
+                      </Label>
                       <Input
                         id="installments"
                         type="number"
-                        placeholder="Ej: 3, 6, 12"
+                        placeholder="Ej: 3"
                         value={installments}
                         onChange={(e) => setInstallments(e.target.value)}
                         min={1}
                         max={60}
-                        className="text-lg"
                       />
-                      <p className="text-sm text-gray-500 mt-1">
-                        Cuotas en las que se dividirá el saldo restante después del pago
-                      </p>
-                      {currentInstallment && (
-                        <p className="text-sm text-blue-600 mt-1">
-                          Interés actual: S/ {formatCurrency(currentInstallment.interest)}
-                        </p>
-                      )}
                     </div>
-                    <div>
-                      <Label htmlFor="loan-type">Tipo de Préstamo</Label>
-                      <ComboboxLoanTypes
-                        controller={{ loanTypeSelected, setLoanTypeSelected }}
-                        loanTypes={loanTypes}
-                      />
-                      <p className="text-sm text-gray-500 mt-1">
-                        Selecciona el tipo de préstamo para las nuevas cuotas
-                      </p>
-                    </div>
-                    <div>
-                      <Label htmlFor="initial-installment-date">Fecha de cuota inicial</Label>
+                    <div className="space-y-1.5">
+                      <Label htmlFor="initial-installment-date" className="text-xs font-medium flex items-center gap-1">
+                        <Calendar className="h-3 w-3" />
+                        Primera cuota
+                      </Label>
                       <Input
                         id="initial-installment-date"
                         type="date"
                         value={initialInstallmentDate}
                         onChange={(e) => setInitialInstallmentDate(e.target.value)}
-                        className="text-lg"
                       />
-                      <p className="text-sm text-gray-500 mt-1">
-                        Fecha en que se realizará la primera cuota
-                      </p>
                     </div>
                   </div>
 
-                  <div className="flex justify-center pt-2">
-                    <Button
-                      onClick={handlePartialPaymentClick}
-                      disabled={!paymentAmount || !installments || !initialInstallmentDate || !loanTypeSelected || isSubmitting}
-                      size="lg"
-                      className="px-8"
-                    >
-                      {isSubmitting ? "Procesando..." : "Procesar Pago Parcial"}
-                    </Button>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="loan-type" className="text-xs font-medium">
+                      Tipo de préstamo
+                    </Label>
+                    <ComboboxLoanTypes
+                      controller={{ loanTypeSelected, setLoanTypeSelected }}
+                      loanTypes={loanTypes}
+                    />
                   </div>
+
+                  {currentInstallment && (
+                    <div className="flex items-center gap-2 rounded-md bg-primary/5 px-3 py-2 text-xs text-primary">
+                      <AlertCircle className="h-3.5 w-3.5" />
+                      Interés actual: {formatCurrency(currentInstallment.interest)}
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
+
+                <Button
+                  onClick={handlePartialPaymentClick}
+                  disabled={!paymentAmount || !installments || !initialInstallmentDate || !loanTypeSelected || isSubmitting}
+                  className="w-full"
+                >
+                  {isSubmitting ? "Procesando..." : "Generar cuotas"}
+                </Button>
+              </div>
+            )}
           </div>
         </DialogContent>
       </Dialog>
@@ -290,13 +336,19 @@ export const PaymentModal = ({
       <Dialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
-            <DialogTitle>Confirmar Pago Completo</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertCircle className="h-5 w-5 text-destructive" />
+              Confirmar pago completo
+            </DialogTitle>
             <DialogDescription>
-              ¿Estás seguro de que deseas pagar el monto completo de S/ {formatCurrency(balance)}?
-              Esta acción marcará el préstamo como pagado en su totalidad y no se podrá deshacer.
+              Marcarás el préstamo como pagado por{" "}
+              <span className="font-semibold text-foreground">
+                {formatCurrency(balance)}
+              </span>
+              . Esta acción no se puede deshacer.
             </DialogDescription>
           </DialogHeader>
-          <div className="flex justify-end gap-2">
+          <div className="flex justify-end gap-2 pt-2">
             <Button
               variant="outline"
               onClick={() => setShowConfirmDialog(false)}
@@ -308,7 +360,7 @@ export const PaymentModal = ({
               onClick={handlePayAllConfirm}
               disabled={isSubmitting}
             >
-              {isSubmitting ? "Procesando..." : "Confirmar Pago Completo"}
+              {isSubmitting ? "Procesando..." : "Confirmar"}
             </Button>
           </div>
         </DialogContent>
