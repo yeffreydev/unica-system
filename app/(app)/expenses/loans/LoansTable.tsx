@@ -37,9 +37,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { LoansContext } from "./LoansProvider";
-import { ILoan } from "@/types/ILoan";
+import { ILoan, ILoanInstallment } from "@/types/ILoan";
 import { formatCurrency } from "@/lib/utils";
-import { InstallmentInterface } from "./utils/installments";
 import apiClient from "@/config/apiClient";
 import { LoansInstallments } from "./LoansInstallments";
 import { DialogForm } from "@/components/dialogs/DialogForm";
@@ -68,7 +67,8 @@ export function LoansTable() {
   const [isLoading, setIsLoading] = useState(true);
   const [openForm, setOpenForm] = useState(false);
   const [selectedLoanId] = useState<string | null>(null);
-  const [installments, setInstallments] = useState<InstallmentInterface[]>([]);
+  const [installments, setInstallments] = useState<ILoanInstallment[]>([]);
+  const [installmentsLoanId, setInstallmentsLoanId] = useState<string | null>(null);
   const [deletingLoans, setDeletingLoans] = useState<string[]>([]);
   const [isOpenDialog, setIsOpenDialog] = useState(false);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
@@ -114,9 +114,17 @@ export function LoansTable() {
       const response = await apiClient.get(`/loans/installments/${loanId}`);
       console.log("Installments fetched successfully", response.data);
       setInstallments(response.data);
+      setInstallmentsLoanId(loanId);
     } catch (error) {
       console.error("Error fetching installments:", error);
     }
+  };
+
+  const handleInstallmentsChanged = () => {
+    if (installmentsLoanId) {
+      fetchInstallments(installmentsLoanId);
+    }
+    refreshLoans?.();
   };
 
   const handlePaymentSuccess = () => {
@@ -278,8 +286,14 @@ export function LoansTable() {
       <div className="w-full">
         <LoansInstallments
           installments={installments}
-          onOpenChange={() => setInstallments([])}
+          onOpenChange={(open) => {
+            if (!open) {
+              setInstallments([]);
+              setInstallmentsLoanId(null);
+            }
+          }}
           isOpen={installments.length > 0}
+          onChanged={handleInstallmentsChanged}
         />
         <PaymentModal
           isOpen={isPaymentModalOpen}

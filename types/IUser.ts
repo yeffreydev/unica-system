@@ -9,4 +9,8 @@ export interface IUser {
   role?: string;
   createdAt?: string;
   updatedAt?: string;
+  deletedAt?: string | null;
 }
+
+export const isActiveUser = (user: { deletedAt?: string | null; dni?: string; name?: string }) =>
+  !user?.deletedAt && !user?.dni?.startsWith("DELETED-") && user?.name !== "[Usuario Eliminado]";

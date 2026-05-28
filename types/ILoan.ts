@@ -27,6 +27,7 @@ export interface ILoanInstallment {
   date: Date;
   loan?: ILoan;
   status?: string;
+  paid?: boolean;
   user?: IUser;
   installment_number?: number;
   isAssemblyMonth?: boolean;

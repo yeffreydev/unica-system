@@ -16,7 +16,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { IUser } from "@/types/IUser";
+import { IUser, isActiveUser } from "@/types/IUser";
 
 export function ComboBoxUsers({
   users,
@@ -29,6 +29,10 @@ export function ComboBoxUsers({
   };
 }) {
   const [open, setOpen] = React.useState(false);
+  const visibleUsers = React.useMemo(
+    () => (Array.isArray(users) ? users.filter(isActiveUser) : []),
+    [users]
+  );
 
   return (
     <Popover open={open} onOpenChange={setOpen} modal={true}>
@@ -50,7 +54,7 @@ export function ComboBoxUsers({
           <CommandList>
             <CommandEmpty>No user found.</CommandEmpty>
             <CommandGroup cy-data="combobox-users-group">
-              {users.map((user) => (
+              {visibleUsers.map((user) => (
                 <CommandItem
                   key={user.id}
                   value={`${user.name} ${user.lastname} ${user.dni} ${user.email}`.toLowerCase()}

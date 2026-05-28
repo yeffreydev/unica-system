@@ -1,5 +1,5 @@
 import React from "react";
-import { IUser } from "@/types/IUser";
+import { IUser, isActiveUser } from "@/types/IUser";
 
 export const useUsers = () => {
   const [users, setUsers] = React.useState<IUser[]>([]);
@@ -11,8 +11,8 @@ export const useUsers = () => {
         if (!response.ok) {
           throw new Error("Network response was not ok");
         }
-        const data = await response.json();
-        setUsers(data);
+        const data: IUser[] = await response.json();
+        setUsers(Array.isArray(data) ? data.filter(isActiveUser) : []);
       } catch (error) {
         console.error("Failed to fetch users:", error);
       }

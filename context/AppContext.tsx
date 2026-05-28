@@ -9,7 +9,7 @@ import {
   useRef,
 } from "react";
 import apiClient from "@/config/apiClient";
-import { IUser } from "@/types/IUser";
+import { IUser, isActiveUser } from "@/types/IUser";
 import { IBank } from "@/types/IBank";
 import { AuthContext } from "./auth/AuthContex";
 
@@ -78,7 +78,8 @@ export const AppProvider: React.FC<AppProviderProps> = ({ children }) => {
   const fetchUsers = async () => {
     try {
       const res = await apiClient.get("/users");
-      setUsers(res.data);
+      const data: IUser[] = Array.isArray(res.data) ? res.data : [];
+      setUsers(data.filter(isActiveUser));
     } catch (error) {
       console.error(error);
     }

@@ -1,8 +1,14 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import apiClient from "@/config/apiClient";
-import { Bar, BarChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import {
+  Area,
+  AreaChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+} from "recharts";
 
 interface InterestData {
   month: string;
@@ -10,81 +16,94 @@ interface InterestData {
   total: number;
 }
 
-export function Overview() {
-  const [data, setData] = useState<Array<{ name: string; total: number }>>([]);
+interface OverviewProps {
+  data: InterestData[];
+}
 
-  useEffect(() => {
-    const fetchInterestData = async () => {
-      try {
-        const response = await apiClient.get('/dashboard/interest-by-month?months=12');
-        const interestData: InterestData[] = response.data;
+const MONTH_INDEX: Record<string, number> = {
+  enero: 0,
+  febrero: 1,
+  marzo: 2,
+  abril: 3,
+  mayo: 4,
+  junio: 5,
+  julio: 6,
+  agosto: 7,
+  septiembre: 8,
+  setiembre: 8,
+  octubre: 9,
+  noviembre: 10,
+  diciembre: 11,
+};
 
-        // Transform data for the chart - take last 12 months and format for display
-        const chartData = interestData
-          .slice(0, 12)
-          .reverse() // Reverse to show chronological order
-          .map(item => ({
-            name: item.month.substring(0, 3), // Abbreviate month name
-            total: item.total,
-          }));
+function formatCurrency(amount: number) {
+  return new Intl.NumberFormat("es-PE", {
+    style: "currency",
+    currency: "PEN",
+    maximumFractionDigits: 0,
+  }).format(amount);
+}
 
-        setData(chartData);
-      } catch (error) {
-        console.error('Error fetching interest data:', error);
-        // Fallback to empty data
-        setData([]);
-      }
-    };
+export function Overview({ data }: OverviewProps) {
+  const chartData = [...(data ?? [])]
+    .sort((a, b) => {
+      if (a.year !== b.year) return a.year - b.year;
+      const am = MONTH_INDEX[a.month.toLowerCase()] ?? 0;
+      const bm = MONTH_INDEX[b.month.toLowerCase()] ?? 0;
+      return am - bm;
+    })
+    .map((item) => ({
+      name: item.month.substring(0, 3),
+      total: item.total,
+    }));
 
-    fetchInterestData();
-  }, []);
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('es-PE', {
-      style: 'currency',
-      currency: 'PEN',
-    }).format(amount);
-  };
-
-  const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?: Array<{ value: number }>; label?: string }) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className="bg-card border border-border rounded-lg p-3 shadow-lg">
-          <p className="text-sm font-medium text-card-foreground">{`Mes: ${label}`}</p>
-          <p className="text-sm text-primary">
-            {`Intereses: ${formatCurrency(payload[0].value)}`}
-          </p>
-        </div>
-      );
-    }
-    return null;
-  };
+  if (chartData.length === 0) {
+    return (
+      <div className="flex items-center justify-center h-[220px] text-sm text-muted-foreground">
+        Aún no hay intereses registrados
+      </div>
+    );
+  }
 
   return (
     <div className="w-full">
-      <ResponsiveContainer height={250}>
-        <BarChart data={data}>
-          <XAxis
-            dataKey="name"
-            stroke="#888888"
-            fontSize={12}
-            tickLine={false}
-            axisLine={false}
-          />
+      <ResponsiveContainer height={220}>
+        <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+          <defs>
+            <linearGradient id="interestGradient" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.4} />
+              <stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0} />
+            </linearGradient>
+          </defs>
+          <CartesianGrid strokeDasharray="3 3" className="stroke-muted/40" vertical={false} />
+          <XAxis dataKey="name" stroke="#888888" fontSize={11} tickLine={false} axisLine={false} />
           <YAxis
             stroke="#888888"
-            fontSize={12}
+            fontSize={11}
             tickLine={false}
             axisLine={false}
-            tickFormatter={(value) => `S/.${value}`}
+            tickFormatter={(v) => `S/${Math.round(v / 1000)}k`}
+            width={40}
           />
-          <Tooltip content={<CustomTooltip />} />
-          <Bar
+          <Tooltip
+            content={({ active, payload, label }) => {
+              if (!active || !payload?.length) return null;
+              return (
+                <div className="bg-card border rounded-md p-2 shadow-md text-xs">
+                  <div className="font-medium capitalize">{label}</div>
+                  <div className="text-primary">{formatCurrency(payload[0].value as number)}</div>
+                </div>
+              );
+            }}
+          />
+          <Area
+            type="monotone"
             dataKey="total"
-            fill="currentColor"
-            radius={[4, 4, 0, 0]}
-            className="fill-primary hover:fill-primary/80 transition-colors"
+            stroke="hsl(var(--primary))"
+            strokeWidth={2}
+            fill="url(#interestGradient)"
           />
-        </BarChart>
+        </AreaChart>
       </ResponsiveContainer>
     </div>
   );

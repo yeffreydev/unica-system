@@ -41,7 +41,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import apiClient from "@/config/apiClient";
-import { IUser } from "@/types/IUser";
+import { IUser, isActiveUser } from "@/types/IUser";
 import { UserDialog } from "./UserDialog";
 import { UserForm } from "./UserForm";
 
@@ -213,9 +213,9 @@ export function UsersTable() {
 
   const apiGetUsers = async () => {
     const res = await apiClient.get("/users");
-    console.log("res", res);
     if (res.status === 200) {
-      setData(res.data);
+      const list: IUser[] = Array.isArray(res.data) ? res.data : [];
+      setData(list.filter(isActiveUser));
     }
   };
   useEffect(() => {

@@ -1,8 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import apiClient from "@/config/apiClient";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
+import {
+  Area,
+  AreaChart,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+} from "recharts";
 
 interface DepositsWithdrawalsData {
   month: string;
@@ -11,89 +18,87 @@ interface DepositsWithdrawalsData {
   withdrawals: number;
 }
 
-export function DepositsWithdrawalsChart() {
-  const [data, setData] = useState<DepositsWithdrawalsData[]>([]);
+interface Props {
+  data: DepositsWithdrawalsData[];
+}
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const response = await apiClient.get('/dashboard/deposits-vs-withdrawals?months=6');
-        const chartData: DepositsWithdrawalsData[] = response.data;
-        setData(chartData);
-      } catch (error) {
-        console.error('Error fetching deposits vs withdrawals data:', error);
-        setData([]);
-      }
-    };
+function formatCurrency(amount: number) {
+  return new Intl.NumberFormat("es-PE", {
+    style: "currency",
+    currency: "PEN",
+    maximumFractionDigits: 0,
+  }).format(amount);
+}
 
-    fetchData();
-  }, []);
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('es-PE', {
-      style: 'currency',
-      currency: 'PEN',
-    }).format(amount);
-  };
-
-  const CustomTooltip = ({ active, payload, label }: { active?: boolean; payload?: Array<{ name: string; value: number; color: string }>; label?: string }) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className="bg-card border border-border rounded-lg p-3 shadow-lg">
-          <p className="text-sm font-medium text-card-foreground">{`Mes: ${label}`}</p>
-          {payload.map((entry: { name: string; value: number; color: string }, index: number) => (
-            <p key={index} className="text-sm" style={{ color: entry.color }}>
-              {`${entry.name}: ${formatCurrency(entry.value)}`}
-            </p>
-          ))}
-        </div>
-      );
-    }
-    return null;
-  };
-
-  if (data.length === 0) {
+export function DepositsWithdrawalsChart({ data }: Props) {
+  if (!data || data.length === 0) {
     return (
-      <div className="flex items-center justify-center h-[300px] text-muted-foreground">
-        No hay datos de depósitos y retiros disponibles
+      <div className="flex items-center justify-center h-[220px] text-sm text-muted-foreground">
+        Sin datos de ingresos y egresos
       </div>
     );
   }
 
   return (
     <div className="w-full">
-      <ResponsiveContainer height={200}>
-        <BarChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-          <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-          <XAxis
-            dataKey="month"
-            stroke="#888888"
-            fontSize={12}
-            tickLine={false}
-            axisLine={false}
-          />
+      <ResponsiveContainer height={220}>
+        <AreaChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+          <defs>
+            {/* Gradientes en familia qipi: chart-1 (primary profundo) y
+                chart-4 (variante clara). Mantiene contraste sin salir de marca. */}
+            <linearGradient id="depGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="hsl(var(--chart-1))" stopOpacity={0.5} />
+              <stop offset="100%" stopColor="hsl(var(--chart-1))" stopOpacity={0} />
+            </linearGradient>
+            <linearGradient id="witGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="hsl(var(--chart-4))" stopOpacity={0.5} />
+              <stop offset="100%" stopColor="hsl(var(--chart-4))" stopOpacity={0} />
+            </linearGradient>
+          </defs>
+          <CartesianGrid strokeDasharray="3 3" className="stroke-muted/40" vertical={false} />
+          <XAxis dataKey="month" stroke="#888" fontSize={11} tickLine={false} axisLine={false} />
           <YAxis
-            stroke="#888888"
-            fontSize={12}
+            stroke="#888"
+            fontSize={11}
             tickLine={false}
             axisLine={false}
-            tickFormatter={(value) => `S/.${value}`}
+            tickFormatter={(v) => `S/${Math.round(v / 1000)}k`}
+            width={40}
           />
-          <Tooltip content={<CustomTooltip />} />
-          <Legend />
-          <Bar
+          <Tooltip
+            content={({ active, payload, label }) => {
+              if (!active || !payload?.length) return null;
+              return (
+                <div className="bg-card border rounded-md p-2 shadow-md text-xs space-y-1">
+                  <div className="font-medium capitalize">{label}</div>
+                  {payload.map((p) => (
+                    <div key={p.dataKey as string} style={{ color: p.color }}>
+                      {p.name}: {formatCurrency(p.value as number)}
+                    </div>
+                  ))}
+                </div>
+              );
+            }}
+          />
+          <Legend iconType="circle" wrapperStyle={{ fontSize: 11 }} />
+          <Area
+            type="monotone"
             dataKey="deposits"
             name="Ingresos"
-            fill="#10b981"
-            radius={[2, 2, 0, 0]}
+            stroke="hsl(var(--chart-1))"
+            strokeWidth={2}
+            fill="url(#depGrad)"
           />
-          <Bar
+          <Area
+            type="monotone"
             dataKey="withdrawals"
             name="Egresos"
-            fill="#ef4444"
-            radius={[2, 2, 0, 0]}
+            stroke="hsl(var(--chart-4))"
+            strokeWidth={2}
+            strokeDasharray="4 4"
+            fill="url(#witGrad)"
           />
-        </BarChart>
+        </AreaChart>
       </ResponsiveContainer>
     </div>
   );

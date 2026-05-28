@@ -15,52 +15,49 @@ interface RecentDepositsProps {
   deposits: RecentDeposit[];
 }
 
+function formatCurrency(amount: number) {
+  return new Intl.NumberFormat("es-PE", { style: "currency", currency: "PEN" }).format(amount);
+}
+
+function formatDate(dateString: string) {
+  return new Date(dateString).toLocaleDateString("es-ES", {
+    day: "2-digit",
+    month: "short",
+  });
+}
+
+function getInitials(name: string, lastname: string) {
+  return `${name?.charAt(0) ?? ""}${lastname?.charAt(0) ?? ""}`.toUpperCase();
+}
+
 export function RecentDeposits({ deposits }: RecentDepositsProps) {
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('es-PE', {
-      style: 'currency',
-      currency: 'PEN',
-    }).format(amount);
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('es-ES', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric',
-    });
-  };
-
-  const getInitials = (name: string, lastname: string) => {
-    return `${name.charAt(0)}${lastname.charAt(0)}`.toUpperCase();
-  };
-
-  if (deposits.length === 0) {
+  if (!deposits || deposits.length === 0) {
     return (
-      <div className="text-center text-muted-foreground py-8">
-        No hay depósitos recientes
+      <div className="text-center text-sm text-muted-foreground py-6">
+        Sin depósitos recientes
       </div>
     );
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-3">
       {deposits.map((deposit) => (
-        <div key={deposit.id} className="flex items-center">
-          <Avatar className="h-9 w-9">
-            <AvatarFallback className="bg-green-500/10 text-green-600">
+        <div
+          key={deposit.id}
+          className="flex items-center gap-3 rounded-md p-2 hover:bg-muted/40 transition-colors"
+        >
+          <Avatar className="h-9 w-9 border">
+            <AvatarFallback className="bg-primary/10 text-primary text-xs font-semibold">
               {getInitials(deposit.user.name, deposit.user.lastname)}
             </AvatarFallback>
           </Avatar>
-          <div className="ml-4 space-y-1">
-            <p className="text-sm font-medium leading-none">
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-medium truncate">
               {deposit.user.name} {deposit.user.lastname}
             </p>
-            <p className="text-sm text-muted-foreground">
-              {formatDate(deposit.createdAt)}
-            </p>
+            <p className="text-xs text-muted-foreground">{formatDate(deposit.createdAt)}</p>
           </div>
-          <div className="ml-auto font-medium text-green-600">
+          <div className="text-sm font-semibold text-primary whitespace-nowrap">
             +{formatCurrency(deposit.amount)}
           </div>
         </div>
