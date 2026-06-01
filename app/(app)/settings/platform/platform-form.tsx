@@ -217,7 +217,7 @@ export function PlatformForm() {
                 name="loanInterestRoundingMode"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Redondeo de Interés de Préstamos</FormLabel>
+                    <FormLabel>Redondeo de Préstamos</FormLabel>
                     <Select onValueChange={field.onChange} value={field.value}>
                       <FormControl>
                         <SelectTrigger>
@@ -231,7 +231,7 @@ export function PlatformForm() {
                       </SelectContent>
                     </Select>
                     <FormDescription>
-                      Normal usa el decimal estándar; arriba siempre sube; abajo siempre corta.
+                      Aplica al capital y al interés de las cuotas. Normal usa el decimal estándar; arriba siempre sube; abajo siempre corta.
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -243,7 +243,7 @@ export function PlatformForm() {
                 name="loanInterestRoundingDigits"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Decimales del Interés</FormLabel>
+                    <FormLabel>Decimales del Préstamo</FormLabel>
                     <FormControl>
                       <Input type="number" step="1" min="0" max="4" {...field} />
                     </FormControl>
