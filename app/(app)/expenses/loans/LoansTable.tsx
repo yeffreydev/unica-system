@@ -18,6 +18,7 @@ import {
   Trash,
   BookText,
   CreditCard,
+  Edit,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -66,7 +67,7 @@ export function LoansTable() {
   const [currentPageIndex, setCurrentPageIndex] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [openForm, setOpenForm] = useState(false);
-  const [selectedLoanId] = useState<string | null>(null);
+  const [editingLoan, setEditingLoan] = useState<ILoan | null>(null);
   const [installments, setInstallments] = useState<ILoanInstallment[]>([]);
   const [installmentsLoanId, setInstallmentsLoanId] = useState<string | null>(null);
   const [deletingLoans, setDeletingLoans] = useState<string[]>([]);
@@ -213,6 +214,16 @@ export function LoansTable() {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent cy-data="options-menu" align="end">
+            <DropdownMenuItem
+              onClick={() => {
+                setEditingLoan(row.original);
+                setOpenForm(true);
+              }}
+            >
+              <Edit className="mr-2 h-4 w-4" />
+              Editar
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
             <DropdownMenuItem
               onClick={() =>
                 row.original.id && fetchInstallments(row.original.id)
@@ -436,13 +447,23 @@ export function LoansTable() {
       </div>
       <DialogForm
         open={openForm}
-        onOpenChange={setOpenForm}
-        isEdit={!!selectedLoanId}
+        onOpenChange={(open) => {
+          setOpenForm(open);
+          if (!open) setEditingLoan(null);
+        }}
+        isEdit
         disabledTrigger
       >
-        <LoanForm
-          loan={loans.find((loan) => loan.id === selectedLoanId) || null}
-        />
+        {editingLoan && (
+          <LoanForm
+            key={editingLoan.id}
+            loan={editingLoan}
+            setIsOpenDialog={(value) => {
+              setOpenForm(value);
+              if (!value) setEditingLoan(null);
+            }}
+          />
+        )}
       </DialogForm>
     </>
   );

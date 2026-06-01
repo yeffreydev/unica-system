@@ -45,17 +45,9 @@ export const LoansProvider: React.FC<LoanProviderProps> = ({ children }) => {
     setLoans(loans.filter((Loan) => Loan.id !== id));
   };
 
-  // const updateLoan = (Loan: ILoan) => {
-  //   const index = loans.findIndex((u) => u.id === Loan.id);
-  //   if (index !== -1) {
-  //     loans[index] = Loan;
-  //     setLoans([...loans]);
-  //   }
-  // };
-
-  // const removeLoan = (id: string) => {
-  //   setLoans(loans.filter((Loan) => Loan.id !== id));
-  // };
+  const updateLoan = (Loan: ILoan) => {
+    setLoans(loans.map((u) => (u.id === Loan.id ? { ...u, ...Loan } : u)));
+  };
 
   const fetchLoans = async () => {
     try {
@@ -79,6 +71,7 @@ export const LoansProvider: React.FC<LoanProviderProps> = ({ children }) => {
         loans,
         deleteLoan,
         addLoan,
+        updateLoan,
         setLoans,
         refreshLoans: fetchLoans,
       }}

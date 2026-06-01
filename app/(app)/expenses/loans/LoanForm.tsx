@@ -44,8 +44,9 @@ export const LoanForm = ({
   setIsOpenDialog?: (value: boolean) => void;
 }) => {
   const { users, formCloseModalRef, bank } = useContext(AppContext);
-  const interestRate = bank?.bank?.loanInterestRate ?? 0.02;
-  const { addLoan } = useContext(LoansContext);
+  const defaultInterestRate = bank?.bank?.loanInterestRate ?? 0.02;
+  const { addLoan, updateLoan } = useContext(LoansContext);
+  const isEdit = !!loan?.id;
   const [installments, setInstallments] = useState<InstallmentInterface[]>([]);
   const [userSelected, setUserSelected] = useState<IUser | null>(null);
   const [loanTypeSelected, setLoanTypeSelected] = useState<ILoanType | null>(
@@ -61,8 +62,10 @@ export const LoanForm = ({
       loanType: "",
       months: loan?.initalInstallments || 0,
       date: loan?.date || new Date().toISOString().split("T")[0],
+      interestRate: loan?.interestRate ?? defaultInterestRate,
     },
   });
+  const interestRate = Number(form.watch("interestRate")) || 0;
 
   useEffect(() => {
     if (loan) {
@@ -76,8 +79,17 @@ export const LoanForm = ({
     }
   }, [loan]);
 
-  const createLoan = async (data: ILoan) => {
+  const saveLoan = async (data: ILoan) => {
     try {
+      if (isEdit) {
+        const res = await apiClient.put(`/loans/${loan!.id}`, data);
+        if (res.status === 200 || res.status === 201) {
+          updateLoan!(res.data);
+          formCloseModalRef?.current?.click();
+          if (setIsOpenDialog) setIsOpenDialog(false);
+        }
+        return;
+      }
       const res = await apiClient.post("/loans", data);
       if (res.status === 201) {
         addLoan!(res.data);
@@ -172,14 +184,14 @@ export const LoanForm = ({
           console.log(userSelected);
 
           const data: ILoan = {
-            amount: formData.amount,
+            amount: Number(formData.amount),
             userId: userSelected?.id,
             loanTypeId: loanTypeSelected?.id as string,
-            initalInstallments: formData.months,
+            initalInstallments: Number(formData.months),
             date: new Date(formData.date + 'T00:00:00-05:00'),
-            interestRate,
+            interestRate: Number(formData.interestRate) || 0,
           };
-          createLoan(data);
+          saveLoan(data);
         })}
       >
         <div className="flex flex-col gap-2 overflow-y-scroll h-full">
@@ -294,6 +306,28 @@ export const LoanForm = ({
                   )}
                 />
               </div>
+              <FormField
+                control={form.control}
+                name="interestRate"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Tasa de Interés (mensual)</FormLabel>
+                    <FormControl>
+                      <Input
+                        cy-data="loan-interest-rate"
+                        type="number"
+                        step="0.001"
+                        min="0"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Decimal mensual. Ej: 0.02 = 2%.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </>
           )}
           {currentPage === 3 && (
@@ -319,6 +353,7 @@ export const LoanForm = ({
               <div className="flex flex-col gap-2">
                 <h2>Monto: S/ {form.getValues("amount")}</h2>
                 <h2>Tipo de Préstamo: {loanTypeSelected?.name}</h2>
+                <h2>Tasa de Interés: {(interestRate * 100).toFixed(2)}%</h2>
                 <h2 className="text-lg font-semibold">
                   Cuotas: {form.getValues("months")}
                 </h2>
