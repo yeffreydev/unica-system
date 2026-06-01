@@ -463,157 +463,123 @@ export default function Payments() {
 
       {/* Payment Modal */}
       <Dialog open={modalOpen} onOpenChange={(open) => { if (!isSubmitting) setModalOpen(open); }}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Registrar Pago de Cuotas</DialogTitle>
-            <DialogDescription>
-              {selectedUser && `Se pagarán todas las cuotas de ${selectedUser.lastname}, ${selectedUser.name} en un solo pago`}
+        <DialogContent className="max-w-md p-0 gap-0 flex flex-col max-h-[90vh]">
+          <DialogHeader className="px-4 pt-4 pb-3 border-b shrink-0">
+            <DialogTitle className="text-base">Pago de Cuotas</DialogTitle>
+            <DialogDescription className="text-xs">
+              {selectedUser && `${selectedUser.lastname}, ${selectedUser.name} · todas en un pago`}
             </DialogDescription>
           </DialogHeader>
-          <div className="grid gap-4 py-4 max-h-[60vh] overflow-y-auto">
+
+          {/* Scrollable installments */}
+          <div className="flex-1 min-h-0 overflow-y-auto px-4 py-3 space-y-2">
             {selectedUser && (
-              <div className="space-y-2">
-                <Label className="text-sm font-semibold">Cuotas del Mes Actual</Label>
-                {userInstallments.length === 0 ? (
-                  <div className="p-4 text-center text-sm text-muted-foreground bg-muted/30 rounded-lg">
-                    No hay cuotas pendientes para este mes
-                  </div>
-                ) : (
-                  userInstallments.map((installment, index) => {
-                    const loan = installment.loan;
-                    const isUnlocked = !!unlockedInterest[installment.id || ''];
+              userInstallments.length === 0 ? (
+                <div className="p-4 text-center text-sm text-muted-foreground bg-muted/30 rounded-lg">
+                  No hay cuotas pendientes para este mes
+                </div>
+              ) : (
+                userInstallments.map((installment, index) => {
+                  const loan = installment.loan;
+                  const isUnlocked = !!unlockedInterest[installment.id || ''];
+                  const edited = editedAmounts[installment.id || ''];
+                  const rowTotal = (parseFloat(edited?.capital) || 0) + (parseFloat(edited?.interest) || 0);
 
-                    return (
-                      <div
-                        key={installment.id || index}
-                        className="p-3 border rounded-lg border-muted transition-all"
-                      >
-                        <div className="flex items-start justify-between">
-                          <div className="flex items-start gap-3 flex-1">
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-1">
-                                <span className="font-semibold text-sm">
-                                  Cuota #{installment.installment_number || index + 1}
-                                </span>
-                                {loan && (
-                                  <Badge variant="outline" className="text-xs">
-                                    {loan.loanType?.name || 'Préstamo'}
-                                  </Badge>
-                                )}
-                              </div>
+                  return (
+                    <div key={installment.id || index} className="rounded-lg border p-2.5 space-y-2">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <span className="text-xs font-semibold shrink-0">
+                            #{installment.installment_number || index + 1}
+                          </span>
+                          {loan && (
+                            <Badge variant="outline" className="text-[10px] px-1 py-0 h-4 truncate">
+                              {loan.loanType?.name || 'Préstamo'}
+                            </Badge>
+                          )}
+                        </div>
+                        {loan && (
+                          <span className="text-[11px] text-muted-foreground shrink-0">
+                            Saldo <span className="font-medium text-orange-600">S/ {loan.balance?.toFixed(2)}</span> · {loan.interestRate}%
+                          </span>
+                        )}
+                      </div>
 
-                              {loan && (
-                                <div className="text-xs text-muted-foreground space-y-1 mt-2 p-2 bg-muted/30 rounded">
-                                  <div className="flex justify-between">
-                                    <span>Monto del préstamo:</span>
-                                    <span className="font-medium">S/ {loan.amount?.toFixed(2)}</span>
-                                  </div>
-                                  <div className="flex justify-between">
-                                    <span>Saldo:</span>
-                                    <span className="font-medium text-orange-600">S/ {loan.balance?.toFixed(2)}</span>
-                                  </div>
-                                  <div className="flex justify-between">
-                                    <span>Tasa de interés:</span>
-                                    <span className="font-medium">{loan.interestRate}%</span>
-                                  </div>
-                                </div>
-                              )}
-                            </div>
-                          </div>
-
-                          <div className="ml-3 space-y-2 min-w-[140px]">
-                            <div className="text-xs text-muted-foreground font-medium mb-1">Editar montos:</div>
-                            <div className="space-y-1.5">
-                              <div>
-                                <Label htmlFor={`capital-${installment.id}`} className="text-xs text-muted-foreground">Capital</Label>
-                                <Input
-                                  id={`capital-${installment.id}`}
-                                  type="number"
-                                  value={editedAmounts[installment.id || '']?.capital || ''}
-                                  onChange={(e) => {
-                                    const value = e.target.value;
-                                    const numValue = parseFloat(value);
-                                    const maxCapital = loan?.balance || 0;
-
-                                    if (value === '' || (numValue >= 0 && numValue <= maxCapital)) {
-                                      setEditedAmounts(prev => ({
-                                        ...prev,
-                                        [installment.id || '']: {
-                                          ...prev[installment.id || ''],
-                                          capital: value
-                                        }
-                                      }));
-                                    }
-                                  }}
-                                  onClick={(e) => e.stopPropagation()}
-                                  step="0.01"
-                                  min="0"
-                                  max={loan?.balance || undefined}
-                                  placeholder="0.00"
-                                  className="h-8 text-xs"
-                                />
-                              </div>
-                              <div>
-                                <Label htmlFor={`interest-${installment.id}`} className="text-xs text-muted-foreground">Interés</Label>
-                                <div className="flex items-center gap-1">
-                                  <Input
-                                    disabled={!isUnlocked}
-                                    id={`interest-${installment.id}`}
-                                    type="number"
-                                    value={editedAmounts[installment.id || '']?.interest || ''}
-                                    onChange={(e) => {
-                                      const value = e.target.value;
-                                      setEditedAmounts(prev => ({
-                                        ...prev,
-                                        [installment.id || '']: {
-                                          ...prev[installment.id || ''],
-                                          interest: value
-                                        }
-                                      }));
-                                    }}
-                                    step="0.01"
-                                    min="0"
-                                    placeholder="0.00"
-                                    className="h-8 text-xs"
-                                  />
-                                  <Button
-                                    type="button"
-                                    variant={isUnlocked ? "default" : "outline"}
-                                    size="icon"
-                                    className="h-8 w-8 shrink-0"
-                                    title={isUnlocked ? "Bloquear interés" : "Desbloquear para editar"}
-                                    onClick={() =>
-                                      setUnlockedInterest(prev => ({
-                                        ...prev,
-                                        [installment.id || '']: !prev[installment.id || '']
-                                      }))
-                                    }
-                                  >
-                                    {isUnlocked ? <Unlock className="h-3.5 w-3.5" /> : <Lock className="h-3.5 w-3.5" />}
-                                  </Button>
-                                </div>
-                              </div>
-                              <div className="pt-1 border-t">
-                                <div className="text-xs text-muted-foreground">Total:</div>
-                                <div className="font-bold text-sm">
-                                  S/ {(() => {
-                                    const edited = editedAmounts[installment.id || ''];
-                                    const capital = parseFloat(edited?.capital) || 0;
-                                    const interest = parseFloat(edited?.interest) || 0;
-                                    return (capital + interest).toFixed(2);
-                                  })()}
-                                </div>
-                              </div>
-                            </div>
+                      <div className="grid grid-cols-[1fr_1fr_auto] gap-2 items-end">
+                        <div>
+                          <Label htmlFor={`capital-${installment.id}`} className="text-[10px] text-muted-foreground">Capital</Label>
+                          <Input
+                            id={`capital-${installment.id}`}
+                            type="number"
+                            value={edited?.capital || ''}
+                            onChange={(e) => {
+                              const value = e.target.value;
+                              const numValue = parseFloat(value);
+                              const maxCapital = loan?.balance || 0;
+                              if (value === '' || (numValue >= 0 && numValue <= maxCapital)) {
+                                setEditedAmounts(prev => ({
+                                  ...prev,
+                                  [installment.id || '']: { ...prev[installment.id || ''], capital: value }
+                                }));
+                              }
+                            }}
+                            step="0.01"
+                            min="0"
+                            max={loan?.balance || undefined}
+                            placeholder="0.00"
+                            className="h-8 text-xs"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor={`interest-${installment.id}`} className="text-[10px] text-muted-foreground">Interés</Label>
+                          <div className="flex items-center gap-1">
+                            <Input
+                              disabled={!isUnlocked}
+                              id={`interest-${installment.id}`}
+                              type="number"
+                              value={edited?.interest || ''}
+                              onChange={(e) => {
+                                const value = e.target.value;
+                                setEditedAmounts(prev => ({
+                                  ...prev,
+                                  [installment.id || '']: { ...prev[installment.id || ''], interest: value }
+                                }));
+                              }}
+                              step="0.01"
+                              min="0"
+                              placeholder="0.00"
+                              className="h-8 text-xs"
+                            />
+                            <Button
+                              type="button"
+                              variant={isUnlocked ? "default" : "outline"}
+                              size="icon"
+                              className="h-8 w-8 shrink-0"
+                              title={isUnlocked ? "Bloquear interés" : "Desbloquear para editar"}
+                              onClick={() =>
+                                setUnlockedInterest(prev => ({
+                                  ...prev,
+                                  [installment.id || '']: !prev[installment.id || '']
+                                }))
+                              }
+                            >
+                              {isUnlocked ? <Unlock className="h-3.5 w-3.5" /> : <Lock className="h-3.5 w-3.5" />}
+                            </Button>
                           </div>
                         </div>
+                        <div className="text-right pb-1">
+                          <div className="text-[10px] text-muted-foreground">Total</div>
+                          <div className="text-xs font-bold tabular-nums">S/ {rowTotal.toFixed(2)}</div>
+                        </div>
                       </div>
-                    );
-                  })
-                )}
-              </div>
+                    </div>
+                  );
+                })
+              )
             )}
           </div>
+
+          {/* Sticky totals + actions */}
           {selectedUser && userInstallments.length > 0 && (() => {
             const total = userInstallments.reduce((sum, inst) => {
               const e = editedAmounts[inst.id || ''];
@@ -622,63 +588,54 @@ export default function Payments() {
             const received = parseFloat(cashReceived) || 0;
             const vuelto = received - total;
             return (
-              <div className="space-y-3 border-t pt-4">
+              <div className="shrink-0 border-t bg-muted/20 px-4 py-3 space-y-2.5">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Total a pagar</span>
+                  <span className="text-xs text-muted-foreground">Total a pagar</span>
                   <span className="text-lg font-bold tabular-nums">S/ {total.toFixed(2)}</span>
                 </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="cash-received" className="text-xs text-muted-foreground flex items-center gap-1">
-                    <Wallet className="h-3.5 w-3.5" /> Efectivo recibido
-                  </Label>
-                  <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2">
+                  <div className="relative flex-1">
+                    <Wallet className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                     <Input
                       id="cash-received"
                       type="number"
                       step="0.01"
                       min="0"
-                      placeholder="0.00"
+                      placeholder="Efectivo recibido"
                       value={cashReceived}
                       onChange={(e) => setCashReceived(e.target.value)}
-                      className="h-10 text-base font-semibold tabular-nums"
+                      className="h-9 pl-8 text-sm font-semibold tabular-nums"
                     />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="h-10 text-xs shrink-0"
-                      onClick={() => setCashReceived(total.toFixed(2))}
-                    >
-                      Exacto
-                    </Button>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="h-9 text-xs shrink-0"
+                    onClick={() => setCashReceived(total.toFixed(2))}
+                  >
+                    Exacto
+                  </Button>
+                  <div className={`flex items-baseline gap-1 shrink-0 ${vuelto < 0 ? 'text-red-600 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                    <span className="text-[10px] text-muted-foreground">Vuelto</span>
+                    <span className="text-sm font-bold tabular-nums">S/ {vuelto.toFixed(2)}</span>
                   </div>
                 </div>
-                <div className={`flex items-center justify-between rounded-lg p-3 ${vuelto < 0 ? 'bg-red-50 dark:bg-red-950/30' : 'bg-emerald-50 dark:bg-emerald-950/30'}`}>
-                  <span className="text-sm font-medium">Vuelto</span>
-                  <span className={`text-lg font-bold tabular-nums ${vuelto < 0 ? 'text-red-600 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
-                    S/ {vuelto.toFixed(2)}
-                  </span>
+                <div className="flex gap-2 pt-0.5">
+                  <Button variant="outline" className="flex-1 h-9" onClick={() => setModalOpen(false)} disabled={isSubmitting}>
+                    Cancelar
+                  </Button>
+                  <Button className="flex-1 h-9" onClick={confirmPayment} disabled={isSubmitting}>
+                    {isSubmitting ? (
+                      <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Registrando...</>
+                    ) : (
+                      "Registrar Pago"
+                    )}
+                  </Button>
                 </div>
-                {received > 0 && vuelto < 0 && (
-                  <p className="text-xs text-red-600 dark:text-red-400">
-                    Efectivo insuficiente para cubrir el total.
-                  </p>
-                )}
               </div>
             );
           })()}
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setModalOpen(false)} disabled={isSubmitting}>
-              Cancelar
-            </Button>
-            <Button onClick={confirmPayment} disabled={isSubmitting}>
-              {isSubmitting ? (
-                <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Registrando...</>
-              ) : (
-                "Registrar Pago"
-              )}
-            </Button>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
 
