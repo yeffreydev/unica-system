@@ -53,6 +53,7 @@ export const LoanForm = ({
     null
   );
   const [loanTypes, setLoanTypes] = useState<ILoanType[]>([]);
+  const [isSaving, setIsSaving] = useState(false);
 
   const [currentPage, setCurrentPage] = useState(1);
   const form = useForm({
@@ -62,10 +63,12 @@ export const LoanForm = ({
       loanType: "",
       months: loan?.initalInstallments || 0,
       date: loan?.date || new Date().toISOString().split("T")[0],
-      interestRate: loan?.interestRate ?? defaultInterestRate,
+      // Stored/displayed as integer percent: 2 = 0.02
+      interestRate: (loan?.interestRate ?? defaultInterestRate) * 100,
     },
   });
-  const interestRate = Number(form.watch("interestRate")) || 0;
+  // Decimal rate used for calculations (2 -> 0.02)
+  const interestRate = (Number(form.watch("interestRate")) || 0) / 100;
 
   useEffect(() => {
     if (loan) {
@@ -80,6 +83,7 @@ export const LoanForm = ({
   }, [loan]);
 
   const saveLoan = async (data: ILoan) => {
+    setIsSaving(true);
     try {
       if (isEdit) {
         const res = await apiClient.put(`/loans/${loan!.id}`, data);
@@ -99,6 +103,8 @@ export const LoanForm = ({
       }
     } catch (e) {
       console.log(e);
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -189,7 +195,7 @@ export const LoanForm = ({
             loanTypeId: loanTypeSelected?.id as string,
             initalInstallments: Number(formData.months),
             date: new Date(formData.date + 'T00:00:00-05:00'),
-            interestRate: Number(formData.interestRate) || 0,
+            interestRate: (Number(formData.interestRate) || 0) / 100,
           };
           saveLoan(data);
         })}
@@ -311,18 +317,18 @@ export const LoanForm = ({
                 name="interestRate"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Tasa de Interés (mensual)</FormLabel>
+                    <FormLabel>Tasa de Interés (%)</FormLabel>
                     <FormControl>
                       <Input
                         cy-data="loan-interest-rate"
                         type="number"
-                        step="0.001"
+                        step="1"
                         min="0"
                         {...field}
                       />
                     </FormControl>
                     <FormDescription>
-                      Decimal mensual. Ej: 0.02 = 2%.
+                      Porcentaje mensual entero. Ej: 2 = 2% (0.02).
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -406,8 +412,8 @@ export const LoanForm = ({
           )}
           {currentPage === 3 && (
             <div>
-              <Button cy-data="save-btn" type="submit">
-                Guardar
+              <Button cy-data="save-btn" type="submit" disabled={isSaving}>
+                {isSaving ? "Guardando..." : "Guardar"}
               </Button>
             </div>
           )}

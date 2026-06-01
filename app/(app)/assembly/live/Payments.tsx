@@ -7,7 +7,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Check, CreditCard, Info, Search, Banknote, Loader2 } from "lucide-react";
+import { Check, CreditCard, Info, Search, Banknote, Loader2, Lock, Unlock, Wallet } from "lucide-react";
 import { useContext, useEffect, useState } from "react";
 import { sileo } from "sileo";
 import { IUser } from "@/types/IUser";
@@ -18,7 +18,6 @@ import { AppContext } from "@/context/AppContext";
 
 import { ILoanInstallment } from "@/types/ILoan";
 import apiClient from "@/config/apiClient";
-import { Checkbox } from "@/components/ui/checkbox";
 
 type LoanInterestRoundingMode = "NORMAL" | "UP" | "DOWN";
 type LoanInterestRoundingConfig = {
@@ -44,6 +43,8 @@ export default function Payments() {
   const [currentMonthInstallments, setCurrentMonthInstallments] = useState<ILoanInstallment[]>([]);
   const [userInstallments, setUserInstallments] = useState<ILoanInstallment[]>([]);
   const [editedAmounts, setEditedAmounts] = useState<Record<string, { capital: string; interest: string; description: string }>>({});
+  const [unlockedInterest, setUnlockedInterest] = useState<Record<string, boolean>>({});
+  const [cashReceived, setCashReceived] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [payingUserId, setPayingUserId] = useState<string | null>(null);
@@ -147,17 +148,20 @@ export default function Payments() {
     const initialAmounts: Record<string, { capital: string; interest: string; description: string }> = {};
     installmentsForUser.forEach(inst => {
       if (inst.id) {
+        const roundedInterest = getInstallmentInterest(inst, config);
         if (inst.paymentAmount !== null && inst.paymentAmount !== undefined) {
-          const roundedInterest = getInstallmentInterest(inst, config);
           initialAmounts[inst.id] = {
             capital: inst.paymentAmount.toString(),
             interest: roundedInterest.toString(),
             description: inst.paymentDescription || ''
           };
         } else {
-          const roundedInterest = getInstallmentInterest(inst, config);
+          // Prefill capital with scheduled installment capital, clamped to balance.
+          const scheduledCapital = Number(inst.payment ?? 0);
+          const maxCapital = inst.loan?.balance ?? scheduledCapital;
+          const defaultCapital = Math.min(scheduledCapital, maxCapital);
           initialAmounts[inst.id] = {
-            capital: '0',
+            capital: defaultCapital > 0 ? defaultCapital.toString() : '0',
             interest: roundedInterest.toString(),
             description: ''
           };
@@ -165,6 +169,8 @@ export default function Payments() {
       }
     });
     setEditedAmounts(initialAmounts);
+    setUnlockedInterest({});
+    setCashReceived('');
     setModalOpen(true);
   };
 
@@ -239,6 +245,8 @@ export default function Payments() {
       setSelectedInstallments([]);
       setUserInstallments([]);
       setEditedAmounts({});
+      setUnlockedInterest({});
+      setCashReceived('');
     } catch (error) {
       console.error("Error confirming payment:", error);
       sileo.error({
@@ -459,7 +467,7 @@ export default function Payments() {
           <DialogHeader>
             <DialogTitle>Registrar Pago de Cuotas</DialogTitle>
             <DialogDescription>
-              {selectedUser && `Selecciona las cuotas a pagar para ${selectedUser.lastname}, ${selectedUser.name}`}
+              {selectedUser && `Se pagarán todas las cuotas de ${selectedUser.lastname}, ${selectedUser.name} en un solo pago`}
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4 max-h-[60vh] overflow-y-auto">
@@ -472,34 +480,16 @@ export default function Payments() {
                   </div>
                 ) : (
                   userInstallments.map((installment, index) => {
-                    const isSelected = selectedInstallments.includes(installment.id || '');
                     const loan = installment.loan;
+                    const isUnlocked = !!unlockedInterest[installment.id || ''];
 
                     return (
                       <div
                         key={installment.id || index}
-                        className={`p-3 border rounded-lg cursor-pointer transition-all ${
-                          isSelected
-                            ? 'border-primary bg-primary/5'
-                            : 'border-muted hover:border-primary/50'
-                        }`}
-                        onClick={() => {
-                          if (isSelected) {
-                            setSelectedInstallments(prev =>
-                              prev.filter(id => id !== installment.id)
-                            );
-                          } else {
-                            setSelectedInstallments(prev => [...prev, installment.id || '']);
-                          }
-                        }}
+                        className="p-3 border rounded-lg border-muted transition-all"
                       >
                         <div className="flex items-start justify-between">
                           <div className="flex items-start gap-3 flex-1">
-                            <Checkbox
-                              checked={isSelected}
-                              onCheckedChange={() => {}}
-                              className="mt-1"
-                            />
                             <div className="flex-1">
                               <div className="flex items-center gap-2 mb-1">
                                 <span className="font-semibold text-sm">
@@ -565,27 +555,43 @@ export default function Payments() {
                               </div>
                               <div>
                                 <Label htmlFor={`interest-${installment.id}`} className="text-xs text-muted-foreground">Interés</Label>
-                                <Input
-                                  disabled
-                                  id={`interest-${installment.id}`}
-                                  type="number"
-                                  value={editedAmounts[installment.id || '']?.interest || ''}
-                                  onChange={(e) => {
-                                    const value = e.target.value;
-                                    setEditedAmounts(prev => ({
-                                      ...prev,
-                                      [installment.id || '']: {
-                                        ...prev[installment.id || ''],
-                                        interest: value
-                                      }
-                                    }));
-                                  }}
-                                  onClick={(e) => e.stopPropagation()}
-                                  step="0.01"
-                                  min="0"
-                                  placeholder="0.00"
-                                  className="h-8 text-xs"
-                                />
+                                <div className="flex items-center gap-1">
+                                  <Input
+                                    disabled={!isUnlocked}
+                                    id={`interest-${installment.id}`}
+                                    type="number"
+                                    value={editedAmounts[installment.id || '']?.interest || ''}
+                                    onChange={(e) => {
+                                      const value = e.target.value;
+                                      setEditedAmounts(prev => ({
+                                        ...prev,
+                                        [installment.id || '']: {
+                                          ...prev[installment.id || ''],
+                                          interest: value
+                                        }
+                                      }));
+                                    }}
+                                    step="0.01"
+                                    min="0"
+                                    placeholder="0.00"
+                                    className="h-8 text-xs"
+                                  />
+                                  <Button
+                                    type="button"
+                                    variant={isUnlocked ? "default" : "outline"}
+                                    size="icon"
+                                    className="h-8 w-8 shrink-0"
+                                    title={isUnlocked ? "Bloquear interés" : "Desbloquear para editar"}
+                                    onClick={() =>
+                                      setUnlockedInterest(prev => ({
+                                        ...prev,
+                                        [installment.id || '']: !prev[installment.id || '']
+                                      }))
+                                    }
+                                  >
+                                    {isUnlocked ? <Unlock className="h-3.5 w-3.5" /> : <Lock className="h-3.5 w-3.5" />}
+                                  </Button>
+                                </div>
                               </div>
                               <div className="pt-1 border-t">
                                 <div className="text-xs text-muted-foreground">Total:</div>
@@ -608,6 +614,59 @@ export default function Payments() {
               </div>
             )}
           </div>
+          {selectedUser && userInstallments.length > 0 && (() => {
+            const total = userInstallments.reduce((sum, inst) => {
+              const e = editedAmounts[inst.id || ''];
+              return sum + (parseFloat(e?.capital) || 0) + (parseFloat(e?.interest) || 0);
+            }, 0);
+            const received = parseFloat(cashReceived) || 0;
+            const vuelto = received - total;
+            return (
+              <div className="space-y-3 border-t pt-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-muted-foreground">Total a pagar</span>
+                  <span className="text-lg font-bold tabular-nums">S/ {total.toFixed(2)}</span>
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="cash-received" className="text-xs text-muted-foreground flex items-center gap-1">
+                    <Wallet className="h-3.5 w-3.5" /> Efectivo recibido
+                  </Label>
+                  <div className="flex items-center gap-2">
+                    <Input
+                      id="cash-received"
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      placeholder="0.00"
+                      value={cashReceived}
+                      onChange={(e) => setCashReceived(e.target.value)}
+                      className="h-10 text-base font-semibold tabular-nums"
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-10 text-xs shrink-0"
+                      onClick={() => setCashReceived(total.toFixed(2))}
+                    >
+                      Exacto
+                    </Button>
+                  </div>
+                </div>
+                <div className={`flex items-center justify-between rounded-lg p-3 ${vuelto < 0 ? 'bg-red-50 dark:bg-red-950/30' : 'bg-emerald-50 dark:bg-emerald-950/30'}`}>
+                  <span className="text-sm font-medium">Vuelto</span>
+                  <span className={`text-lg font-bold tabular-nums ${vuelto < 0 ? 'text-red-600 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                    S/ {vuelto.toFixed(2)}
+                  </span>
+                </div>
+                {received > 0 && vuelto < 0 && (
+                  <p className="text-xs text-red-600 dark:text-red-400">
+                    Efectivo insuficiente para cubrir el total.
+                  </p>
+                )}
+              </div>
+            );
+          })()}
           <DialogFooter>
             <Button variant="outline" onClick={() => setModalOpen(false)} disabled={isSubmitting}>
               Cancelar
