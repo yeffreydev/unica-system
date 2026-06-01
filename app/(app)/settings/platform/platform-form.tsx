@@ -59,6 +59,11 @@ const PlatformFormSchema = z.object({
     .refine((v) => Number.isInteger(Number(v)), { message: "Debe ser un número entero." })
     .refine((v) => Number(v) >= 0, { message: "No puede ser menor a 0." })
     .refine((v) => Number(v) <= 4, { message: "No puede ser mayor a 4." }),
+  stockPrice: z
+    .string()
+    .refine((v) => v !== "", { message: "Este campo es requerido." })
+    .refine((v) => !isNaN(Number(v)), { message: "Debe ser un número válido." })
+    .refine((v) => Number(v) >= 0, { message: "El precio no puede ser negativo." }),
 });
 
 type PlatformFormValues = z.infer<typeof PlatformFormSchema>;
@@ -71,6 +76,7 @@ const defaultValues: PlatformFormValues = {
   loanInterestRoundingDigits: "2",
   savingsInterestRoundingMode: "NORMAL",
   savingsInterestRoundingDigits: "2",
+  stockPrice: "10",
 };
 
 export function PlatformForm() {
@@ -86,22 +92,29 @@ export function PlatformForm() {
   const updatePlatform = async (data: PlatformFormValues) => {
     setLoading(true);
     try {
-      const res = await apiClient.put("/banks", {
-        name: data.name,
-        loanInterestRate: Number(data.loanInterestRate) / 100,
-        savingsInterestRate: Number(data.savingsInterestRate) / 100,
-        loanInterestRoundingMode: data.loanInterestRoundingMode,
-        loanInterestRoundingDigits: Number(data.loanInterestRoundingDigits),
-        savingsInterestRoundingMode: data.savingsInterestRoundingMode,
-        savingsInterestRoundingDigits: Number(data.savingsInterestRoundingDigits),
-      });
+      const [res, stockRes] = await Promise.all([
+        apiClient.put("/banks", {
+          name: data.name,
+          loanInterestRate: Number(data.loanInterestRate) / 100,
+          savingsInterestRate: Number(data.savingsInterestRate) / 100,
+          loanInterestRoundingMode: data.loanInterestRoundingMode,
+          loanInterestRoundingDigits: Number(data.loanInterestRoundingDigits),
+          savingsInterestRoundingMode: data.savingsInterestRoundingMode,
+          savingsInterestRoundingDigits: Number(data.savingsInterestRoundingDigits),
+        }),
+        apiClient.put("/banks/stock", { price: Number(data.stockPrice) }),
+      ]);
 
       if (res.data) {
         sileo.success({
           title: "Éxito",
           description: "La configuración se actualizó correctamente.",
         });
-        const updatedBank = { ...bank, bank: res.data };
+        const updatedBank = {
+          ...bank,
+          bank: res.data,
+          mainStock: stockRes?.data ?? bank.mainStock,
+        };
         setBank(updatedBank);
         localStorage.setItem("bank", JSON.stringify(updatedBank));
       }
@@ -131,6 +144,7 @@ export function PlatformForm() {
     form.setValue("loanInterestRoundingDigits", String(bank?.bank?.loanInterestRoundingDigits ?? 2));
     form.setValue("savingsInterestRoundingMode", bank?.bank?.savingsInterestRoundingMode ?? "NORMAL");
     form.setValue("savingsInterestRoundingDigits", String(bank?.bank?.savingsInterestRoundingDigits ?? 2));
+    form.setValue("stockPrice", String(bank?.mainStock?.price ?? 10));
   }, [bank]);
 
   const roundingMode = form.watch("loanInterestRoundingMode");
@@ -300,6 +314,33 @@ export function PlatformForm() {
                 )}
               />
             </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Acciones</CardTitle>
+            <CardDescription>
+              Configura el precio de cada acción. Este valor se usa al registrar compras en la asamblea.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <FormField
+              control={form.control}
+              name="stockPrice"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Precio de la acción (S/)</FormLabel>
+                  <FormControl>
+                    <Input type="number" step="0.01" min="0" {...field} />
+                  </FormControl>
+                  <FormDescription>
+                    Precio unitario aplicado a cada acción comprada en la asamblea.
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
           </CardContent>
         </Card>
 

@@ -17,7 +17,7 @@ import { IAssemblyScheduleRun, IPartnerShares, IUserStock } from "../types";
 import { useAssembly } from "../AssemblyContext";
 
 export default function Shares() {
-  const { users } = useContext(AppContext);
+  const { users, bank } = useContext(AppContext);
   const { assembly } = useAssembly();
 
   const [assemblyRun, setAssemblyRun] = useState<IAssemblyScheduleRun | null>(null);
@@ -25,7 +25,7 @@ export default function Shares() {
   const [partnerShares, setPartnerShares] = useState<IPartnerShares[]>([]);
   const [selectedUser, setSelectedUser] = useState<IUser | null>(null);
   const [quantity, setQuantity] = useState(1);
-  const [price] = useState(10);
+  const price = bank?.mainStock?.price ?? 0;
   const [searchQuery, setSearchQuery] = useState("");
 
   const handleAddShares = (user: IPartnerShares) => {
