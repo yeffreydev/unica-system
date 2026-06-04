@@ -148,11 +148,24 @@ export default function Payments() {
     });
     const result: ILoanInstallment[] = [];
     byLoan.forEach((insts) => {
+      // 1) Cuota que ya tiene pago en esta asamblea: la mantenemos visible para
+      // ver/editar lo pagado (si no, rotaría a la siguiente y parecería no pagada).
+      const paidThisRun = insts.find(
+        (i) =>
+          (i.paymentAmount !== null && i.paymentAmount !== undefined) ||
+          (i.paymentInterest !== null && i.paymentInterest !== undefined)
+      );
+      if (paidThisRun) {
+        result.push(paidThisRun);
+        return;
+      }
+      // 2) Cuota del mes de la asamblea.
       const assemblyCuota = insts.find((i) => i.isAssemblyMonth);
       if (assemblyCuota) {
         result.push(assemblyCuota);
         return;
       }
+      // 3) Cuota pendiente más próxima del préstamo.
       const pending = insts
         .filter((i) => !i.paid && (i.loan?.balance ?? 0) > 0)
         .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
