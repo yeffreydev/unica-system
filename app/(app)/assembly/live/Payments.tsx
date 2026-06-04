@@ -138,6 +138,12 @@ export default function Payments() {
   // desfase de fechas) tomamos su cuota pendiente más próxima. Así cada préstamo
   // se paga/edita de forma independiente y no sólo el más antiguo del socio.
   const getUserPayableInstallments = (userId: string): ILoanInstallment[] => {
+    // Fin del mes en que corre la asamblea. No surfaceamos cuotas con fecha
+    // posterior (futuras): solo la del mes en curso o vencidas de meses previos.
+    const runDate = assemblyRun ? new Date(assemblyRun.startAt) : null;
+    const assemblyMonthEnd = runDate
+      ? new Date(runDate.getFullYear(), runDate.getMonth() + 1, 0, 23, 59, 59, 999)
+      : null;
     const userInsts = currentMonthInstallments.filter((inst) => inst.user?.id === userId);
     const byLoan = new Map<string, ILoanInstallment[]>();
     userInsts.forEach((inst) => {
@@ -165,9 +171,15 @@ export default function Payments() {
         result.push(assemblyCuota);
         return;
       }
-      // 3) Cuota pendiente más próxima del préstamo.
+      // 3) Cuota vencida más próxima (fecha <= fin de mes de la asamblea).
+      // Excluye cuotas futuras: esas se pagan en su propia reunión.
       const pending = insts
-        .filter((i) => !i.paid && (i.loan?.balance ?? 0) > 0)
+        .filter(
+          (i) =>
+            !i.paid &&
+            (i.loan?.balance ?? 0) > 0 &&
+            (!assemblyMonthEnd || new Date(i.date) <= assemblyMonthEnd)
+        )
         .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
       if (pending.length > 0) result.push(pending[0]);
     });
