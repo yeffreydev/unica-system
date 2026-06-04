@@ -133,13 +133,39 @@ export default function Payments() {
     fetchAssemblyMonthInstallments();
   }, [assemblyRun?.id]);
 
+  // Una cuota pagable por cada préstamo activo del socio. Preferimos la cuota
+  // del mes de la asamblea; si un préstamo no tiene cuota este mes (por gracia o
+  // desfase de fechas) tomamos su cuota pendiente más próxima. Así cada préstamo
+  // se paga/edita de forma independiente y no sólo el más antiguo del socio.
+  const getUserPayableInstallments = (userId: string): ILoanInstallment[] => {
+    const userInsts = currentMonthInstallments.filter((inst) => inst.user?.id === userId);
+    const byLoan = new Map<string, ILoanInstallment[]>();
+    userInsts.forEach((inst) => {
+      const loanId = inst.loanId || inst.loan?.id || '';
+      const list = byLoan.get(loanId) ?? [];
+      list.push(inst);
+      byLoan.set(loanId, list);
+    });
+    const result: ILoanInstallment[] = [];
+    byLoan.forEach((insts) => {
+      const assemblyCuota = insts.find((i) => i.isAssemblyMonth);
+      if (assemblyCuota) {
+        result.push(assemblyCuota);
+        return;
+      }
+      const pending = insts
+        .filter((i) => !i.paid && (i.loan?.balance ?? 0) > 0)
+        .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+      if (pending.length > 0) result.push(pending[0]);
+    });
+    return result;
+  };
+
   const handlePayInterest = async (user: IUser) => {
     const config = await fetchRoundingConfig();
     setSelectedUser(user);
 
-    const installmentsForUser = currentMonthInstallments.filter(
-      inst => inst.user?.id === user.id && inst.isAssemblyMonth
-    );
+    const installmentsForUser = getUserPayableInstallments(user.id);
     setUserInstallments(installmentsForUser);
 
     const installmentIds = installmentsForUser.map(inst => inst.id || '');
@@ -179,8 +205,8 @@ export default function Payments() {
     setDetailsModalOpen(true);
   };
 
-  const partnersWithLoans = paymentsData.partners.filter((user) =>
-    currentMonthInstallments.some((inst) => inst.user?.id === user.id && inst.isAssemblyMonth)
+  const partnersWithLoans = paymentsData.partners.filter(
+    (user) => getUserPayableInstallments(user.id).length > 0
   );
 
   const calculateTotals = () => {
@@ -354,9 +380,7 @@ export default function Payments() {
                   const paymentAmount = userPayments.reduce((sum, p) => sum + Number(p.amount || 0) + Number(p.interest || 0), 0);
                   const hasPaid = paymentAmount > 0;
 
-                  const userAssemblyInstallments = currentMonthInstallments.filter(
-                    inst => inst.user?.id === user.id && inst.isAssemblyMonth
-                  );
+                  const userAssemblyInstallments = getUserPayableInstallments(user.id);
 
                   const totalBalance = userAssemblyInstallments.reduce((sum, inst) => sum + (inst.loan?.balance || 0), 0);
                   const uniqueLoanIds = new Set(userAssemblyInstallments.map(inst => inst.loanId));
@@ -653,11 +677,8 @@ export default function Payments() {
               const userPaymentsDetail = paymentsData.payments.filter(p => p.userId === selectedUser.id);
               const paidCapital = userPaymentsDetail.reduce((sum, p) => sum + Number(p.amount || 0), 0);
               const paidInterest = userPaymentsDetail.reduce((sum, p) => sum + Number(p.interest || 0), 0);
-              const totalPaid = paidCapital + paidInterest;
 
-              const userInstallmentsForDetail = currentMonthInstallments.filter(
-                inst => inst.user?.id === selectedUser.id && inst.isAssemblyMonth
-              );
+              const userInstallmentsForDetail = getUserPayableInstallments(selectedUser.id);
 
               const allBalancesPaid = userInstallmentsForDetail.every(
                 inst => (inst.loan?.balance || 0) === 0
@@ -711,8 +732,9 @@ export default function Payments() {
                         const expectedCapital = installment.payment;
                         const expectedInterest = getInstallmentInterest(installment);
 
-                        const installmentPaidCapital = totalPaid > 0 ? expectedCapital : 0;
-                        const installmentPaidInterest = totalPaid > 0 ? expectedInterest : 0;
+                        // Pagado real por cuota (por préstamo), no el total del socio.
+                        const installmentPaidCapital = Number(installment.paymentAmount ?? 0);
+                        const installmentPaidInterest = Number(installment.paymentInterest ?? 0);
                         const installmentPaid = installmentPaidCapital + installmentPaidInterest;
                         const installmentTotal = expectedCapital + expectedInterest;
 
