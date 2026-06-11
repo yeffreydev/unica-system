@@ -179,6 +179,7 @@ export default function Assembly() {
               elapsed={elapsed}
               totalSteps={totalSteps}
               currentStepMeta={currentStepMeta}
+              place={assembly.lastRun?.place ?? assembly.place}
             />
           )
         }
@@ -192,6 +193,7 @@ export default function Assembly() {
         handleStartAssembly={handleStartAssembly}
         upcomingISO={typeof assembly.nextRun === 'string' ? assembly.nextRun : new Date(assembly.nextRun).toISOString()}
         onRescheduled={() => { refetchAssembly(); }}
+        place={assembly.place}
       />}
       
 

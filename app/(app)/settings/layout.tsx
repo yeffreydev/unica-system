@@ -16,6 +16,10 @@ const sidebarNavItems = [
     title: "Asamblea",
     href: "/settings/assembly/",
   },
+  {
+    title: "Cuenta de acceso",
+    href: "/settings/account/",
+  },
 ];
 
 interface SettingsLayoutProps {

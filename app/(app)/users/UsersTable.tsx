@@ -40,10 +40,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Badge } from "@/components/ui/badge";
 import apiClient from "@/config/apiClient";
 import { IUser, isActiveUser } from "@/types/IUser";
 import { UserDialog } from "./UserDialog";
 import { UserForm } from "./UserForm";
+import { OrgRolesDialog } from "./OrgRolesDialog";
 
 export function UsersTable() {
   const [sorting, setSorting] = useState<SortingState>([]);
@@ -151,6 +153,21 @@ export function UsersTable() {
       cell: ({ row }) => (
         <div className="lowercase">{row.getValue("email")}</div>
       ),
+    },
+    {
+      id: "orgRole",
+      header: "Cargo",
+      accessorFn: (row) => row.orgRole?.name ?? "",
+      cell: ({ row }) => {
+        const name = row.original.orgRole?.name;
+        return name ? (
+          <Badge variant="outline" className="font-medium">
+            {name}
+          </Badge>
+        ) : (
+          <span className="text-xs text-muted-foreground">—</span>
+        );
+      },
     },
     {
       id: "actions",
@@ -275,9 +292,12 @@ export function UsersTable() {
           </DropdownMenuContent>
         </DropdownMenu>
         
+        {/* Gestión de cargos organizativos */}
+        <OrgRolesDialog onChanged={apiGetUsers} />
+
         {/* Dialog para crear usuario */}
-        <UserDialog 
-          open={isCreateDialogOpen} 
+        <UserDialog
+          open={isCreateDialogOpen}
           onOpenChange={setIsCreateDialogOpen}
         >
           <UserForm onSuccess={handleCreateSuccess} />

@@ -17,6 +17,7 @@ interface NextAssemblyCardProps {
   handleStartAssembly: () => void;
   upcomingISO?: string;
   onRescheduled?: () => void;
+  place?: string | null;
 }
 
 export function NextAssemblyCard({
@@ -27,6 +28,7 @@ export function NextAssemblyCard({
   handleStartAssembly,
   upcomingISO,
   onRescheduled,
+  place,
 }: NextAssemblyCardProps) {
   const [open, setOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -99,9 +101,12 @@ export function NextAssemblyCard({
             <div className="rounded-md border bg-card p-4">
               <div className="text-xs text-muted-foreground">Lugar</div>
               <div className="mt-1 text-lg font-semibold text-foreground flex items-center gap-2">
-                <MapPin className="w-4 h-4 text-primary" /> Sala Principal Montes y Vegas
+                <MapPin className="w-4 h-4 text-primary shrink-0" />
+                <span className="truncate">{place?.trim() || "Por definir"}</span>
               </div>
-              <div className="text-sm text-muted-foreground">Combayo</div>
+              <div className="text-sm text-muted-foreground">
+                {place?.trim() ? "Lugar configurado" : "Configúralo en ajustes"}
+              </div>
             </div>
           </div>
 

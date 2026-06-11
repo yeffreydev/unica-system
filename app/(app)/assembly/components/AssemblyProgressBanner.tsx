@@ -1,4 +1,4 @@
-import { CircleDot, PlayCircle, Wallet } from "lucide-react";
+import { CircleDot, MapPin, PlayCircle } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -14,6 +14,7 @@ interface AssemblyProgressBannerProps {
     title?: string;
     description?: string;
   };
+  place?: string | null;
 }
 
 export function AssemblyProgressBanner({
@@ -21,6 +22,7 @@ export function AssemblyProgressBanner({
   elapsed,
   totalSteps,
   currentStepMeta,
+  place,
 }: AssemblyProgressBannerProps) {
   
 
@@ -35,6 +37,12 @@ export function AssemblyProgressBanner({
                 En curso
               </span>
               <span className="text-xs text-muted-foreground">Asamblea</span>
+              {place?.trim() && (
+                <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                  <MapPin className="h-3.5 w-3.5 text-primary" />
+                  {place.trim()}
+                </span>
+              )}
             </div>
             <div className="flex items-center gap-6">
               <div className="text-right">

@@ -23,6 +23,7 @@ export interface IAssemblyScheduleRun {
     topic: string;
     status: ScheduleRunStatusesTypes;
     endAt: Date;
+    place?: string | null;
     participants: IAssemblyParticipant[];
 }
 export interface IAssemblyParticipant {
@@ -36,6 +37,7 @@ export interface IAssemblySchedule {
     id: string;
     startAt: Date;
     endAt: Date;
+    place?: string | null;
     nextRun: Date;
     lastRun: IAssemblyScheduleRun | null;
     lastRuns: Array<IAssemblyScheduleRun>;

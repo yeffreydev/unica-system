@@ -23,8 +23,19 @@ import {
 } from "../../../components/ui/form";
 import { Input } from "../../../components/ui/input";
 import { Button } from "../../../components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import apiClient from "@/config/apiClient";
-import { IUser } from "@/types/IUser";
+import { IUser, IOrgRole } from "@/types/IUser";
+import { apiGetOrgRoles } from "./orgRolesApi";
+
+// valor centinela para "sin cargo" (Radix Select no admite value="")
+const NO_ORG_ROLE = "none";
 
 interface UserFormProps {
   user?: IUser;
@@ -34,7 +45,14 @@ interface UserFormProps {
 export const UserForm = ({ user, onSuccess }: UserFormProps) => {
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [orgRoles, setOrgRoles] = useState<IOrgRole[]>([]);
   const isEditMode = !!user;
+
+  useEffect(() => {
+    apiGetOrgRoles()
+      .then(setOrgRoles)
+      .catch((e) => console.error("Error cargando cargos:", e));
+  }, []);
 
   const formSchema = z.object({
     dni: z.string().min(8, {
@@ -60,6 +78,7 @@ export const UserForm = ({ user, onSuccess }: UserFormProps) => {
       })
       .optional()
       .or(z.literal("")),
+    orgRoleId: z.string().optional().or(z.literal("")),
   });
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -70,6 +89,7 @@ export const UserForm = ({ user, onSuccess }: UserFormProps) => {
       lastname: user?.lastname || "",
       email: user?.email || "",
       phone: user?.phone || "",
+      orgRoleId: user?.orgRoleId || user?.orgRole?.id || "",
     },
   });
 
@@ -82,6 +102,7 @@ export const UserForm = ({ user, onSuccess }: UserFormProps) => {
         lastname: user.lastname || "",
         email: user.email || "",
         phone: user.phone || "",
+        orgRoleId: user.orgRoleId || user.orgRole?.id || "",
       });
     }
   }, [user, form]);
@@ -352,6 +373,42 @@ export const UserForm = ({ user, onSuccess }: UserFormProps) => {
                           </FormControl>
                           <FormDescription className="text-xs text-muted-foreground">
                             Número de teléfono del usuario
+                          </FormDescription>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="orgRoleId"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-sm font-medium text-foreground">
+                            Cargo en la asociación
+                          </FormLabel>
+                          <Select
+                            value={field.value ? field.value : NO_ORG_ROLE}
+                            onValueChange={(v) =>
+                              field.onChange(v === NO_ORG_ROLE ? "" : v)
+                            }
+                          >
+                            <FormControl>
+                              <SelectTrigger className="h-12 theme-input">
+                                <SelectValue placeholder="Sin cargo" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value={NO_ORG_ROLE}>Sin cargo</SelectItem>
+                              {orgRoles.map((role) => (
+                                <SelectItem key={role.id} value={role.id}>
+                                  {role.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormDescription className="text-xs text-muted-foreground">
+                            Presidente, Secretario, Tesorero, etc. (opcional)
                           </FormDescription>
                           <FormMessage />
                         </FormItem>

@@ -51,6 +51,7 @@ const assemblyFormSchema = z.object({
   weekDay: z.string().optional().nullable(),
   hour: z.number().min(0).max(23),
   minute: z.number().min(0).max(59),
+  place: z.string().max(160, "Máximo 160 caracteres").optional().nullable(),
 });
 
 type AssemblyFormValues = z.infer<typeof assemblyFormSchema>;
@@ -143,6 +144,7 @@ export function AssemblyConfigForm({ onConfigSaved }: { onConfigSaved?: () => vo
       minute: 0,
       weekOccurrence: undefined,
       weekDay: undefined,
+      place: "",
     },
     mode: "onChange",
   });
@@ -422,6 +424,29 @@ export function AssemblyConfigForm({ onConfigSaved }: { onConfigSaved?: () => vo
 
           </div>
         )}
+
+        <FormField
+          control={form.control}
+          name="place"
+          render={({ field }) => (
+            <FormItem className="space-y-3">
+              <FormLabel>Lugar de la asamblea</FormLabel>
+              <FormControl>
+                <Input
+                  placeholder="Ej: Local comunal, Av. Los Andes 123"
+                  value={field.value ?? ""}
+                  onChange={field.onChange}
+                  onBlur={field.onBlur}
+                  name={field.name}
+                />
+              </FormControl>
+              <FormDescription>
+                Se mostrará en el acta y en la próxima asamblea programada.
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
         <div className="grid grid-cols-2 gap-4">
           <FormField

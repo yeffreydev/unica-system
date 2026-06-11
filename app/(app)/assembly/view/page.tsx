@@ -3,13 +3,25 @@
 import { Suspense, useEffect, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ArrowLeft, FileCheck, FileX, Loader2 } from "lucide-react";
+import { ArrowLeft, FileCheck, FileText, FileX, Loader2 } from "lucide-react";
 import { apiGetActaByRun } from "../api";
 import { formatCurrency } from "@/lib/utils";
+import { downloadActaPdf } from "../acta-pdf";
+import {
+  ActaPaper,
+  ActaTitle,
+  ActaSection,
+  ActaTable,
+  ActaClosing,
+  ActaConfirmation,
+  participantStatusLabel,
+  runStatusLabel,
+  creditStatusLabel,
+  fmtDateLong,
+  fmtTimeShort,
+} from "../acta-theme";
 
 type ActaResponse = {
   confirmed?: boolean;
@@ -17,6 +29,8 @@ type ActaResponse = {
   content?: any;
   scheduleRunId?: string;
 };
+
+const userLabel = (u: any) => (u ? `${u.lastname ?? ""}, ${u.name ?? ""}`.replace(/^,\s*|,\s*$/g, "") || "—" : "—");
 
 function AssemblyViewInner() {
   const searchParams = useSearchParams();
@@ -53,187 +67,163 @@ function AssemblyViewInner() {
   const savingsDeposits = content.savingsDeposits ?? [];
   const savingsPayouts = content.savingsPayouts ?? [];
   const creditApplications = content.creditApplications ?? [];
+  const participants = run?.participants ?? [];
 
   const startAt = run?.startAt ? new Date(run.startAt) : null;
+  const confirmed = !!data?.confirmed;
 
   return (
-    <div className="flex flex-col gap-5">
-      <div className="flex items-center justify-between gap-2 flex-wrap">
-        <div className="flex items-center gap-2">
-          <Button asChild variant="outline" size="sm">
-            <Link href="/assembly/list"><ArrowLeft className="w-4 h-4 mr-1" /> Volver</Link>
+    <div className="flex flex-col gap-5 max-w-4xl mx-auto w-full">
+      <div className="flex items-center justify-between gap-2 flex-wrap print:hidden">
+        <Button asChild variant="outline" size="sm">
+          <Link href="/assembly/list"><ArrowLeft className="w-4 h-4 mr-1" /> Volver</Link>
+        </Button>
+        <div className="flex items-center gap-3">
+          <span className="text-xs text-muted-foreground hidden sm:inline">
+            {confirmed ? "Documento oficial confirmado" : "Documento sin confirmar"}
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => downloadActaPdf(data ?? {}, run ?? { id, startAt })}
+            disabled={!data}
+          >
+            <FileText className="w-4 h-4 mr-1" /> Descargar PDF
           </Button>
-          <h1 className="text-lg sm:text-xl font-bold tracking-tight">Acta de asamblea</h1>
         </div>
-        {data?.confirmed ? (
-          <Badge className="bg-emerald-600 text-white"><FileCheck className="w-3 h-3 mr-1" /> Confirmada</Badge>
-        ) : (
-          <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
-            <FileX className="w-3 h-3 mr-1" /> Sin confirmar
-          </Badge>
-        )}
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Sesión</CardTitle>
-        </CardHeader>
-        <CardContent className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm">
-          <div><div className="text-[10px] uppercase text-muted-foreground">Fecha</div><div className="font-medium">{startAt ? startAt.toLocaleDateString("es-PE") : "-"}</div></div>
-          <div><div className="text-[10px] uppercase text-muted-foreground">Hora</div><div className="font-medium">{startAt ? startAt.toLocaleTimeString("es-PE", { hour: "2-digit", minute: "2-digit" }) : "-"}</div></div>
-          <div><div className="text-[10px] uppercase text-muted-foreground">Estado</div><div className="font-medium">{run?.status ?? "-"}</div></div>
-          <div><div className="text-[10px] uppercase text-muted-foreground">Recaudado</div><div className="font-semibold tabular-nums">{formatCurrency(content.totalCollected ?? 0)}</div></div>
+      <Card className="border-foreground/15">
+        <CardContent className="px-5 sm:px-10 py-8 sm:py-10">
+          <ActaPaper>
+            <ActaTitle
+              subtitle={run?.topic || "Asamblea General de Socios"}
+              meta={[
+                { label: "Fecha", value: startAt ? fmtDateLong(startAt) : "—" },
+                { label: "Hora", value: startAt ? fmtTimeShort(startAt) : "—" },
+                ...(run?.place ? [{ label: "Lugar", value: String(run.place) }] : []),
+                { label: "Estado", value: runStatusLabel(run?.status) },
+                { label: "Total recaudado", value: formatCurrency(content.totalCollected ?? 0) },
+              ]}
+              badge={
+                <span className={`inline-flex items-center gap-1 px-3 py-1 text-[11px] uppercase tracking-wide border rounded-sm ${confirmed ? "border-emerald-700 text-emerald-700 dark:text-emerald-400" : "border-amber-700 text-amber-700 dark:text-amber-500"}`}>
+                  {confirmed ? <FileCheck className="w-3 h-3" /> : <FileX className="w-3 h-3" />}
+                  {confirmed ? "Acta confirmada" : "Acta sin confirmar"}
+                </span>
+              }
+            />
+
+            <ActaSection numeral="I" title="Control de asistencia" right={`${participants.length} convocados`}>
+              <ActaTable
+                columns={[
+                  { key: "socio", header: "Socio", render: (p) => (p.user ? userLabel(p.user) : (p.name ?? "—")) },
+                  { key: "estado", header: "Estado", align: "right", render: (p) => participantStatusLabel(p.status) },
+                ]}
+                rows={participants}
+                empty="Sin participantes registrados."
+              />
+            </ActaSection>
+
+            <ActaSection numeral="II" title="Compra de acciones" right={formatCurrency(content.sharesTotal ?? 0)}>
+              <ActaTable
+                columns={[
+                  { key: "socio", header: "Socio", render: (s) => userLabel(s.user) },
+                  { key: "cant", header: "Cantidad", align: "right", render: (s) => s.quantity ?? 0 },
+                  { key: "precio", header: "Precio", align: "right", render: (s) => formatCurrency(s.price ?? 0) },
+                  { key: "total", header: "Total", align: "right", render: (s) => formatCurrency((s.quantity ?? 0) * (s.price ?? 0)) },
+                ]}
+                rows={shares}
+                totals={{ socio: "Total", total: formatCurrency(content.sharesTotal ?? 0) }}
+                empty="Sin compras de acciones."
+              />
+            </ActaSection>
+
+            <ActaSection numeral="III" title="Recuperación de préstamos">
+              <ActaTable
+                columns={[
+                  { key: "socio", header: "Socio", render: (p) => userLabel(p.user) },
+                  { key: "interes", header: "Interés", align: "right", render: (p) => formatCurrency(Number(p.interest ?? 0)) },
+                  { key: "capital", header: "Capital", align: "right", render: (p) => formatCurrency(p.amount ?? 0) },
+                  { key: "total", header: "Total", align: "right", render: (p) => formatCurrency((p.amount ?? 0) + Number(p.interest ?? 0)) },
+                ]}
+                rows={payments}
+                totals={{
+                  socio: "Totales",
+                  interes: formatCurrency(content.paymentsInterest ?? 0),
+                  capital: formatCurrency(content.paymentsCapital ?? 0),
+                  total: formatCurrency((content.paymentsCapital ?? 0) + (content.paymentsInterest ?? 0)),
+                }}
+                empty="Sin pagos de préstamos."
+              />
+            </ActaSection>
+
+            <ActaSection numeral="IV" title="Depósitos de ahorro" right={formatCurrency(content.savingsDepositsTotal ?? 0)}>
+              <ActaTable
+                columns={[
+                  { key: "socio", header: "Socio", render: (d) => userLabel(d.user) },
+                  { key: "monto", header: "Monto", align: "right", render: (d) => formatCurrency(d.amount ?? 0) },
+                ]}
+                rows={savingsDeposits}
+                totals={{ socio: "Total", monto: formatCurrency(content.savingsDepositsTotal ?? 0) }}
+                empty="Sin depósitos registrados."
+              />
+            </ActaSection>
+
+            <ActaSection numeral="V" title="Pagos a ahorristas">
+              <ActaTable
+                columns={[
+                  { key: "socio", header: "Socio", render: (p) => userLabel(p.user) },
+                  { key: "desc", header: "Descripción", render: (p) => p.description ?? "—" },
+                  { key: "monto", header: "Monto", align: "right", render: (p) => formatCurrency(p.amount ?? 0) },
+                ]}
+                rows={savingsPayouts}
+                empty="Sin pagos a ahorristas."
+              />
+            </ActaSection>
+
+            <ActaSection numeral="VI" title="Multas" right={formatCurrency(content.finesTotal ?? 0)}>
+              <ActaTable
+                columns={[
+                  { key: "socio", header: "Socio", render: (f) => userLabel(f.user) || (f.description ?? "—") },
+                  { key: "desc", header: "Descripción", render: (f) => f.description ?? "—" },
+                  { key: "monto", header: "Monto", align: "right", render: (f) => formatCurrency(f.amount ?? 0) },
+                ]}
+                rows={fines}
+                totals={{ socio: "Total", monto: formatCurrency(content.finesTotal ?? 0) }}
+                empty="Sin multas registradas."
+              />
+            </ActaSection>
+
+            <ActaSection numeral="VII" title="Otros ingresos" right={formatCurrency(content.otherIncomesTotal ?? 0)}>
+              <ActaTable
+                columns={[
+                  { key: "desc", header: "Descripción", render: (o) => o.description ?? "—" },
+                  { key: "monto", header: "Monto", align: "right", render: (o) => formatCurrency(o.amount ?? 0) },
+                ]}
+                rows={otherIncomes}
+                totals={{ desc: "Total", monto: formatCurrency(content.otherIncomesTotal ?? 0) }}
+                empty="Sin otros ingresos."
+              />
+            </ActaSection>
+
+            <ActaSection numeral="VIII" title="Solicitudes de crédito">
+              <ActaTable
+                columns={[
+                  { key: "socio", header: "Socio", render: (c) => userLabel(c.user) },
+                  { key: "monto", header: "Monto", align: "right", render: (c) => formatCurrency(c.amount ?? 0) },
+                  { key: "prop", header: "Propósito", render: (c) => c.purpose ?? "—" },
+                  { key: "estado", header: "Estado", align: "right", render: (c) => creditStatusLabel(c.status) },
+                ]}
+                rows={creditApplications}
+                empty="Sin solicitudes de crédito."
+              />
+            </ActaSection>
+
+            <ActaClosing timeLabel={run?.endAt ? fmtTimeShort(run.endAt) : startAt ? fmtTimeShort(startAt) : undefined} />
+            <ActaConfirmation confirmed={confirmed} />
+          </ActaPaper>
         </CardContent>
       </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Asistencia</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {(run?.participants ?? []).length === 0 ? (
-            <p className="text-sm text-muted-foreground">Sin participantes.</p>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Socio</TableHead>
-                  <TableHead>Estado</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {(run?.participants ?? []).map((p: any) => (
-                  <TableRow key={p.id}>
-                    <TableCell>{p.user ? `${p.user.lastname ?? ""}, ${p.user.name ?? ""}` : (p.name ?? "-")}</TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{p.status}</Badge>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Card>
-          <CardHeader><CardTitle className="text-base">Acciones compradas</CardTitle></CardHeader>
-          <CardContent>
-            <div className="text-sm text-muted-foreground mb-2">Total: <span className="font-semibold text-foreground">{formatCurrency(content.sharesTotal ?? 0)}</span></div>
-            {shares.length === 0 ? <p className="text-xs text-muted-foreground">Sin movimientos.</p> : (
-              <ul className="space-y-1">
-                {shares.map((s: any) => (
-                  <li key={s.id} className="flex justify-between text-xs">
-                    <span>{s.user ? `${s.user.lastname}, ${s.user.name}` : "-"}</span>
-                    <span className="tabular-nums">{s.quantity} × {formatCurrency(s.price)}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader><CardTitle className="text-base">Pagos de préstamos</CardTitle></CardHeader>
-          <CardContent>
-            <div className="text-sm text-muted-foreground mb-2">Capital: <span className="font-semibold text-foreground">{formatCurrency(content.paymentsCapital ?? 0)}</span> · Interés: <span className="font-semibold text-foreground">{formatCurrency(content.paymentsInterest ?? 0)}</span></div>
-            {payments.length === 0 ? <p className="text-xs text-muted-foreground">Sin pagos.</p> : (
-              <ul className="space-y-1">
-                {payments.map((p: any) => (
-                  <li key={p.id} className="flex justify-between text-xs">
-                    <span>{p.user ? `${p.user.lastname}, ${p.user.name}` : "-"}</span>
-                    <span className="tabular-nums">{formatCurrency((p.amount ?? 0) + Number(p.interest ?? 0))}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader><CardTitle className="text-base">Ahorros (depósitos)</CardTitle></CardHeader>
-          <CardContent>
-            <div className="text-sm text-muted-foreground mb-2">Total: <span className="font-semibold text-foreground">{formatCurrency(content.savingsDepositsTotal ?? 0)}</span></div>
-            {savingsDeposits.length === 0 ? <p className="text-xs text-muted-foreground">Sin depósitos.</p> : (
-              <ul className="space-y-1">
-                {savingsDeposits.map((d: any) => (
-                  <li key={d.id} className="flex justify-between text-xs">
-                    <span>{d.user ? `${d.user.lastname}, ${d.user.name}` : "-"}</span>
-                    <span className="tabular-nums">{formatCurrency(d.amount)}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader><CardTitle className="text-base">Pagos a ahorristas</CardTitle></CardHeader>
-          <CardContent>
-            {savingsPayouts.length === 0 ? <p className="text-xs text-muted-foreground">Sin pagos.</p> : (
-              <ul className="space-y-1">
-                {savingsPayouts.map((p: any) => (
-                  <li key={p.id} className="flex justify-between text-xs">
-                    <span>{p.user ? `${p.user.lastname}, ${p.user.name}` : "-"}</span>
-                    <span className="tabular-nums">{formatCurrency(p.amount)}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader><CardTitle className="text-base">Multas</CardTitle></CardHeader>
-          <CardContent>
-            <div className="text-sm text-muted-foreground mb-2">Total: <span className="font-semibold text-foreground">{formatCurrency(content.finesTotal ?? 0)}</span></div>
-            {fines.length === 0 ? <p className="text-xs text-muted-foreground">Sin multas.</p> : (
-              <ul className="space-y-1">
-                {fines.map((f: any) => (
-                  <li key={f.id} className="flex justify-between text-xs">
-                    <span>{f.user ? `${f.user.lastname}, ${f.user.name}` : (f.description ?? "-")}</span>
-                    <span className="tabular-nums">{formatCurrency(f.amount)}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader><CardTitle className="text-base">Otros ingresos</CardTitle></CardHeader>
-          <CardContent>
-            <div className="text-sm text-muted-foreground mb-2">Total: <span className="font-semibold text-foreground">{formatCurrency(content.otherIncomesTotal ?? 0)}</span></div>
-            {otherIncomes.length === 0 ? <p className="text-xs text-muted-foreground">Sin movimientos.</p> : (
-              <ul className="space-y-1">
-                {otherIncomes.map((o: any) => (
-                  <li key={o.id} className="flex justify-between text-xs">
-                    <span>{o.description ?? "-"}</span>
-                    <span className="tabular-nums">{formatCurrency(o.amount)}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader><CardTitle className="text-base">Solicitudes de crédito</CardTitle></CardHeader>
-          <CardContent>
-            {creditApplications.length === 0 ? <p className="text-xs text-muted-foreground">Sin solicitudes.</p> : (
-              <ul className="space-y-1">
-                {creditApplications.map((c: any) => (
-                  <li key={c.id} className="flex justify-between text-xs">
-                    <span>{c.user ? `${c.user.lastname}, ${c.user.name}` : "-"}</span>
-                    <span className="tabular-nums">{formatCurrency(c.amount)} · {c.status}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </CardContent>
-        </Card>
-      </div>
     </div>
   );
 }

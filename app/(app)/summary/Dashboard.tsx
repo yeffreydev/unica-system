@@ -184,25 +184,21 @@ interface KpiCardProps {
 
 function KpiCard({ label, value, Icon, tintVar, trend, hint }: KpiCardProps) {
   const tint = `hsl(var(${tintVar}))`;
-  const tintSoft = `hsl(var(${tintVar}) / 0.12)`;
-  const gradient = `linear-gradient(135deg, hsl(var(${tintVar}) / 0.08), transparent 60%)`;
+  const tintSoft = `hsl(var(${tintVar}) / 0.10)`;
   return (
-    <Card className="relative overflow-hidden border-muted/60 hover:shadow-md transition-shadow">
-      {/* Banda superior + degradado sutil dentro de la familia qipi. */}
-      <div className="absolute inset-x-0 top-0 h-1" style={{ background: tint }} aria-hidden />
-      <div className="absolute inset-0 pointer-events-none" style={{ background: gradient }} aria-hidden />
-      <CardContent className="relative p-4">
+    <Card className="border-border hover:border-foreground/20 transition-colors">
+      <CardContent className="p-4">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
             <p className="text-xs font-medium text-muted-foreground truncate">{label}</p>
-            <p className="text-xl font-bold tracking-tight mt-1 tabular-nums">{value}</p>
+            <p className="text-xl font-semibold tracking-tight mt-1 tabular-nums">{value}</p>
             <div className="mt-2 flex items-center gap-2">
               {typeof trend === "number" && <TrendBadge value={trend} />}
               {hint && <span className="text-[11px] text-muted-foreground">{hint}</span>}
             </div>
           </div>
           <div
-            className="h-10 w-10 shrink-0 rounded-lg flex items-center justify-center"
+            className="h-10 w-10 shrink-0 rounded-md flex items-center justify-center"
             style={{ backgroundColor: tintSoft }}
           >
             <Icon className="h-5 w-5" style={{ color: tint }} />
@@ -226,10 +222,7 @@ function PortfolioStat({ label, value, Icon, tintVar, hint }: PortfolioStatProps
   const tint = `hsl(var(${tintVar}))`;
   const tintSoft = `hsl(var(${tintVar}) / 0.10)`;
   return (
-    <div
-      className="rounded-lg border border-muted/60 p-3 transition-colors hover:bg-muted/30"
-      style={{ background: `linear-gradient(135deg, ${tintSoft}, transparent 70%)` }}
-    >
+    <div className="rounded-md border border-border p-3 transition-colors hover:bg-muted/30">
       <div className="flex items-center gap-2">
         <div
           className="h-8 w-8 rounded-md flex items-center justify-center shrink-0"
@@ -239,7 +232,7 @@ function PortfolioStat({ label, value, Icon, tintVar, hint }: PortfolioStatProps
         </div>
         <p className="text-[11px] font-medium text-muted-foreground truncate">{label}</p>
       </div>
-      <p className="mt-2 text-lg font-bold tracking-tight tabular-nums">{value}</p>
+      <p className="mt-2 text-lg font-semibold tracking-tight tabular-nums">{value}</p>
       {hint && <p className="text-[10px] text-muted-foreground mt-0.5">{hint}</p>}
     </div>
   );
@@ -353,15 +346,15 @@ export default function Dashboard() {
 
   return (
     <div className="flex-1 space-y-4 pt-6 pb-10">
-      {/* Hero header */}
-      <div className="relative overflow-hidden rounded-xl border bg-gradient-to-br from-primary/20 via-primary/5 to-background p-5">
+      {/* Header */}
+      <div className="rounded-lg border bg-card p-5">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <CalendarDays className="h-3.5 w-3.5" />
               <span className="capitalize">{today}</span>
             </div>
-            <h1 className="text-3xl font-bold tracking-tight mt-1">Panel de Control</h1>
+            <h1 className="text-2xl font-semibold tracking-tight mt-1">Panel de Control</h1>
             <p className="text-sm text-muted-foreground mt-1">
               Resumen financiero y operativo de tu única
             </p>
@@ -407,31 +400,24 @@ export default function Dashboard() {
 
       {/* Primary KPI grid */}
       <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4">
-        <Card className="relative overflow-hidden border-muted/60 hover:shadow-md transition-shadow">
-          {/* Capital Social = card destacado con gradiente y meta. Todo en
-              familia qipi (primary). */}
-          <div className="absolute inset-x-0 top-0 h-1 bg-primary" aria-hidden />
-          <div
-            className="absolute inset-0 pointer-events-none"
-            style={{ background: "linear-gradient(135deg, hsl(var(--primary) / 0.10), transparent 60%)" }}
-            aria-hidden
-          />
-          <CardContent className="relative p-4">
+        <Card className="border-primary/30 hover:border-primary/50 transition-colors">
+          {/* Capital Social = card destacado (acento primary, sin degradados). */}
+          <CardContent className="p-4">
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
                 <p className="text-xs font-medium text-muted-foreground truncate">Capital Social</p>
-                <p className="text-xl font-bold tracking-tight mt-1 tabular-nums">
+                <p className="text-xl font-semibold tracking-tight mt-1 tabular-nums">
                   {formatCurrency(data.socialCapital.total)}
                 </p>
                 <p className="mt-1 text-[11px] text-muted-foreground">Valor total de acciones</p>
               </div>
-              <div className="h-10 w-10 shrink-0 rounded-lg flex items-center justify-center bg-primary/10">
+              <div className="h-10 w-10 shrink-0 rounded-md flex items-center justify-center bg-primary/10">
                 <Wallet className="h-5 w-5 text-primary" />
               </div>
             </div>
 
             {/* Indicador de meta de capital */}
-            <div className="mt-3 pt-3 border-t border-muted/60 space-y-1.5">
+            <div className="mt-3 pt-3 border-t border-border space-y-1.5">
               <div className="flex items-center justify-between text-[11px]">
                 <span className="flex items-center gap-1 text-muted-foreground">
                   <Target className="h-3 w-3 text-primary" />
@@ -475,7 +461,7 @@ export default function Dashboard() {
 
       {/* Monthly trend KPIs */}
       <div className="grid gap-3 md:grid-cols-3">
-        <Card className="border-muted/60">
+        <Card className="border-border">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
               <CreditCard className="h-4 w-4 text-primary" />
@@ -491,7 +477,7 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card className="border-muted/60">
+        <Card className="border-border">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
               <Coins className="h-4 w-4" style={{ color: "hsl(var(--chart-2))" }} />
@@ -507,7 +493,7 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card className="border-muted/60">
+        <Card className="border-border">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium flex items-center gap-2">
               <PiggyBank className="h-4 w-4" style={{ color: "hsl(var(--chart-3))" }} />
@@ -526,13 +512,8 @@ export default function Dashboard() {
 
       {/* Cartera de préstamos: desembolsado, recuperado, intereses,
           saldo pendiente, y badge de cuotas vencidas. */}
-      <Card className="relative overflow-hidden border-muted/60 hover:shadow-md transition-shadow">
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{ background: "linear-gradient(135deg, hsl(var(--primary) / 0.06), transparent 70%)" }}
-          aria-hidden
-        />
-        <CardHeader className="relative pb-2">
+      <Card className="border-border">
+        <CardHeader className="pb-2">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <CardTitle className="text-base flex items-center gap-2">
               <Briefcase className="h-4 w-4 text-primary" />
@@ -555,7 +536,7 @@ export default function Dashboard() {
             )}
           </div>
         </CardHeader>
-        <CardContent className="relative pt-0">
+        <CardContent className="pt-0">
           <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
             <PortfolioStat
               label="Desembolsado"
@@ -591,7 +572,7 @@ export default function Dashboard() {
 
       {/* Charts row */}
       <div className="grid gap-4 lg:grid-cols-3">
-        <Card className="lg:col-span-2 hover:shadow-md transition-shadow">
+        <Card className="lg:col-span-2 hover:shadow-sm transition-shadow">
           <CardHeader className="pb-2">
             <div className="flex items-center justify-between">
               <CardTitle className="text-base flex items-center gap-2">
@@ -606,7 +587,7 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card className="hover:shadow-md transition-shadow">
+        <Card className="hover:shadow-sm transition-shadow">
           <CardHeader className="pb-2">
             <CardTitle className="text-base flex items-center gap-2">
               <CreditCard className="h-4 w-4 text-primary" />
@@ -621,7 +602,7 @@ export default function Dashboard() {
       </div>
 
       {/* Deposits vs Withdrawals full width */}
-      <Card className="hover:shadow-md transition-shadow">
+      <Card className="hover:shadow-sm transition-shadow">
         <CardHeader className="pb-2">
           <div className="flex items-center justify-between">
             <CardTitle className="text-base flex items-center gap-2">
@@ -638,7 +619,7 @@ export default function Dashboard() {
 
       {/* Bottom row */}
       <div className="grid gap-4 lg:grid-cols-3">
-        <Card className="hover:shadow-md transition-shadow">
+        <Card className="hover:shadow-sm transition-shadow">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm flex items-center gap-2">
               <CreditCard className="h-3.5 w-3.5 text-primary" />
@@ -650,7 +631,7 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card className="hover:shadow-md transition-shadow">
+        <Card className="hover:shadow-sm transition-shadow">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm flex items-center gap-2">
               <PiggyBank className="h-3.5 w-3.5 text-primary" />
@@ -662,7 +643,7 @@ export default function Dashboard() {
           </CardContent>
         </Card>
 
-        <Card className="hover:shadow-md transition-shadow">
+        <Card className="hover:shadow-sm transition-shadow">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm flex items-center gap-2">
               <Trophy className="h-3.5 w-3.5 text-primary" />
@@ -706,7 +687,7 @@ export default function Dashboard() {
       </div>
 
       {/* Próximas cuotas a vencer */}
-      <Card className="hover:shadow-md transition-shadow">
+      <Card className="hover:shadow-sm transition-shadow">
         <CardHeader className="pb-2">
           <div className="flex items-center justify-between">
             <CardTitle className="text-base flex items-center gap-2">
@@ -736,12 +717,10 @@ export default function Dashboard() {
                 return (
                   <div
                     key={inst.id}
-                    className="rounded-lg border border-muted/60 p-3 hover:bg-muted/30 transition-colors"
-                    style={{
-                      background: urgent
-                        ? "linear-gradient(135deg, hsl(var(--chart-4) / 0.10), transparent 70%)"
-                        : "linear-gradient(135deg, hsl(var(--primary) / 0.05), transparent 70%)",
-                    }}
+                    className={`rounded-md border p-3 hover:bg-muted/30 transition-colors ${
+                      urgent ? "border-l-2" : "border-border"
+                    }`}
+                    style={urgent ? { borderLeftColor: "hsl(var(--chart-4))" } : undefined}
                   >
                     <div className="flex items-center gap-2">
                       <Avatar className="h-7 w-7 border">
