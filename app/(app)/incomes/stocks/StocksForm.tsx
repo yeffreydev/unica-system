@@ -107,8 +107,8 @@ export const StocksForm = ({
       <form
         onSubmit={form.handleSubmit(async (formData) => {
           if (isSubmitting) return; // Prevent multiple submissions
-          if (formData.amount <= 0) {
-            alert("La cantidad debe ser mayor a 0");
+          if (formData.amount === 0) {
+            alert("La cantidad no puede ser 0");
             return;
           }
           if (!userSelected) {
