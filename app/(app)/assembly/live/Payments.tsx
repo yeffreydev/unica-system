@@ -15,6 +15,7 @@ import { IAssemblyScheduleRun, ILoanPayment, IPaymentData } from "../types";
 import { apiGetAssemblyRun, apiGetPaymentsData, apiRecordPayment } from "../api";
 import { useAssembly } from "../AssemblyContext";
 import { AppContext } from "@/context/AppContext";
+import { getParticipantUserIds } from "./utils";
 
 import { ILoanInstallment } from "@/types/ILoan";
 import apiClient from "@/config/apiClient";
@@ -230,8 +231,10 @@ export default function Payments() {
     setDetailsModalOpen(true);
   };
 
+  // Solo participantes de la asamblea. Los no-participantes no se listan para pagar intereses.
+  const participantIds = getParticipantUserIds(assemblyRun);
   const partnersWithLoans = paymentsData.partners.filter(
-    (user) => getUserPayableInstallments(user.id).length > 0
+    (user) => participantIds.has(user.id) && getUserPayableInstallments(user.id).length > 0
   );
 
   const calculateTotals = () => {
@@ -312,6 +315,7 @@ export default function Payments() {
 
   const totals = calculateTotals();
   const paidCount = paymentsData.partners.filter(user => {
+    if (!participantIds.has(user.id)) return false;
     const userPayments = paymentsData.payments.filter(p => p.userId === user.id);
     return userPayments.reduce((sum, p) => sum + Number(p.amount || 0) + Number(p.interest || 0), 0) > 0;
   }).length;

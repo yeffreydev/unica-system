@@ -21,6 +21,7 @@ import { loanTypesData, LoanTypesEnum } from "@/constants";
 import { IAssemblyScheduleRun, ICreditApplication, ILoanPayment, IUserStock } from "../types";
 import { apiCreateCreditApplication, apiGetAssemblyRun, apiGetCreditApplicationsWithLoans, apiDeleteCreditApplication, apiApproveCreditApplication, apiRejectCreditApplication } from "../api";
 import { useAssembly } from "../AssemblyContext";
+import { getParticipantUserIds } from "./utils";
 import apiClient from "@/config/apiClient";
 import { IDeposit } from "../../incomes/deposits/types";
 import {  ISocialFundsTransaction } from "@/types/ISocialFunds";
@@ -397,6 +398,10 @@ export default function Loans() {
     });
   }, [currentBalance, expensesAmount, updateCashBalance]);
 
+  // Solo participantes de la asamblea pueden recibir un préstamo. Los no-participantes no se listan.
+  const participantIds = getParticipantUserIds(assemblyRun);
+  const participantUsers = (users ?? []).filter((u) => participantIds.has(u.id));
+
   return (
    <div className="flex flex-col gap-4">
     {/* Arqueo de Caja */}
@@ -663,7 +668,7 @@ export default function Loans() {
               <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                 1. Socio
               </Label>
-              <ComboBoxUsers users={users} controller={{ userSelected, setUserSelected }} />
+              <ComboBoxUsers users={participantUsers} controller={{ userSelected, setUserSelected }} />
               {userSelected && (
                 <div className="flex items-center gap-3 p-3 rounded-lg border bg-muted/30">
                   <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary/10 text-primary text-xs font-bold shrink-0">

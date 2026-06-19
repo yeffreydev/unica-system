@@ -14,6 +14,7 @@ import { IAssemblyScheduleRun, ISavingsPartner } from "../types";
 import { useAssembly } from "../AssemblyContext";
 import { AppContext } from "@/context/AppContext";
 import { sileo } from "sileo";
+import { getParticipantUserIds } from "./utils";
 
 type NumberInputProps = Omit<React.ComponentProps<typeof Input>, "value" | "onChange" | "type"> & {
   value: number | null | undefined;
@@ -202,7 +203,11 @@ export default function Savings() {
     }
   };
 
-  const savers = savingsPartners.filter((p) => (p.savingsBalance ?? 0) > 0);
+  // Solo participantes de la asamblea. Los no-participantes no se listan ni cuentan.
+  const participantIds = getParticipantUserIds(assemblyRun);
+  const participantPartners = savingsPartners.filter((p) => participantIds.has(p.id));
+
+  const savers = participantPartners.filter((p) => (p.savingsBalance ?? 0) > 0);
   const totalDeposits = savers.reduce(
     (sum, p) => sum + p.deposits.reduce((s, d) => s + d.amount, 0),
     0
@@ -215,7 +220,7 @@ export default function Savings() {
     (sum, p) => sum + p.payouts.reduce((s, py) => s + py.amount, 0),
     0
   );
-  const visiblePartners = savingsPartners
+  const visiblePartners = participantPartners
     .filter((user) => {
       if (!searchQuery.trim()) return true;
       const fullName = `${user.lastname} ${user.name}`.toLowerCase();

@@ -15,6 +15,7 @@ import { IUser } from "@/types/IUser";
 import { apiBuySharesInAssembly, apiGetAssemblyRun, apiGetPartnersWithShares } from "../api";
 import { IAssemblyScheduleRun, IPartnerShares, IUserStock } from "../types";
 import { useAssembly } from "../AssemblyContext";
+import { getParticipantUserIds } from "./utils";
 
 export default function Shares() {
   const { users, bank } = useContext(AppContext);
@@ -92,9 +93,13 @@ export default function Shares() {
     fetchPartnersWithShares();
   }, [assemblyRun]);
 
-  const totalShares = partnerShares.reduce((sum, user) => sum + user.shares.reduce((s, share) => s + share.quantity, 0), 0);
-  const totalAmount = partnerShares.reduce((sum, user) => sum + user.shares.reduce((s, share) => s + share.quantity * share.price, 0), 0);
-  const buyersCount = partnerShares.filter((u) => u.shares.reduce((s, sh) => s + sh.quantity, 0) > 0).length;
+  // Solo participantes de la asamblea. Los no-participantes no se listan ni cuentan.
+  const participantIds = getParticipantUserIds(assemblyRun);
+  const participantShares = partnerShares.filter((u) => participantIds.has(u.id));
+
+  const totalShares = participantShares.reduce((sum, user) => sum + user.shares.reduce((s, share) => s + share.quantity, 0), 0);
+  const totalAmount = participantShares.reduce((sum, user) => sum + user.shares.reduce((s, share) => s + share.quantity * share.price, 0), 0);
+  const buyersCount = participantShares.filter((u) => u.shares.reduce((s, sh) => s + sh.quantity, 0) > 0).length;
 
   const selectedUserShares = selectedUser
     ? partnerShares.find((p) => p.id === selectedUser.id)?.shares?.reduce((s, sh) => s + sh.quantity, 0) ?? 0
@@ -166,7 +171,7 @@ export default function Shares() {
 
             {/* Partners List */}
             <div className="px-3 sm:px-5 pb-5 space-y-1.5 max-h-[500px] overflow-y-auto">
-              {[...partnerShares]
+              {[...participantShares]
                 .filter((user) => {
                   if (!searchQuery.trim()) return true;
                   const fullName = `${user.lastname} ${user.name}`.toLowerCase();
@@ -227,8 +232,8 @@ export default function Shares() {
                     </div>
                   );
                 })}
-              {partnerShares.length === 0 && (
-                <div className="py-8 text-center text-sm text-muted-foreground">No hay usuarios disponibles</div>
+              {participantShares.length === 0 && (
+                <div className="py-8 text-center text-sm text-muted-foreground">No hay participantes en la asamblea</div>
               )}
             </div>
           </>
