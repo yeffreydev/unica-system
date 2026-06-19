@@ -40,24 +40,12 @@ export const DepositProvider: React.FC<DepositProviderProps> = ({
   const { auth } = useContext(AuthContext);
 
   const addDeposit = (deposit: IDeposit) => {
-    setDeposits([deposit, ...deposits]);
+    setDeposits((prev) => [deposit, ...prev]);
   };
 
-  // const deleteDeposit = (id: string) => {
-  //   setDeposits(deposits.filter((deposit) => deposit.id !== id));
-  // };
-
-  // const updateDeposit = (deposit: IDeposit) => {
-  //   const index = deposits.findIndex((u) => u.id === deposit.id);
-  //   if (index !== -1) {
-  //     deposits[index] = deposit;
-  //     setDeposits([...deposits]);
-  //   }
-  // };
-
-  // const removeDeposit = (id: string) => {
-  //   setDeposits(deposits.filter((deposit) => deposit.id !== id));
-  // };
+  const updateDeposit = (deposit: IDeposit) => {
+    setDeposits((prev) => prev.map((d) => (d.id === deposit.id ? deposit : d)));
+  };
 
   const fetchDeposit = async () => {
     try {
@@ -80,6 +68,7 @@ export const DepositProvider: React.FC<DepositProviderProps> = ({
       value={{
         deposits,
         addDeposit,
+        updateDeposit,
         setDeposits,
       }}
     >

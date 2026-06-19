@@ -45,12 +45,12 @@ export function DepositsDialog({
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>
-            {isEdit ? "Editar Pago" : "Pago de capital e intereses"}
+            {isEdit ? "Editar Depósito" : "Nuevo Depósito"}
           </DialogTitle>
           <DialogDescription>
             {isEdit
-              ? "Modifica los detalles del pago aquí."
-              : "Ingresa los detalles del nuevo pago aquí."}
+              ? "Modifica los detalles del depósito aquí."
+              : "Ingresa los detalles del nuevo depósito aquí."}
           </DialogDescription>
         </DialogHeader>
         {children}

@@ -6,6 +6,7 @@ import {
   SortingState,
   flexRender,
   getCoreRowModel,
+  getFilteredRowModel,
   getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
@@ -108,7 +109,8 @@ export const columns: ColumnDef<IDeposit>[] = [
 
 export function DepositsTable() {
   const [sorting, setSorting] = useState<SortingState>([]);
-  const { deposits, setDeposits, addDeposit } = useContext(DepositContext);
+  const [globalFilter, setGlobalFilter] = useState("");
+  const { deposits, setDeposits, addDeposit, updateDeposit } = useContext(DepositContext);
   const [openDialog, setOpenDialog] = useState(false);
   const [loading, setLoading] = useState(true);
   const [editDeposit, setEditDeposit] = useState<IDeposit | null>(null);
@@ -122,12 +124,20 @@ export function DepositsTable() {
     data: deposits,
     columns,
     onSortingChange: setSorting,
+    onGlobalFilterChange: setGlobalFilter,
+    globalFilterFn: (row, _columnId, value) => {
+      const user = row.original.user;
+      const fullName = `${user?.name ?? ""} ${user?.lastname ?? ""}`.toLowerCase();
+      return fullName.includes(String(value).toLowerCase());
+    },
     getCoreRowModel: getCoreRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
     meta: {
       onEdit: (deposit: IDeposit) => {
         setEditDeposit(deposit);
+        setOpenDialog(true);
       },
       onDelete: async (deposit: IDeposit) => {
         if (!deposit.id) return;
@@ -144,6 +154,7 @@ export function DepositsTable() {
     } as TableMeta<IDeposit> & { onDelete: (d: IDeposit) => Promise<void>; onEdit: (d: IDeposit) => void },
     state: {
       sorting,
+      globalFilter,
     },
   });
 
@@ -151,14 +162,26 @@ export function DepositsTable() {
     <div className="w-full">
       <div className="flex items-center py-4">
         <Input
-          placeholder="Filtrar nombres..."
-          onChange={(event) =>
-            table.getColumn("user.name")?.setFilterValue(event.target.value)
-          }
+          placeholder="Buscar por nombre o apellido..."
+          value={globalFilter}
+          onChange={(event) => setGlobalFilter(event.target.value)}
           className="max-w-sm mr-auto bg-background border-border"
         />
-        <DepositsDialog open={openDialog} onOpenChange={setOpenDialog}>
-          <DepositForm addDeposit={addDeposit!} setOpenDialog={setOpenDialog} editDeposit={editDeposit} setEditDeposit={setEditDeposit} />
+        <DepositsDialog
+          isEdit={!!editDeposit}
+          open={openDialog}
+          onOpenChange={(open) => {
+            setOpenDialog(open);
+            if (!open) setEditDeposit(null);
+          }}
+        >
+          <DepositForm
+            addDeposit={addDeposit!}
+            updateDepositInList={updateDeposit}
+            setOpenDialog={setOpenDialog}
+            editDeposit={editDeposit}
+            setEditDeposit={setEditDeposit}
+          />
         </DepositsDialog>
       </div>
       <div className="bg-background border-border">

@@ -23,6 +23,7 @@ export const DepositForm = ({
   editDeposit,
   setEditDeposit,
   addDeposit,
+  updateDepositInList,
   scheduleRunId,
   defaultDate,
 
@@ -31,6 +32,7 @@ export const DepositForm = ({
   editDeposit?: IDeposit | null;
   setEditDeposit?: (deposit: IDeposit | null) => void;
   addDeposit: (deposit: IDeposit) => void;
+  updateDepositInList?: (deposit: IDeposit) => void;
   scheduleRunId?: string;
   defaultDate?: Date;
 }) => {
@@ -56,12 +58,16 @@ export const DepositForm = ({
     },
   });
 
-  // Prefill on edit
+  // Prefill on edit / reset on switch to add
   useEffect(() => {
-    if (!isEdit || !editDeposit) return;
-    setUserSelected(editDeposit.user as IUser);
-    form.setValue("amount", editDeposit.amount);
-    form.setValue("date", new Date(editDeposit.date).toISOString().split('T')[0]);
+    if (isEdit && editDeposit) {
+      setUserSelected(editDeposit.user as IUser);
+      form.setValue("amount", editDeposit.amount);
+      form.setValue("date", new Date(editDeposit.date).toISOString().split('T')[0]);
+    } else {
+      setUserSelected(null);
+      form.reset();
+    }
   }, [isEdit, editDeposit, form]);
 
   const createDeposit = async (data: IDeposit) => {
@@ -88,11 +94,11 @@ export const DepositForm = ({
     try {
       const res = await apiClient.put(`/deposits/${id}`, data);
       if (res.data) {
-        // Assuming context has updateDeposit function
-        // updateDeposit(res.data);
+        updateDepositInList?.(res.data);
         setOpenDialog?.(false);
         setEditDeposit?.(null);
         form.reset();
+        setUserSelected(null);
       }
     } catch (e) {
       console.error(e);
@@ -130,7 +136,6 @@ export const DepositForm = ({
           }
         })}
       >
-        <h2>{isEdit ? "Editar Depósito" : "Deposito a Cuenta de ahorros."}</h2>
         <FormField
           control={form.control}
           name="amount"
