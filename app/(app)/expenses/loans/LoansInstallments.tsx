@@ -15,22 +15,15 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  ColumnDef,
-  flexRender,
-  getCoreRowModel,
-  getPaginationRowModel,
-  getSortedRowModel,
-  useReactTable,
-} from "@tanstack/react-table";
 import { ScrollArea, ScrollBar } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Pencil, Trash } from "lucide-react";
+import { CalendarClock, CheckCircle2, Clock, Pencil, Trash } from "lucide-react";
 import { ILoanInstallment } from "@/types/ILoan";
 import apiClient from "@/config/apiClient";
+import { formatCurrency } from "@/lib/utils";
 
 function toDateInputValue(value: Date | string): string {
   const date = new Date(value);
@@ -60,6 +53,26 @@ export function LoansInstallments({
   const [editPayment, setEditPayment] = useState("");
   const [editInterest, setEditInterest] = useState("");
   const [editPaid, setEditPaid] = useState(false);
+
+  const isPaid = (i: ILoanInstallment) =>
+    Boolean(i.paid) || i.status === "PAID";
+
+  const sorted = [...installments].sort((a, b) => {
+    const da = new Date(a.date).getTime();
+    const db = new Date(b.date).getTime();
+    return da - db;
+  });
+
+  const totalCount = sorted.length;
+  const paidCount = sorted.filter(isPaid).length;
+  const pendingCount = totalCount - paidCount;
+  const totalAmount = sorted.reduce(
+    (acc, i) => acc + (i.payment ?? 0) + (i.interest ?? 0),
+    0
+  );
+  const pendingAmount = sorted
+    .filter((i) => !isPaid(i))
+    .reduce((acc, i) => acc + (i.payment ?? 0) + (i.interest ?? 0), 0);
 
   const openEdit = (installment: ILoanInstallment) => {
     setEditing(installment);
@@ -104,129 +117,136 @@ export function LoansInstallments({
     }
   };
 
-  const columns: ColumnDef<ILoanInstallment>[] = [
-    {
-      accessorKey: "date",
-      header: "Fecha",
-      cell: ({ row }) => (
-        <div>
-          {row.original?.date
-            ? new Intl.DateTimeFormat("es-ES", {
-                dateStyle: "medium",
-              }).format(new Date(row.original.date))
-            : "Fecha no disponible"}
-        </div>
-      ),
-    },
-    {
-      accessorKey: "payment",
-      header: "Abono",
-      cell: ({ row }) => <div>{(row.original.payment ?? 0).toFixed(2)}</div>,
-    },
-    {
-      accessorKey: "interest",
-      header: "Interés",
-      cell: ({ row }) => <div>{(row.original.interest ?? 0).toFixed(2)}</div>,
-    },
-    {
-      header: "Cuota",
-      cell: ({ row }) => (
-        <div>
-          {((row.original.interest ?? 0) + (row.original.payment ?? 0)).toFixed(2)}
-        </div>
-      ),
-    },
-    {
-      id: "actions",
-      header: "",
-      cell: ({ row }) => (
-        <div className="flex gap-1">
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7"
-            onClick={() => openEdit(row.original)}
-          >
-            <Pencil className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7 text-destructive"
-            onClick={() => setDeleting(row.original)}
-          >
-            <Trash className="h-4 w-4" />
-          </Button>
-        </div>
-      ),
-    },
-  ];
-  const table = useReactTable({
-    data: installments,
-    columns,
-    getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-  });
-
-  const isPaid = (i: ILoanInstallment) =>
-    Boolean(i.paid) || i.status === "PAID";
-
   return (
     <>
       <Dialog open={isOpen} onOpenChange={onOpenChange}>
-        <DialogContent cy-data="installments-dialog" className="sm:max-w-[480px]">
-          <ScrollArea className="h-[400px] w-full">
-            <DialogHeader>
-              <DialogTitle>Cuotas del prestamo</DialogTitle>
-              <DialogDescription>
-                Cuotas del prestamo seleccionado.
-              </DialogDescription>
-            </DialogHeader>
+        <DialogContent
+          cy-data="installments-dialog"
+          className="sm:max-w-[560px] max-h-[90vh] flex flex-col"
+        >
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CalendarClock className="h-5 w-5 text-primary" />
+              Cuotas del préstamo
+            </DialogTitle>
+            <DialogDescription>
+              {totalCount} {totalCount === 1 ? "cuota" : "cuotas"} en total ·{" "}
+              {paidCount} pagadas · {pendingCount} pendientes
+            </DialogDescription>
+          </DialogHeader>
+
+          {/* Resumen */}
+          <div className="grid grid-cols-2 gap-2">
+            <div className="rounded-xl border bg-muted/40 p-3">
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                Total del cronograma
+              </p>
+              <p className="text-lg font-bold mt-0.5">
+                {formatCurrency(totalAmount)}
+              </p>
+            </div>
+            <div className="rounded-xl border bg-muted/40 p-3">
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                Pendiente por pagar
+              </p>
+              <p className="text-lg font-bold mt-0.5 text-destructive">
+                {formatCurrency(pendingAmount)}
+              </p>
+            </div>
+          </div>
+
+          <ScrollArea className="h-[420px] w-full rounded-xl border">
             <Table>
-              <TableHeader>
-                {table.getHeaderGroups().map((headerGroup) => (
-                  <TableRow key={headerGroup.id}>
-                    {headerGroup.headers.map((header) => (
-                      <TableHead
-                        className="text-black font-semibold"
-                        key={header.id}
-                      >
-                        {flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
-                      </TableHead>
-                    ))}
-                  </TableRow>
-                ))}
+              <TableHeader className="sticky top-0 z-10 bg-background">
+                <TableRow>
+                  <TableHead className="font-semibold">#</TableHead>
+                  <TableHead className="font-semibold">Fecha</TableHead>
+                  <TableHead className="font-semibold text-right">
+                    Abono
+                  </TableHead>
+                  <TableHead className="font-semibold text-right">
+                    Interés
+                  </TableHead>
+                  <TableHead className="font-semibold text-right">
+                    Cuota
+                  </TableHead>
+                  <TableHead className="font-semibold">Estado</TableHead>
+                  <TableHead className="font-semibold text-right"></TableHead>
+                </TableRow>
               </TableHeader>
               <TableBody cy-data="installments-table-body">
-                {table.getRowModel().rows.length ? (
-                  table.getRowModel().rows.map((row) => (
-                    <TableRow
-                      className={`${
-                        isPaid(row.original) ? "bg-green-200" : "bg-red-200"
-                      }`}
-                      key={row.id}
-                    >
-                      {row.getVisibleCells().map((cell) => (
-                        <TableCell key={cell.id}>
-                          {flexRender(
-                            cell.column.columnDef.cell,
-                            cell.getContext()
+                {sorted.length ? (
+                  sorted.map((item, index) => {
+                    const paid = isPaid(item);
+                    return (
+                      <TableRow
+                        key={item.id ?? index}
+                        className="hover:bg-muted/50"
+                      >
+                        <TableCell className="text-muted-foreground">
+                          {item.installment_number ?? index + 1}
+                        </TableCell>
+                        <TableCell>
+                          {item.date
+                            ? new Intl.DateTimeFormat("es-ES", {
+                                dateStyle: "medium",
+                              }).format(new Date(item.date))
+                            : "—"}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {formatCurrency(item.payment ?? 0)}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {formatCurrency(item.interest ?? 0)}
+                        </TableCell>
+                        <TableCell className="text-right font-medium">
+                          {formatCurrency(
+                            (item.interest ?? 0) + (item.payment ?? 0)
                           )}
                         </TableCell>
-                      ))}
-                    </TableRow>
-                  ))
+                        <TableCell>
+                          <span
+                            className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium ${
+                              paid
+                                ? "bg-green-100 text-green-700 dark:bg-green-500/15 dark:text-green-400"
+                                : "bg-orange-100 text-orange-700 dark:bg-orange-500/15 dark:text-orange-400"
+                            }`}
+                          >
+                            {paid ? (
+                              <CheckCircle2 className="h-3 w-3" />
+                            ) : (
+                              <Clock className="h-3 w-3" />
+                            )}
+                            {paid ? "Pagada" : "Pendiente"}
+                          </span>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex justify-end gap-1">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7"
+                              onClick={() => openEdit(item)}
+                            >
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 text-destructive hover:text-destructive"
+                              onClick={() => setDeleting(item)}
+                            >
+                              <Trash className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })
                 ) : (
                   <TableRow>
-                    <TableCell
-                      colSpan={columns.length}
-                      className="h-24 text-center"
-                    >
-                      No se encontraron resultados.
+                    <TableCell colSpan={7} className="h-24 text-center">
+                      No se encontraron cuotas.
                     </TableCell>
                   </TableRow>
                 )}

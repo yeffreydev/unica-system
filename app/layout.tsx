@@ -27,9 +27,9 @@ export default function RootLayout({
   return (
     <html lang="es" suppressHydrationWarning={true}>
       <head>
-        <title>Qipi</title>
-        <meta name="description" content="Qipi - Sistema de Gestión" />
-        <link rel="icon" href="/qipi.svg" />
+        <title>Aqui Nace</title>
+        <meta name="description" content="Aqui Nace - Sistema de Gestión" />
+        <link rel="icon" href="/favicon.ico" sizes="any" />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}

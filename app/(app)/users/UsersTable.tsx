@@ -63,7 +63,7 @@ export function UsersTable() {
 
   const handleInviteToApp = async (user: IUser) => {
     const confirm = window.confirm(
-      `¿Enviar invitación a QIPI para ${user.name} ${user.lastname} (DNI: ${user.dni})?`
+      `¿Enviar invitación a Aqui Nace para ${user.name} ${user.lastname} (DNI: ${user.dni})?`
     );
     if (!confirm) return;
 
@@ -195,7 +195,7 @@ export function UsersTable() {
                 disabled={invitingUserId === user.id}
               >
                 <Smartphone />
-                {invitingUserId === user.id ? "Enviando..." : "Invitar a QIPI"}
+                {invitingUserId === user.id ? "Enviando..." : "Invitar a Aqui Nace"}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => handleDelete(user.id)}>

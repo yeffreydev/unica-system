@@ -53,12 +53,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  getLoanStatusColor,
-  getLoanStatusText,
-  LoanStatusColor,
-  LoanStatusText,
-} from "./utils";
+import { getLoanStatusText, LoanStatusText } from "./utils";
+import { Landmark } from "lucide-react";
 
 export function LoansTable() {
   const [sorting, setSorting] = useState<SortingState>([]);
@@ -180,27 +176,49 @@ export function LoansTable() {
     {
       accessorKey: "amount",
       header: "Monto",
-      cell: ({ row }) => <div>{formatCurrency(row.original.amount || 0)}</div>,
+      cell: ({ row }) => (
+        <div className="font-medium">
+          {formatCurrency(row.original.amount || 0)}
+        </div>
+      ),
     },
     {
       accessorKey: "balance",
       header: "Balance",
-      cell: ({ row }) => <div>{formatCurrency(row.original.balance || 0)}</div>,
+      cell: ({ row }) => (
+        <div
+          className={
+            (row.original.balance || 0) > 0
+              ? "font-medium text-destructive"
+              : "font-medium text-muted-foreground"
+          }
+        >
+          {formatCurrency(row.original.balance || 0)}
+        </div>
+      ),
     },
     {
       accessorKey: "status",
       header: "Estado",
-      cell: ({ row }) => (
-        <div
-          className={`text-white w-min px-2 text-center rounded-lg ${getLoanStatusColor(
-            row.original.status as keyof typeof LoanStatusColor
-          )}`}
-        >
-          {`${getLoanStatusText(
-            row.original.status as keyof typeof LoanStatusText
-          )}`}
-        </div>
-      ),
+      cell: ({ row }) => {
+        const paid = row.original.status === "PAID";
+        return (
+          <span
+            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium capitalize ${
+              paid
+                ? "bg-green-100 text-green-700 dark:bg-green-500/15 dark:text-green-400"
+                : "bg-orange-100 text-orange-700 dark:bg-orange-500/15 dark:text-orange-400"
+            }`}
+          >
+            <span
+              className={`h-1.5 w-1.5 rounded-full ${
+                paid ? "bg-green-500" : "bg-orange-500"
+              }`}
+            />
+            {getLoanStatusText(row.original.status as keyof typeof LoanStatusText)}
+          </span>
+        );
+      },
     },
     {
       id: "actions",
@@ -346,9 +364,21 @@ export function LoansTable() {
             </div>
           </DialogContent>
         </Dialog>
+        <div className="flex items-center gap-3 pb-1">
+          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
+            <Landmark className="h-6 w-6" />
+          </div>
+          <div>
+            <h1 className="text-xl font-semibold leading-tight">Préstamos</h1>
+            <p className="text-sm text-muted-foreground">
+              {loans.length} {loans.length === 1 ? "préstamo" : "préstamos"}{" "}
+              registrados
+            </p>
+          </div>
+        </div>
         <div className="flex items-center py-4 gap-3">
           <Input
-            placeholder="Filtrar nombres..."
+            placeholder="Filtrar por nombre..."
             value={(table.getColumn("userName")?.getFilterValue() as string) ?? ""}
             onChange={(event) =>
               table.getColumn("userName")?.setFilterValue(event.target.value)
@@ -359,13 +389,13 @@ export function LoansTable() {
             <LoanForm setIsOpenDialog={setIsOpenDialog} />
           </DialogForm>
         </div>
-        <div className="">
-          <Table className="bg-background border-border">
-            <TableHeader>
+        <div className="rounded-xl border border-border overflow-hidden">
+          <Table className="bg-background">
+            <TableHeader className="bg-muted/50">
               {table.getHeaderGroups().map((headerGroup) => (
                 <TableRow key={headerGroup.id}>
                   {headerGroup.headers.map((header) => (
-                    <TableHead key={header.id}>
+                    <TableHead key={header.id} className="font-semibold">
                       {flexRender(
                         header.column.columnDef.header,
                         header.getContext()
@@ -402,7 +432,7 @@ export function LoansTable() {
                 ))
               ) : table.getRowModel().rows.length ? (
                 table.getRowModel().rows.map((row) => (
-                  <TableRow key={row.id}>
+                  <TableRow key={row.id} className="hover:bg-muted/50">
                     {row.getVisibleCells().map((cell) => (
                       <TableCell key={cell.id}>
                         {flexRender(
@@ -426,23 +456,29 @@ export function LoansTable() {
             </TableBody>
           </Table>
         </div>
-        <div className="flex items-center justify-end space-x-2 py-4">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.previousPage()}
-            disabled={!table.getCanPreviousPage()}
-          >
-            Anterior
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => table.nextPage()}
-            disabled={!table.getCanNextPage()}
-          >
-            Siguiente
-          </Button>
+        <div className="flex items-center justify-between gap-2 py-4">
+          <p className="text-sm text-muted-foreground">
+            Página {table.getState().pagination.pageIndex + 1} de{" "}
+            {Math.max(table.getPageCount(), 1)}
+          </p>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => table.previousPage()}
+              disabled={!table.getCanPreviousPage()}
+            >
+              Anterior
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => table.nextPage()}
+              disabled={!table.getCanNextPage()}
+            >
+              Siguiente
+            </Button>
+          </div>
         </div>
       </div>
       <DialogForm

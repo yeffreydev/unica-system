@@ -48,9 +48,8 @@ export default function AppLayout({
             </Button>
 
             <Link href="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity shrink-0">
-              <img src="/qipi.svg" alt="Qipi" className="h-7 w-7 dark:hidden" />
-              <img src="/qipi-light.svg" alt="Qipi" className="h-7 w-7 hidden dark:block" />
-              <span className="font-bold text-base tracking-tight text-foreground hidden sm:inline">Qipi</span>
+              <img src="/aquinace.svg" alt="Aqui Nace" className="h-7 w-7 dark:hidden" />
+              <img src="/aquinace-light.svg" alt="Aqui Nace" className="h-7 w-7 hidden dark:block" />
             </Link>
 
             <div className="hidden sm:block h-4 w-px bg-border"></div>
@@ -105,9 +104,8 @@ export default function AppLayout({
               <SheetDescription>Navegación principal</SheetDescription>
             </SheetHeader>
             <div className="flex items-center gap-2 px-4 py-3 border-b border-border/50">
-              <img src="/qipi.svg" alt="Qipi" className="h-7 w-7 dark:hidden" />
-              <img src="/qipi-light.svg" alt="Qipi" className="h-7 w-7 hidden dark:block" />
-              <span className="font-bold text-base tracking-tight text-foreground">Qipi</span>
+              <img src="/aquinace.svg" alt="Aqui Nace" className="h-7 w-7 dark:hidden" />
+              <img src="/aquinace-light.svg" alt="Aqui Nace" className="h-7 w-7 hidden dark:block" />
             </div>
             <div className="overflow-y-auto h-[calc(100%-56px)] px-3 pt-4 pb-6">
               <AppSidebar />
