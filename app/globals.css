@@ -3,7 +3,8 @@
 @tailwind utilities;
 
 body {
-  font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-family: 'Fredoka', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-weight: 400;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
@@ -51,10 +52,10 @@ body {
     --popover: 0 0% 100%;
     --popover-foreground: 210 25% 12%;
 
-    /* Brand - Rich dark cyan, authoritative */
-    --primary: 186 75% 28%;
+    /* Brand - Aquí Nace green (#0a8f80), authoritative */
+    --primary: 173 87% 30%;
     --primary-foreground: 0 0% 100%;
-    --main: 186 75% 28%;
+    --main: 173 87% 30%;
     --main-foreground: 0 0% 100%;
 
     /* Secondary - Soft cool gray */
@@ -65,9 +66,9 @@ body {
     --muted: 210 15% 95%;
     --muted-foreground: 210 10% 46%;
 
-    /* Accent - Subtle cyan tint for hovers */
-    --accent: 186 20% 94%;
-    --accent-foreground: 186 75% 22%;
+    /* Accent - Mint tint for hovers */
+    --accent: 160 60% 96%;
+    --accent-foreground: 173 89% 21%;
 
     /* Destructive */
     --destructive: 0 72% 51%;
@@ -76,26 +77,26 @@ body {
     /* Borders - Barely visible, let shadows do the work */
     --border: 210 15% 90%;
     --input: 210 15% 87%;
-    --ring: 186 75% 28%;
+    --ring: 173 87% 30%;
 
-    /* Chart colors - Brand cyan spectrum with good contrast */
-    --chart-1: 186 75% 28%;
-    --chart-2: 192 70% 36%;
-    --chart-3: 179 65% 32%;
-    --chart-4: 186 55% 48%;
-    --chart-5: 192 50% 52%;
+    /* Chart colors - Brand green → sky → silver spectrum */
+    --chart-1: 173 87% 30%;
+    --chart-2: 199 89% 48%;
+    --chart-3: 160 60% 38%;
+    --chart-4: 160 70% 55%;
+    --chart-5: 199 92% 60%;
 
     --radius: 0.625rem;
 
     /* Sidebar - White/light, clean and modern */
     --sidebar-background: 0 0% 100%;
     --sidebar-foreground: 210 25% 12%;
-    --sidebar-primary: 186 75% 28%;
+    --sidebar-primary: 173 87% 30%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 186 20% 94%;
-    --sidebar-accent-foreground: 186 75% 22%;
+    --sidebar-accent: 160 60% 96%;
+    --sidebar-accent-foreground: 173 89% 21%;
     --sidebar-border: 210 15% 92%;
-    --sidebar-ring: 186 75% 28%;
+    --sidebar-ring: 173 87% 30%;
 
     /* Top header */
     --top-header-background: 0 0% 100%;
@@ -112,11 +113,11 @@ body {
     --popover: 215 18% 14%;
     --popover-foreground: 210 15% 92%;
 
-    /* Brand - softer teal, harmonized with light */
-    --primary: 186 55% 48%;
-    --primary-foreground: 215 25% 10%;
-    --main: 186 55% 48%;
-    --main-foreground: 215 25% 10%;
+    /* Brand - softer green (#2dd4bf-ish), harmonized with light */
+    --primary: 173 70% 45%;
+    --primary-foreground: 173 45% 12%;
+    --main: 173 70% 45%;
+    --main-foreground: 173 45% 12%;
 
     /* Secondary - slate elevation */
     --secondary: 215 14% 19%;
@@ -125,33 +126,33 @@ body {
     --muted: 215 14% 17%;
     --muted-foreground: 215 10% 62%;
 
-    /* Accent - subtle teal hint on hover */
-    --accent: 215 14% 21%;
-    --accent-foreground: 186 50% 75%;
+    /* Accent - subtle green hint on hover */
+    --accent: 173 20% 20%;
+    --accent-foreground: 160 70% 80%;
 
     --destructive: 0 65% 48%;
     --destructive-foreground: 0 0% 100%;
 
     --border: 215 12% 22%;
     --input: 215 12% 22%;
-    --ring: 186 55% 48%;
+    --ring: 173 70% 45%;
 
-    /* Chart - muted brand spectrum */
-    --chart-1: 186 55% 48%;
-    --chart-2: 192 50% 52%;
-    --chart-3: 179 50% 45%;
-    --chart-4: 200 45% 58%;
-    --chart-5: 172 40% 50%;
+    /* Chart - muted brand spectrum (green/sky/silver) */
+    --chart-1: 173 70% 45%;
+    --chart-2: 199 92% 60%;
+    --chart-3: 160 60% 45%;
+    --chart-4: 199 89% 48%;
+    --chart-5: 213 27% 74%;
 
     /* Sidebar - deeper for separation */
     --sidebar-background: 215 22% 9%;
     --sidebar-foreground: 210 12% 86%;
-    --sidebar-primary: 186 55% 48%;
-    --sidebar-primary-foreground: 215 25% 10%;
-    --sidebar-accent: 215 16% 15%;
-    --sidebar-accent-foreground: 186 45% 78%;
+    --sidebar-primary: 173 70% 45%;
+    --sidebar-primary-foreground: 173 45% 12%;
+    --sidebar-accent: 173 20% 16%;
+    --sidebar-accent-foreground: 160 70% 80%;
     --sidebar-border: 215 14% 17%;
-    --sidebar-ring: 186 55% 48%;
+    --sidebar-ring: 173 70% 45%;
 
     --top-header-background: 215 22% 9%;
     --top-header-foreground: 210 12% 90%;

@@ -12,7 +12,7 @@ interface LoanStatusChartProps {
   data: LoanStatusData[];
 }
 
-// Tonos de marca qipi (familia teal/cyan de las variables --chart-1..5).
+// Tonos de marca Aqui Nace (familia teal/cyan de las variables --chart-1..5).
 const COLORS: Record<string, string> = {
   APPROVED: "hsl(var(--chart-2))",
   PENDING: "hsl(var(--chart-4))",

@@ -13,8 +13,9 @@ export default function NavHeader() {
 
   return (
     <div className="flex flex-col items-center justify-center">
-      <img className="w-[50px]" src={'/qipi.svg'} alt="Qipi Logo" />
-      <span className="font-bold text-primary">Qipi</span>
+      <img className="w-[50px] dark:hidden" src={'/aquinace.svg'} alt="Aqui Nace Logo" />
+      <img className="w-[50px] hidden dark:block" src={'/aquinace-light.svg'} alt="Aqui Nace Logo" />
+      <span className="font-bold text-primary">Aqui Nace</span>
     </div>
   );
 }

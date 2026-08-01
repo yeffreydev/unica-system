@@ -176,7 +176,7 @@ export function StepReconciliation() {
           </Button>
           <Button
             onClick={() => {
-              localStorage.removeItem("qipi.onboarding.v1");
+              localStorage.removeItem("aquinace.onboarding.v1");
               window.location.href = "/";
             }}
           >

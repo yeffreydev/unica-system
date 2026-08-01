@@ -44,7 +44,7 @@ export function DepositsWithdrawalsChart({ data }: Props) {
       <ResponsiveContainer height={220}>
         <AreaChart data={data} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
           <defs>
-            {/* Gradientes en familia qipi: chart-1 (primary profundo) y
+            {/* Gradientes en familia Aqui Nace: chart-1 (primary profundo) y
                 chart-4 (variante clara). Mantiene contraste sin salir de marca. */}
             <linearGradient id="depGrad" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor="hsl(var(--chart-1))" stopOpacity={0.5} />

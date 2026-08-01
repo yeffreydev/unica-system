@@ -157,7 +157,7 @@ function computeCapitalGoal(current: number): GoalProgress {
 
 function TrendBadge({ value }: { value: number }) {
   const up = value >= 0;
-  // Subida = primary brand. Bajada = neutral muted. Solo paleta qipi.
+  // Subida = primary brand. Bajada = neutral muted. Solo paleta Aqui Nace.
   return (
     <span
       className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium ${
@@ -176,7 +176,7 @@ interface KpiCardProps {
   label: string;
   value: string;
   Icon: LucideIcon;
-  /** Nombre de variable CSS qipi: --primary o --chart-1..5. */
+  /** Nombre de variable CSS Aqui Nace: --primary o --chart-1..5. */
   tintVar: string;
   trend?: number;
   hint?: string;

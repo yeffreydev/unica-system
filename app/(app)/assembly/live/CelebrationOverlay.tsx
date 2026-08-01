@@ -3,13 +3,13 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { CheckCircle2, PartyPopper, Sparkles } from "lucide-react";
 
-// Qipi brand palette (cyan-based) + warm accents for pop
+// Aqui Nace brand palette (purple + sky + silver) for pop
 const CONFETTI_COLORS = [
-  "hsl(186 75% 28%)", // primary
-  "hsl(186 55% 48%)", // primary light
-  "hsl(186 70% 65%)", // cyan soft
-  "hsl(168 70% 45%)", // teal
-  "hsl(45 95% 58%)", // gold
+  "hsl(262 83% 58%)", // purple primary
+  "hsl(255 92% 76%)", // purple light
+  "hsl(199 89% 48%)", // sky
+  "hsl(199 92% 60%)", // sky bright
+  "hsl(213 27% 84%)", // silver
   "hsl(0 0% 100%)", // white
 ];
 

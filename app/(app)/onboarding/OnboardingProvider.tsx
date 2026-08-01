@@ -10,7 +10,7 @@ import {
 } from "react";
 import { OnboardingState, STEPS, StepId } from "./types";
 
-const STORAGE_KEY = "qipi.onboarding.v1";
+const STORAGE_KEY = "aquinace.onboarding.v1";
 
 const todayPeru = () => {
   const now = new Date();

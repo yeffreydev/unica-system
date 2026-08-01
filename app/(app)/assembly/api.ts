@@ -116,6 +116,12 @@ export const apiUpdateParticipantInAssemblyRun = async (scheduleRunId: string, d
   return response.data;
 };
 
+// crear socio rápido (usado desde la asamblea en vivo)
+export const apiCreateQuickUser = async (data: { dni: string; name: string; lastname: string; email?: string; phone?: string }) => {
+  const response = await apiClient.post("/users", data);
+  return response.data;
+};
+
 // savings (ahorristas)
 export const apiGetSavingsData = async (runId: string) => {
   const response = await apiClient.get(`/schedules/assembly/run/${runId}/savings-data`);

@@ -66,14 +66,14 @@ export const LoginForm = () => {
       <div className="space-y-5">
         <div className="flex flex-col gap-2">
           <label className="text-sm font-medium text-foreground/80 ml-1">
-            DNI
+            Usuario
           </label>
           <input
             name="username"
             cy-data="username"
             value={form.username}
             onChange={handleChange}
-            placeholder="00000000"
+            placeholder="Usuario"
             className="w-full border border-border bg-background hover:border-primary/50 focus:border-primary focus:ring-4 focus:ring-primary/10 rounded-xl py-3 px-4 text-foreground placeholder:text-muted-foreground/50 transition-all outline-none"
             type="text"
             disabled={isLoading}

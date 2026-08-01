@@ -19,7 +19,7 @@ interface RecentSalesProps {
   loans: RecentLoan[];
 }
 
-// Paleta restringida a marca qipi: variaciones de primary + neutrales.
+// Paleta restringida a marca Aqui Nace: variaciones de primary + neutrales.
 const STATUS_VARIANT: Record<string, { label: string; className: string }> = {
   APPROVED: { label: "Aprobado", className: "bg-primary/10 text-primary border-primary/20" },
   PENDING: { label: "Pendiente", className: "bg-accent text-accent-foreground border-border" },

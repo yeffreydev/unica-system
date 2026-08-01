@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Users, CheckCircle, XCircle, DollarSign, UserPlus, Trash2, Search, Clock, CircleDot, Banknote, AlertTriangle, Loader2 } from "lucide-react";
+import { Users, CheckCircle, XCircle, DollarSign, UserPlus, Trash2, Search, Clock, CircleDot, Banknote, AlertTriangle, Loader2, IdCard, Phone, Mail, Sparkles } from "lucide-react";
 import { sileo } from "sileo";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -9,7 +9,9 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { apiGetAssemblyRun, apiUpdateParticipantStatusInAssemblyRun, apiCreateOtherIncomesTransaction, apiGetOtherIncomesByScheduleRun, apiDeleteOtherIncomesTransactionAssembly, apiUpdateParticipantInAssemblyRun, apiGetFinesConfig, IFinesConfig } from "../api";
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { apiGetAssemblyRun, apiUpdateParticipantStatusInAssemblyRun, apiCreateOtherIncomesTransaction, apiGetOtherIncomesByScheduleRun, apiDeleteOtherIncomesTransactionAssembly, apiUpdateParticipantInAssemblyRun, apiGetFinesConfig, apiCreateQuickUser, IFinesConfig } from "../api";
 import { useAssembly } from "../AssemblyContext";
 import { IAssemblyScheduleRun, ParticipantStatusTypes } from "../types";
 import { translateParticipantStatus } from "../utils";
@@ -45,13 +47,17 @@ function getStatusConfig(status: string) {
 
 export function AttendanceTracker() {
   const { assembly } = useAssembly();
-  const { users } = useContext(AppContext);
+  const { users, addUser } = useContext(AppContext);
   const [assemblyRun, setAssemblyRun] = useState<IAssemblyScheduleRun | null>(null);
   const [payments, setPayments] = useState<Record<string, { amount: number; transactionIds: string[] }>>({});
   const [openModal, setOpenModal] = useState<string | null>(null);
   const [amount, setAmount] = useState<number>(0);
   const [openAddModal, setOpenAddModal] = useState(false);
+  const [addTab, setAddTab] = useState<"existing" | "new">("existing");
   const [selectedUser, setSelectedUser] = useState<IUser | null>(null);
+  const [newUser, setNewUser] = useState({ dni: "", name: "", lastname: "", phone: "", email: "" });
+  const [newUserErrors, setNewUserErrors] = useState<Record<string, string>>({});
+  const [creatingUser, setCreatingUser] = useState(false);
   const [confirmChange, setConfirmChange] = useState<{ id: string; status: ParticipantStatusTypes } | null>(null);
   const [confirmDeletePayment, setConfirmDeletePayment] = useState<string | null>(null);
   const [confirmRemoveParticipant, setConfirmRemoveParticipant] = useState<string | null>(null);
@@ -235,6 +241,54 @@ export function AttendanceTracker() {
     }
   };
 
+  const validateNewUser = () => {
+    const errors: Record<string, string> = {};
+    if (!newUser.dni.trim() || newUser.dni.trim().length < 8) errors.dni = "DNI debe tener al menos 8 caracteres.";
+    if (!newUser.name.trim() || newUser.name.trim().length < 2) errors.name = "Nombre debe tener al menos 2 caracteres.";
+    if (!newUser.lastname.trim() || newUser.lastname.trim().length < 2) errors.lastname = "Apellido debe tener al menos 2 caracteres.";
+    if (newUser.email.trim() && !/^\S+@\S+\.\S+$/.test(newUser.email.trim())) errors.email = "Ingresa un email válido.";
+    setNewUserErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
+  const handleCreateAndAddUser = async () => {
+    if (!assemblyRun?.id || creatingUser) return;
+    if (!validateNewUser()) return;
+    setCreatingUser(true);
+    try {
+      const created = await apiCreateQuickUser({
+        dni: newUser.dni.trim(),
+        name: newUser.name.trim(),
+        lastname: newUser.lastname.trim(),
+        phone: newUser.phone.trim() || undefined,
+        email: newUser.email.trim() || undefined,
+      });
+      addUser?.(created);
+      await apiUpdateParticipantInAssemblyRun(assemblyRun.id, {
+        userId: created.id,
+        action: "add",
+      });
+      const updatedData = await apiGetAssemblyRun(assemblyRun.id);
+      setAssemblyRun(updatedData);
+      sileo.success({
+        title: "Socio creado y agregado",
+        description: `${created.name} ${created.lastname} fue registrado y agregado a la asamblea.`,
+      });
+      setNewUser({ dni: "", name: "", lastname: "", phone: "", email: "" });
+      setNewUserErrors({});
+      setAddTab("existing");
+    } catch (error: any) {
+      console.error("Error creating user:", error);
+      const message = error?.response?.data?.message;
+      sileo.error({
+        title: "Error",
+        description: typeof message === "string" ? message : "No se pudo crear el socio. Verifica que el DNI no esté registrado.",
+      });
+    } finally {
+      setCreatingUser(false);
+    }
+  };
+
   const handlePayment = async (attendee: IAssemblyScheduleRun["participants"][0]) => {
     if (!attendee.user?.id) return;
     if (payingId) return;
@@ -337,6 +391,32 @@ export function AttendanceTracker() {
         )}
       </CardHeader>
 
+      {/* Socios nuevos promo */}
+      <div className="px-3 sm:px-5 pt-3 pb-1">
+        <div className="flex items-center justify-between gap-3 rounded-xl border border-primary/20 bg-primary/5 dark:bg-primary/10 p-3 sm:p-4">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="flex items-center justify-center w-9 h-9 rounded-full bg-primary/15 text-primary shrink-0">
+              <Sparkles className="w-4.5 h-4.5" />
+            </div>
+            <div className="min-w-0">
+              <div className="text-sm font-semibold text-foreground">Socios nuevos</div>
+              <p className="text-xs text-muted-foreground truncate">Puedes agregar un socio sin salir de tu reunión.</p>
+            </div>
+          </div>
+          <Button
+            onClick={() => {
+              setAddTab("new");
+              setOpenAddModal(true);
+            }}
+            size="sm"
+            className="gap-1.5 h-8 text-xs shrink-0"
+          >
+            <UserPlus className="w-3.5 h-3.5" />
+            Crear socio
+          </Button>
+        </div>
+      </div>
+
       {/* Add Participant Dialog */}
       <Dialog open={openAddModal} onOpenChange={setOpenAddModal} modal={false}>
         <DialogContent>
@@ -373,11 +453,117 @@ export function AttendanceTracker() {
               ))}
             </div>
             <div className="border-t pt-4 space-y-3">
-              <h4 className="font-medium text-sm">Agregar Nuevo Participante</h4>
-              <ComboBoxUsers users={availableUsers} controller={{ userSelected: selectedUser, setUserSelected: setSelectedUser }} />
-              <Button onClick={handleAddAttendee} className="w-full" disabled={!selectedUser}>
-                Agregar Participante
-              </Button>
+              <h4 className="font-medium text-sm">Agregar Participante</h4>
+              <Tabs value={addTab} onValueChange={(v) => setAddTab(v as "existing" | "new")}>
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="existing" className="gap-1.5">
+                    <Users className="w-3.5 h-3.5" />
+                    Socio existente
+                  </TabsTrigger>
+                  <TabsTrigger value="new" className="gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5" />
+                    Socio nuevo
+                  </TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="existing" className="space-y-3 pt-1">
+                  <ComboBoxUsers users={availableUsers} controller={{ userSelected: selectedUser, setUserSelected: setSelectedUser }} />
+                  <Button onClick={handleAddAttendee} className="w-full" disabled={!selectedUser}>
+                    Agregar Participante
+                  </Button>
+                </TabsContent>
+
+                <TabsContent value="new" className="space-y-3 pt-1">
+                  <div className="rounded-lg border bg-muted/20 p-3 space-y-3">
+                    <div className="space-y-1.5">
+                      <Label htmlFor="new-user-dni" className="text-xs flex items-center gap-1.5">
+                        <IdCard className="w-3.5 h-3.5" />
+                        DNI
+                      </Label>
+                      <Input
+                        id="new-user-dni"
+                        placeholder="00000000"
+                        value={newUser.dni}
+                        onChange={(e) => setNewUser((prev) => ({ ...prev, dni: e.target.value }))}
+                        disabled={creatingUser}
+                        className="h-9"
+                      />
+                      {newUserErrors.dni && <p className="text-[11px] text-red-600 dark:text-red-400">{newUserErrors.dni}</p>}
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1.5">
+                        <Label htmlFor="new-user-name" className="text-xs">Nombres</Label>
+                        <Input
+                          id="new-user-name"
+                          placeholder="Nombres"
+                          value={newUser.name}
+                          onChange={(e) => setNewUser((prev) => ({ ...prev, name: e.target.value }))}
+                          disabled={creatingUser}
+                          className="h-9"
+                        />
+                        {newUserErrors.name && <p className="text-[11px] text-red-600 dark:text-red-400">{newUserErrors.name}</p>}
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label htmlFor="new-user-lastname" className="text-xs">Apellidos</Label>
+                        <Input
+                          id="new-user-lastname"
+                          placeholder="Apellidos"
+                          value={newUser.lastname}
+                          onChange={(e) => setNewUser((prev) => ({ ...prev, lastname: e.target.value }))}
+                          disabled={creatingUser}
+                          className="h-9"
+                        />
+                        {newUserErrors.lastname && <p className="text-[11px] text-red-600 dark:text-red-400">{newUserErrors.lastname}</p>}
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1.5">
+                        <Label htmlFor="new-user-phone" className="text-xs flex items-center gap-1.5">
+                          <Phone className="w-3.5 h-3.5" />
+                          Teléfono
+                        </Label>
+                        <Input
+                          id="new-user-phone"
+                          placeholder="999 999 999"
+                          value={newUser.phone}
+                          onChange={(e) => setNewUser((prev) => ({ ...prev, phone: e.target.value }))}
+                          disabled={creatingUser}
+                          className="h-9"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label htmlFor="new-user-email" className="text-xs flex items-center gap-1.5">
+                          <Mail className="w-3.5 h-3.5" />
+                          Email
+                        </Label>
+                        <Input
+                          id="new-user-email"
+                          placeholder="correo@ejemplo.com"
+                          value={newUser.email}
+                          onChange={(e) => setNewUser((prev) => ({ ...prev, email: e.target.value }))}
+                          disabled={creatingUser}
+                          className="h-9"
+                        />
+                        {newUserErrors.email && <p className="text-[11px] text-red-600 dark:text-red-400">{newUserErrors.email}</p>}
+                      </div>
+                    </div>
+
+                    <p className="text-[11px] text-muted-foreground">
+                      Se creará como socio nuevo (contraseña inicial = DNI) y se agregará de inmediato a esta asamblea.
+                    </p>
+
+                    <Button onClick={handleCreateAndAddUser} className="w-full gap-1.5" disabled={creatingUser}>
+                      {creatingUser ? (
+                        <><Loader2 className="w-4 h-4 animate-spin" />Creando...</>
+                      ) : (
+                        <><UserPlus className="w-4 h-4" />Crear y Agregar</>
+                      )}
+                    </Button>
+                  </div>
+                </TabsContent>
+              </Tabs>
             </div>
           </div>
         </DialogContent>
