@@ -5,6 +5,7 @@ import { AppSidebar } from "@/components/Nav";
 import { User, LogOut, Users, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
+import SyncButton from "@/components/SyncButton";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,7 +16,8 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "
 import { useContext } from "react";
 import { AuthContext } from "@/context/auth/AuthContex";
 import { AppContext } from "@/context/AppContext";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { useTenant } from "@/context/TenantContext";
 import { useEffect } from "react";
 
 export default function AppLayout({
@@ -27,10 +29,29 @@ export default function AppLayout({
   const { bank, users } = useContext(AppContext);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
+  const { tenant } = useTenant();
+  // Asociación recién creada: primero el onboarding, después los módulos.
+  const needsOnboarding = tenant !== null && !tenant.onboardingCompleted;
 
   useEffect(() => {
     setMobileNavOpen(false);
   }, [pathname]);
+
+  useEffect(() => {
+    if (needsOnboarding) router.replace("/start");
+  }, [needsOnboarding, router]);
+
+  if (needsOnboarding) {
+    return (
+      <div className="flex h-screen w-screen items-center justify-center bg-background">
+        <div className="flex items-center gap-3 text-sm text-muted-foreground">
+          <span className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+          Preparando la configuración de tu comunidad...
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col w-screen h-screen bg-background overflow-hidden">
@@ -66,6 +87,8 @@ export default function AppLayout({
           </div>
 
           <div className="flex items-center gap-1 shrink-0">
+            {/* Solo aparece en el instalador: es el estado de la base local. */}
+            <SyncButton />
             <ThemeToggle />
 
             <DropdownMenu>

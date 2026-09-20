@@ -6,13 +6,18 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, ChevronDown, ChevronUp, Clock, Coins, Download, Eye, FileCheck, FileText, FileX, Loader2 } from "lucide-react";
-import { apiGetActaByRun, apiListAssemblyRuns, apiSetActaConfirmation } from "../api";
+import { apiGetActaByRun, apiGetFinesConfig, apiListAssemblyRuns, apiSetActaConfirmation, IFinesConfig } from "../api";
 import { sileo } from "sileo";
 import { formatCurrency } from "@/lib/utils";
 import { downloadActaPdf } from "../acta-pdf";
 import {
+  DEFAULT_FINES_CONFIG,
+  attendanceHtmlColumns,
+  attendanceHtmlTotals,
+  buildAttendanceRows,
+} from "../acta-attendance";
+import {
   ACTA_PRINT_CSS,
-  participantStatusLabel,
   runStatusLabel,
   creditStatusLabel,
   fmtDateLong,
@@ -50,8 +55,11 @@ export default function AssemblyListPage() {
   const handleDownloadActa = async (run: RunRow) => {
     setDownloadingId(run.id);
     try {
-      const resp = await apiGetActaByRun(run.id);
-      const html = buildActaHtml(resp, run);
+      const [resp, cfg] = await Promise.all([
+        apiGetActaByRun(run.id),
+        apiGetFinesConfig().catch(() => null),
+      ]);
+      const html = buildActaHtml(resp, run, cfg ?? DEFAULT_FINES_CONFIG);
       const blob = new Blob([html], { type: "text/html;charset=utf-8" });
       const url = URL.createObjectURL(blob);
       const date = new Date(run.startAt).toISOString().slice(0, 10);
@@ -74,8 +82,11 @@ export default function AssemblyListPage() {
   const handleDownloadPdf = async (run: RunRow) => {
     setDownloadingPdfId(run.id);
     try {
-      const resp = await apiGetActaByRun(run.id);
-      downloadActaPdf(resp, run);
+      const [resp, cfg] = await Promise.all([
+        apiGetActaByRun(run.id),
+        apiGetFinesConfig().catch(() => null),
+      ]);
+      downloadActaPdf(resp, run, cfg ?? DEFAULT_FINES_CONFIG);
       sileo.success({ title: "Acta descargada (PDF)" });
     } catch (err) {
       console.error(err);
@@ -308,7 +319,7 @@ function userLabel(u: any): string {
   return [last, name].filter(Boolean).join(", ") || "-";
 }
 
-function buildActaHtml(acta: any, run: RunRow): string {
+function buildActaHtml(acta: any, run: RunRow, finesConfig: IFinesConfig = DEFAULT_FINES_CONFIG): string {
   const c = acta?.content ?? {};
   const r = c.run ?? run;
   const startAt = r?.startAt ? new Date(r.startAt) : new Date(run.startAt);
@@ -330,6 +341,7 @@ function buildActaHtml(acta: any, run: RunRow): string {
   const creditApplications: any[] = c.creditApplications ?? [];
 
   const fmt = (n: any) => escapeHtml(formatCurrency(Number(n ?? 0)));
+  const attendance = buildAttendanceRows(participants, fines, finesConfig);
 
   const section = (num: string, title: string, right: string, body: string) =>
     `<h2 class="section"><span class="num">${num}.</span>${escapeHtml(title)}${right ? `<span style="float:right;font-weight:400;text-transform:none;letter-spacing:0;color:#666;font-size:12px;">${right}</span>` : ""}</h2>${body}`;
@@ -372,10 +384,11 @@ function buildActaHtml(acta: any, run: RunRow): string {
     </div>
   </div>
 
-  ${section("I", "Control de asistencia", `${participants.length} convocados`, table(participants, [
-    { head: "Socio", cell: (p) => escapeHtml(userLabel(p.user) || p.name) },
-    { head: "Estado", num: true, cell: (p) => escapeHtml(participantStatusLabel(p.status)) },
-  ]))}
+  ${section("I", "Control de asistencia", `${participants.length} convocados`, table(
+    attendance,
+    attendanceHtmlColumns(escapeHtml, fmt),
+    attendance.length ? attendanceHtmlTotals(attendance, fmt) : undefined,
+  ))}
 
   ${section("II", "Compra de acciones", fmt(c.sharesTotal), table(shares, [
     { head: "Socio", cell: (s) => escapeHtml(userLabel(s.user)) },

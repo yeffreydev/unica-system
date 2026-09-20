@@ -44,7 +44,7 @@ const reportsItems = [
 const otherItems = [
   // { title: "Documentos", href: "/docs" },
   // { title: "Asistencia", href: "/attendance" },
-  { title: "Onboarding", href: "/onboarding", icon: Rocket },
+  { title: "Onboarding", href: "/start", icon: Rocket },
   { title: "Usuarios", href: "/users", icon: Users },
   { title: "Ajustes", href: "/settings", icon: Settings },
 ];

@@ -6,7 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, FileCheck, FileText, FileX, Loader2 } from "lucide-react";
-import { apiGetActaByRun } from "../api";
+import { apiGetActaByRun, apiGetFinesConfig, IFinesConfig } from "../api";
 import { formatCurrency } from "@/lib/utils";
 import { downloadActaPdf } from "../acta-pdf";
 import {
@@ -16,12 +16,17 @@ import {
   ActaTable,
   ActaClosing,
   ActaConfirmation,
-  participantStatusLabel,
   runStatusLabel,
   creditStatusLabel,
   fmtDateLong,
   fmtTimeShort,
 } from "../acta-theme";
+import {
+  DEFAULT_FINES_CONFIG,
+  attendanceScreenColumns,
+  attendanceScreenTotals,
+  buildAttendanceRows,
+} from "../acta-attendance";
 
 type ActaResponse = {
   confirmed?: boolean;
@@ -36,14 +41,19 @@ function AssemblyViewInner() {
   const searchParams = useSearchParams();
   const id = searchParams.get("id") ?? "";
   const [data, setData] = useState<ActaResponse | null>(null);
+  const [finesConfig, setFinesConfig] = useState<IFinesConfig>(DEFAULT_FINES_CONFIG);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!id) { setLoading(false); return; }
     (async () => {
       try {
-        const res = await apiGetActaByRun(id);
+        const [res, cfg] = await Promise.all([
+          apiGetActaByRun(id),
+          apiGetFinesConfig().catch(() => null),
+        ]);
         setData(res);
+        if (cfg) setFinesConfig(cfg);
       } catch (err) {
         console.error(err);
       } finally {
@@ -68,6 +78,7 @@ function AssemblyViewInner() {
   const savingsPayouts = content.savingsPayouts ?? [];
   const creditApplications = content.creditApplications ?? [];
   const participants = run?.participants ?? [];
+  const attendance = buildAttendanceRows(participants, fines, finesConfig);
 
   const startAt = run?.startAt ? new Date(run.startAt) : null;
   const confirmed = !!data?.confirmed;
@@ -85,7 +96,7 @@ function AssemblyViewInner() {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => downloadActaPdf(data ?? {}, run ?? { id, startAt })}
+            onClick={() => downloadActaPdf(data ?? {}, run ?? { id, startAt }, finesConfig)}
             disabled={!data}
           >
             <FileText className="w-4 h-4 mr-1" /> Descargar PDF
@@ -115,11 +126,9 @@ function AssemblyViewInner() {
 
             <ActaSection numeral="I" title="Control de asistencia" right={`${participants.length} convocados`}>
               <ActaTable
-                columns={[
-                  { key: "socio", header: "Socio", render: (p) => (p.user ? userLabel(p.user) : (p.name ?? "—")) },
-                  { key: "estado", header: "Estado", align: "right", render: (p) => participantStatusLabel(p.status) },
-                ]}
-                rows={participants}
+                columns={attendanceScreenColumns()}
+                rows={attendance}
+                totals={attendance.length ? attendanceScreenTotals(attendance) : undefined}
                 empty="Sin participantes registrados."
               />
             </ActaSection>

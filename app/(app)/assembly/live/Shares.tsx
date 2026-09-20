@@ -25,21 +25,49 @@ export default function Shares() {
   const [modalOpen, setModalOpen] = useState(false);
   const [partnerShares, setPartnerShares] = useState<IPartnerShares[]>([]);
   const [selectedUser, setSelectedUser] = useState<IUser | null>(null);
-  const [quantity, setQuantity] = useState(1);
+  // El input se maneja como string para poder representar "0" y el estado vacío mientras se escribe.
+  const [quantityInput, setQuantityInput] = useState("0");
+  const [saving, setSaving] = useState(false);
   const price = bank?.mainStock?.price ?? 0;
   const [searchQuery, setSearchQuery] = useState("");
+
+  const quantity = quantityInput === "" ? 0 : Number(quantityInput);
+
+  // Solo dígitos, sin negativos y sin ceros a la izquierda ("05" -> "5").
+  const sanitizeQuantity = (raw: string) => {
+    const digits = raw.replace(/\D/g, "");
+    if (digits === "") return "";
+    const normalized = digits.replace(/^0+(?=\d)/, "");
+    return normalized;
+  };
 
   const handleAddShares = (user: IPartnerShares) => {
     setSelectedUser(user);
     const currentShares = user.shares.reduce((sum, share) => sum + share.quantity, 0);
-    setQuantity(currentShares || 1);
+    // Se precarga el valor real (incluido 0), no un 1 por defecto.
+    setQuantityInput(String(currentShares));
     setModalOpen(true);
   };
 
-  const confirmPurchase = async () => {
-    try {
-      if (!selectedUser) return;
+  const closeModal = () => {
+    setModalOpen(false);
+    setSelectedUser(null);
+    setQuantityInput("0");
+  };
 
+  const confirmPurchase = async () => {
+    if (!selectedUser || saving) return;
+
+    const hadShares = (partnerShares.find((p) => p.id === selectedUser.id)?.shares?.length ?? 0) > 0;
+
+    // Sin registro previo y cantidad 0: no hay nada que guardar (el backend rechaza crear con 0).
+    if (quantity === 0 && !hadShares) {
+      closeModal();
+      return;
+    }
+
+    try {
+      setSaving(true);
       const data: IUserStock = await apiBuySharesInAssembly(assemblyRun?.id || "", {
         userId: selectedUser.id,
         shares: quantity,
@@ -47,27 +75,29 @@ export default function Shares() {
       });
 
       const updatedShares = partnerShares.map((partner) => {
-        if (partner.id === selectedUser.id) {
-          const shares = partner.shares.some((share) => share.id === data.id)
-            ? partner.shares.map((share) => (share.id === data.id ? data : share))
-            : [...partner.shares, data];
-          return { ...partner, shares };
-        }
-        return partner;
+        if (partner.id !== selectedUser.id) return partner;
+        // Con 0 el backend elimina el registro: se limpia también en el cliente
+        // para que la próxima edición no arrastre valores viejos.
+        if (quantity === 0) return { ...partner, shares: [] };
+        // Un socio tiene como máximo un registro por asamblea: se reemplaza, nunca se acumula.
+        return { ...partner, shares: [data] };
       });
       setPartnerShares(updatedShares);
 
-      const isUpdate = (partnerShares.find((p) => p.id === selectedUser.id)?.shares?.reduce((s, sh) => s + sh.quantity, 0) ?? 0) > 0;
       sileo.success({
-        title: isUpdate ? "Acciones actualizadas" : "Compra registrada",
-        description: `${quantity} acciones para ${selectedUser.name} ${selectedUser.lastname} (S/ ${(quantity * price).toFixed(2)}).`,
+        title: quantity === 0 ? "Acciones eliminadas" : hadShares ? "Acciones actualizadas" : "Compra registrada",
+        description:
+          quantity === 0
+            ? `Se quitaron las acciones de ${selectedUser.name} ${selectedUser.lastname}.`
+            : `${quantity} acciones para ${selectedUser.name} ${selectedUser.lastname} (S/ ${(quantity * price).toFixed(2)}).`,
       });
 
-      setModalOpen(false);
-      setSelectedUser(null);
+      closeModal();
     } catch (error) {
       console.error("Error confirming purchase:", error);
       sileo.error({ title: "Error", description: "No se pudo registrar la compra de acciones." });
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -101,10 +131,7 @@ export default function Shares() {
   const totalAmount = participantShares.reduce((sum, user) => sum + user.shares.reduce((s, share) => s + share.quantity * share.price, 0), 0);
   const buyersCount = participantShares.filter((u) => u.shares.reduce((s, sh) => s + sh.quantity, 0) > 0).length;
 
-  const selectedUserShares = selectedUser
-    ? partnerShares.find((p) => p.id === selectedUser.id)?.shares?.reduce((s, sh) => s + sh.quantity, 0) ?? 0
-    : 0;
-  const isUpdate = selectedUserShares > 0;
+  const isUpdate = selectedUser ? (partnerShares.find((p) => p.id === selectedUser.id)?.shares?.length ?? 0) > 0 : false;
 
   return (
     <Card className="w-full overflow-hidden">
@@ -241,7 +268,7 @@ export default function Shares() {
       </CardContent>
 
       {/* Purchase Dialog */}
-      <Dialog open={modalOpen} onOpenChange={setModalOpen}>
+      <Dialog open={modalOpen} onOpenChange={(open) => (open ? setModalOpen(true) : closeModal())}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>{isUpdate ? "Actualizar Acciones" : "Comprar Acciones"}</DialogTitle>
@@ -254,17 +281,28 @@ export default function Shares() {
             <div className="space-y-2">
               <Label className="text-sm">Cantidad de acciones</Label>
               <div className="flex items-center gap-2">
-                <Button variant="outline" size="sm" className="h-10 w-10 p-0 shrink-0" onClick={() => setQuantity(Math.max(0, quantity - 1))}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-10 w-10 p-0 shrink-0"
+                  disabled={quantity === 0}
+                  onClick={() => setQuantityInput(String(Math.max(0, quantity - 1)))}
+                >
                   <Minus className="w-4 h-4" />
                 </Button>
                 <Input
-                  type="number"
-                  value={quantity === 0 ? "" : quantity}
-                  onChange={(e) => setQuantity(e.target.value === "" ? 0 : Number(e.target.value))}
+                  type="text"
+                  inputMode="numeric"
+                  autoFocus
+                  value={quantityInput}
+                  // Al enfocar se selecciona todo: escribir reemplaza el valor precargado
+                  // en vez de concatenarse con él (antes 5 + "3" quedaba en 53).
+                  onFocus={(e) => e.target.select()}
+                  onChange={(e) => setQuantityInput(sanitizeQuantity(e.target.value))}
+                  onBlur={() => setQuantityInput((v) => (v === "" ? "0" : v))}
                   className="text-center text-lg font-semibold h-10"
-                  min="0"
                 />
-                <Button variant="outline" size="sm" className="h-10 w-10 p-0 shrink-0" onClick={() => setQuantity(quantity + 1)}>
+                <Button variant="outline" size="sm" className="h-10 w-10 p-0 shrink-0" onClick={() => setQuantityInput(String(quantity + 1))}>
                   <Plus className="w-4 h-4" />
                 </Button>
               </div>
@@ -287,10 +325,12 @@ export default function Shares() {
             </div>
           </div>
           <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setModalOpen(false)}>
+            <Button variant="outline" onClick={closeModal} disabled={saving}>
               Cancelar
             </Button>
-            <Button onClick={confirmPurchase}>{isUpdate ? "Actualizar" : "Confirmar Compra"}</Button>
+            <Button onClick={confirmPurchase} disabled={saving}>
+              {quantity === 0 && isUpdate ? "Quitar acciones" : isUpdate ? "Actualizar" : "Confirmar Compra"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

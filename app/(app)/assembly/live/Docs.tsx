@@ -20,6 +20,8 @@ import {
   apiGetAssemblyActaSummary,
   apiGetActaByRun,
   apiSetActaConfirmation,
+  apiGetFinesConfig,
+  IFinesConfig,
 } from "../api";
 import { toast } from "@/hooks/use-toast";
 import apiClient from "@/config/apiClient";
@@ -45,11 +47,18 @@ import {
   ActaClosing,
   ActaConfirmation,
   ACTA_PDF,
-  participantStatusLabel,
   creditStatusLabel,
   fmtDateShort,
   fmtTimeShort,
 } from "../acta-theme";
+import {
+  DEFAULT_FINES_CONFIG,
+  attendancePdfColumns,
+  attendancePdfTotals,
+  attendanceScreenColumns,
+  attendanceScreenTotals,
+  buildAttendanceRows,
+} from "../acta-attendance";
 
 type ActaOperation = {
   id: string;
@@ -85,6 +94,7 @@ export default function Docs() {
   const [creditApplications, setCreditApplications] = useState<ICreditApplication[]>([]);
   const [savingsPartners, setSavingsPartners] = useState<ISavingsPartner[]>([]);
   const [finesIncomes, setFinesIncomes] = useState<IOtherIncome[]>([]);
+  const [finesConfig, setFinesConfig] = useState<IFinesConfig>(DEFAULT_FINES_CONFIG);
   const [otherIncomes, setOtherIncomes] = useState<IOtherIncome[]>([]);
 
   // Operations data
@@ -126,6 +136,8 @@ export default function Docs() {
           apiClient.get(`/expenses/dividends/schedule-run/${assemblyRun.id}`),
           apiGetActaByRun(assemblyRun.id),
         ]);
+        const finesCfg = await apiGetFinesConfig().catch(() => null);
+        if (finesCfg) setFinesConfig(finesCfg);
 
         setPartnerShares(sharesRes);
         setPaymentsData(paymentsRes);
@@ -167,6 +179,7 @@ export default function Docs() {
   const totalPayments = totalCapital + totalInterest;
 
   const totalFines = finesIncomes.reduce((sum: number, inc: IOtherIncome) => sum + inc.amount, 0);
+  const attendance = buildAttendanceRows(participants, finesIncomes, finesConfig);
 
   const approvedCredits = creditApplications.filter(c => c.status === 'approved');
   const totalApprovedCreditAmount = approvedCredits.reduce((sum, c) => sum + Number(c.loan?.amount ?? c.amount ?? 0), 0);
@@ -323,7 +336,14 @@ export default function Docs() {
       doc.setDrawColor(...color); doc.setLineWidth(w); doc.line(margin, yy, pageWidth - margin, yy);
     };
 
-    type Col = { key: string; title: string; w: number; align?: "right"; get: (r: any) => string | number };
+    type Col = {
+      key: string;
+      title: string;
+      w: number;
+      align?: "right";
+      get: (r: any) => string | number;
+      color?: (r: any) => [number, number, number] | undefined;
+    };
 
     const section = (num: string, title: string) => {
       checkPage(14);
@@ -354,7 +374,10 @@ export default function Docs() {
         cs.forEach((c) => {
           let txt = String(c.get(r) ?? "");
           if (c.align !== "right") txt = doc.splitTextToSize(txt, c.w - 3)[0] || "";
+          const tone = c.color?.(r);
+          if (tone) doc.setTextColor(...tone);
           doc.text(txt, xt(c), y + 2, opt(c));
+          if (tone) doc.setTextColor(...C.ink);
         });
         y += 5;
         doc.setDrawColor(...C.hair); doc.setLineWidth(0.15); doc.line(margin, y - 1.4, pageWidth - margin, y - 1.4);
@@ -390,11 +413,10 @@ export default function Docs() {
     // I. Asistencia
     section("I", "Control de asistencia");
     table(
-      [
-        { key: "socio", title: "Socio", w: 120, get: (p) => name(p.user) },
-        { key: "estado", title: "Estado", w: 50, align: "right", get: (p) => participantStatusLabel(p.status) },
-      ],
-      participants, undefined, "Sin participantes registrados."
+      attendancePdfColumns(),
+      attendance,
+      attendance.length ? attendancePdfTotals(attendance) : undefined,
+      "Sin participantes registrados."
     );
 
     // II. Multas
@@ -518,7 +540,7 @@ export default function Docs() {
     );
 
     doc.save(`Acta_${fmtDateShort(assemblyRun.startAt).replace(/\s/g, "_").replace(/,/g, "")}.pdf`);
-  }, [assemblyRun, participants, presentCount, quorumPercent,
+  }, [assemblyRun, participants, attendance, presentCount, quorumPercent,
     sharesWithPurchases, totalSharesAmount, payments, paymentsData, totalCapital, totalInterest, totalPayments,
     finesIncomes, totalFines, savingsWithDeposits, totalSavingsDeposits, totalSavingsPayouts, totalSavingsWithdrawals,
     operationRows, totalIncomeOps, totalExpenseOps, actaCashBalance, creditApplications, isConfirmed, creditDetail]);
@@ -583,11 +605,9 @@ export default function Docs() {
 
             <ActaSection numeral="I" title="Control de asistencia" right={`${participants.length} convocados`}>
               <ActaTable
-                columns={[
-                  { key: "socio", header: "Socio", render: (p) => personName(p.user) },
-                  { key: "estado", header: "Estado", align: "right", render: (p) => participantStatusLabel(p.status) },
-                ]}
-                rows={participants}
+                columns={attendanceScreenColumns()}
+                rows={attendance}
+                totals={attendance.length ? attendanceScreenTotals(attendance) : undefined}
                 empty="Sin participantes registrados."
               />
             </ActaSection>

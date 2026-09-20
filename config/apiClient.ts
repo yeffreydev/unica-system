@@ -1,5 +1,6 @@
 import axios from "axios";
 import appConfig from "./config";
+import { isDesktop, resolveApiHost } from "./runtime";
 
 /**
  * Resolve the tenant code:
@@ -17,17 +18,27 @@ export function getTenantCode(): string {
 /** @deprecated Use getTenantCode() */
 export const getTenantId = getTenantCode;
 
+// En el escritorio la baseURL apunta al sidecar local (que trabaja sin
+// internet); en el navegador, a la API en la nube.
 const apiClient = axios.create({
-  baseURL: `${appConfig.apiHost}`,
+  baseURL: resolveApiHost(appConfig.apiHost),
   headers: {
     "Content-Type": "application/json",
   },
 });
 
 apiClient.interceptors.request.use((config) => {
-  const code = getTenantCode();
-  config.headers["X-Tenant-Code"] = code;
-  config.headers["X-Tenant-ID"] = code;
+  // La baseURL se resuelve en cada request: en el escritorio el sidecar puede
+  // no estar listo cuando se crea el módulo.
+  config.baseURL = resolveApiHost(appConfig.apiHost);
+
+  // El sidecar tiene una sola asociación y la resuelve él mismo; mandarle un
+  // código desde el front solo podría confundirlo.
+  if (!isDesktop()) {
+    const code = getTenantCode();
+    config.headers["X-Tenant-Code"] = code;
+    config.headers["X-Tenant-ID"] = code;
+  }
   return config;
 });
 

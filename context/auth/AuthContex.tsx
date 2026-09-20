@@ -15,6 +15,30 @@ interface AuthContextType {
   loading: boolean;
 }
 
+/** Rutas accesibles sin sesión iniciada. */
+const PUBLIC_ROUTES = ['/login', '/register'];
+
+/**
+ * Sesión entregada por el panel de asociaciones: al crear una asociación, el
+ * panel abre `<host>/start#token=...` para que el creador entre directo al
+ * onboarding sin escribir las credenciales sembradas.
+ *
+ * El token viaja en el hash (el navegador nunca lo manda al servidor) y se
+ * borra de la URL apenas se lee.
+ */
+function consumeHandoffToken(): string | null {
+  if (typeof window === "undefined") return null;
+  const hash = window.location.hash;
+  if (!hash.includes("token=")) return null;
+
+  const token = new URLSearchParams(hash.slice(1)).get("token");
+  window.history.replaceState(null, "", window.location.pathname + window.location.search);
+  if (!token) return null;
+
+  localStorage.setItem("auth", JSON.stringify({ token }));
+  return token;
+}
+
 const initialState: AuthContextType = {
   loginUser: () => {},
   logout: () => {},
@@ -60,8 +84,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const loadToken = () => {
+    // Un token entregado por el panel gana sobre la sesión guardada.
+    const handoffToken = consumeHandoffToken();
     const authData = localStorage.getItem("auth") as string;
-    const token = authData ? JSON.parse(authData).token : null;
+    const token = handoffToken ?? (authData ? JSON.parse(authData).token : null);
 
     if (token) {
       apiClient.defaults.headers.common["Authorization"] = `Bearer ${token}`;
@@ -92,10 +118,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, []);
 
   useEffect(() => {
-    if (!loading && !auth.authenticated && pathname !== '/login') {
+    const isPublicRoute = PUBLIC_ROUTES.some((route) => pathname.startsWith(route));
+    if (!loading && !auth.authenticated && !isPublicRoute) {
       router.push('/login');
     }
-    if (!loading && auth.authenticated && pathname.startsWith('/login')) {
+    if (!loading && auth.authenticated && isPublicRoute) {
       router.push('/');
     }
   }, [loading, auth.authenticated, pathname, router]);

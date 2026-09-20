@@ -1,6 +1,6 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
-  "productName": "unica-system",
+  "productName": "Aqui Nace",
   "version": "0.1.0",
   "identifier": "com.unica.system",
   "build": {
@@ -12,9 +12,9 @@
   "app": {
     "windows": [
       {
-        "title": "unica-system",
-        "width": 800,
-        "height": 600,
+        "title": "Aqui Nace",
+        "width": 1280,
+        "height": 800,
         "resizable": true,
         "fullscreen": false
       }
@@ -32,6 +32,12 @@
       "icons/128x128@2x.png",
       "icons/icon.icns",
       "icons/icon.ico"
-    ]
+    ],
+    "externalBin": [
+      "../../server/dist-sidecar/unica-sidecar"
+    ],
+    "resources": {
+      "../../server/dist-sidecar/payload/**/*": "payload/"
+    }
   }
 }

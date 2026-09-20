@@ -3,6 +3,8 @@ import localFont from "next/font/local";
 import "./globals.css";
 import { AuthProvider } from "@/context/auth/AuthContex";
 import { AppProvider } from "@/context/AppContext";
+import { TenantProvider } from "@/context/TenantContext";
+import { TenantGate } from "@/components/TenantGate";
 import { ThemeProvider } from "@/context/ThemeProvider";
 import { ThemeContextProvider } from "@/context/ThemeContext";
 import { AssemblyProvider } from "@/app/(app)/assembly/AssemblyContext";
@@ -51,14 +53,20 @@ export default function RootLayout({
           storageKey="unica-theme"
         >
           <ThemeContextProvider>
-            <AuthProvider>
-              <AppProvider>
-                <AssemblyProvider>
-                  {children}
-                  <Toaster position="bottom-right" />
-                </AssemblyProvider>
-              </AppProvider>
-            </AuthProvider>
+            {/* Primero se resuelve la asociación del dominio; sin ella no hay
+                login ni módulos que mostrar. */}
+            <TenantProvider>
+              <TenantGate>
+                <AuthProvider>
+                  <AppProvider>
+                    <AssemblyProvider>
+                      {children}
+                      <Toaster position="bottom-right" />
+                    </AssemblyProvider>
+                  </AppProvider>
+                </AuthProvider>
+              </TenantGate>
+            </TenantProvider>
           </ThemeContextProvider>
         </ThemeProvider>
       </body>

@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ListChecks, Download, Flag } from "lucide-react";
 import { useAssembly } from "../AssemblyContext";
-import { apiGetAssemblyActaSummary } from "../api";
+import { apiGetAssemblyActaSummary, apiGetFinesConfig, IFinesConfig } from "../api";
 import { formatCurrency } from "@/lib/utils";
 import CelebrationOverlay from "./CelebrationOverlay";
 import {
@@ -17,11 +17,16 @@ import {
   ActaEmpty,
   ActaClosing,
   ActaConfirmation,
-  participantStatusLabel,
   creditStatusLabel,
   fmtDateShort,
   fmtTimeShort,
 } from "../acta-theme";
+import {
+  DEFAULT_FINES_CONFIG,
+  attendanceScreenColumns,
+  attendanceScreenTotals,
+  buildAttendanceRows,
+} from "../acta-attendance";
 
 type ActaSummary = {
   run: {
@@ -85,6 +90,7 @@ function incomeLabel(tag?: string) {
 export default function Review() {
   const { assembly } = useAssembly();
   const [summary, setSummary] = useState<ActaSummary | null>(null);
+  const [finesConfig, setFinesConfig] = useState<IFinesConfig>(DEFAULT_FINES_CONFIG);
   const [loading, setLoading] = useState(true);
   const [celebrating, setCelebrating] = useState(false);
 
@@ -95,8 +101,12 @@ export default function Review() {
         return;
       }
       try {
-        const data = await apiGetAssemblyActaSummary(assembly.lastRun.id);
+        const [data, cfg] = await Promise.all([
+          apiGetAssemblyActaSummary(assembly.lastRun.id),
+          apiGetFinesConfig().catch(() => null),
+        ]);
         setSummary(data);
+        if (cfg) setFinesConfig(cfg);
       } catch (error) {
         console.error("Error loading acta summary:", error);
       } finally {
@@ -164,7 +174,7 @@ export default function Review() {
           </CardContent>
         </Card>
       ) : (
-        <ActaContent summary={summary} />
+        <ActaContent summary={summary} finesConfig={finesConfig} />
       )}
 
       {/* Actions */}
@@ -182,8 +192,9 @@ export default function Review() {
   );
 }
 
-function ActaContent({ summary }: { summary: ActaSummary }) {
+function ActaContent({ summary, finesConfig }: { summary: ActaSummary; finesConfig: IFinesConfig }) {
   const run = summary.run;
+  const attendance = buildAttendanceRows(run.participants, summary.fines, finesConfig);
   const present = run.participants.filter(p => p.status === "attended" || p.status === "late").length;
 
   return (
@@ -204,20 +215,9 @@ function ActaContent({ summary }: { summary: ActaSummary }) {
           {/* I. Asistencia */}
           <ActaSection numeral="I" title="Control de asistencia" right={`${run.participants.length} convocados`}>
             <ActaTable
-              columns={[
-                { key: "socio", header: "Socio", render: (p) => formatName(p.user) },
-                {
-                  key: "faltas",
-                  header: "Faltas",
-                  align: "right",
-                  render: (p) =>
-                    (p.absencesCount ?? 0) > 0
-                      ? `${p.absencesCount}${(p.consecutiveAbsencesCount ?? 0) > 0 ? ` (${p.consecutiveAbsencesCount} consec.)` : ""}`
-                      : "—",
-                },
-                { key: "estado", header: "Estado", align: "right", render: (p) => participantStatusLabel(p.status) },
-              ]}
-              rows={run.participants}
+              columns={attendanceScreenColumns({ withAbsences: true })}
+              rows={attendance}
+              totals={attendance.length ? attendanceScreenTotals(attendance) : undefined}
               empty="Sin participantes registrados."
             />
           </ActaSection>

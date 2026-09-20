@@ -1,15 +1,28 @@
 import jsPDF from "jspdf";
-import { formatCurrency } from "@/lib/utils";
 import {
   ACTA_PDF,
-  participantStatusLabel,
   creditStatusLabel,
   runStatusLabel,
   fmtDateShort,
   fmtTimeShort,
 } from "./acta-theme";
+import {
+  DEFAULT_FINES_CONFIG,
+  attendancePdfColumns,
+  attendancePdfTotals,
+  buildAttendanceRows,
+} from "./acta-attendance";
+import type { IFinesConfig } from "./api";
 
-export type PdfCol = { key: string; title: string; w: number; align?: "right"; get: (r: any) => string | number };
+export type PdfCol = {
+  key: string;
+  title: string;
+  w: number;
+  align?: "right";
+  get: (r: any) => string | number;
+  /** Color del texto de la celda (por ejemplo, rojo en faltas y tardanzas). */
+  color?: (r: any) => [number, number, number] | undefined;
+};
 
 const userLabel = (u: any) =>
   u ? `${u?.lastname ?? ""}, ${u?.name ?? ""}`.replace(/^,\s*|,\s*$/g, "") || "—" : "—";
@@ -121,7 +134,10 @@ export class ActaPdf {
       cs.forEach((c) => {
         let txt = String(c.get(r) ?? "");
         if (c.align !== "right") txt = doc.splitTextToSize(txt, c.w - 3)[0] || "";
+        const tone = c.color?.(r);
+        if (tone) doc.setTextColor(...tone);
         doc.text(txt, xt(c), this.y + 2, opt(c));
+        if (tone) doc.setTextColor(...C.ink);
       });
       this.y += 5;
       doc.setDrawColor(...C.hair); doc.setLineWidth(0.15);
@@ -182,7 +198,7 @@ export class ActaPdf {
  * Genera y descarga el acta en PDF a partir del documento guardado (content).
  * Misma estructura I–VIII que las vistas en pantalla.
  */
-export function downloadActaPdf(acta: any, run: any) {
+export function downloadActaPdf(acta: any, run: any, finesConfig?: IFinesConfig) {
   const c = acta?.content ?? {};
   const r = c.run ?? run;
   const startAt = r?.startAt ?? run?.startAt;
@@ -213,13 +229,14 @@ export function downloadActaPdf(acta: any, run: any) {
     ],
   });
 
+  const attendance = buildAttendanceRows(participants, fines, finesConfig ?? DEFAULT_FINES_CONFIG);
+
   A.section("I", "Control de asistencia");
   A.table(
-    [
-      { key: "socio", title: "Socio", w: 120, get: (p) => (p.user ? userLabel(p.user) : p.name ?? "—") },
-      { key: "estado", title: "Estado", w: 50, align: "right", get: (p) => participantStatusLabel(p.status) },
-    ],
-    participants, undefined, "Sin participantes registrados."
+    attendancePdfColumns(),
+    attendance,
+    attendance.length ? attendancePdfTotals(attendance) : undefined,
+    "Sin participantes registrados."
   );
 
   A.section("II", "Multas");
