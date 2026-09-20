@@ -14,7 +14,11 @@ const FEATURES = [
 
 export default function LoginPage() {
   const { tenant, code } = useTenant();
-  const displayName = tenant?.name?.trim() || code.split(".")[0] || "tu comunidad";
+  // Algunas asociaciones tienen el dominio como nombre: en ese caso se muestra
+  // solo el subdominio, capitalizado, en vez de "xxx.aquinace.com".
+  const rawName = tenant?.name?.trim() ?? "";
+  const label = (rawName && !rawName.includes(".") ? rawName : code.split(".")[0]) || "tu comunidad";
+  const displayName = label.charAt(0).toUpperCase() + label.slice(1);
 
   return (
     <div className="relative min-h-screen w-full flex flex-col lg:flex-row bg-background overflow-hidden">
