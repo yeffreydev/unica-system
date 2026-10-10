@@ -9,37 +9,37 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { MoreVertical, Trash2, Filter, Plus, ArrowUpRight, ArrowDownLeft, Receipt } from "lucide-react";
 import { cn, formatCurrency } from "@/lib/utils";
 
-import { IDeposit } from "../../incomes/deposits/types";
-import { DepositForm } from "../../incomes/deposits/DepositForm";
+import { IDeposit } from "@/components/finance/incomes/deposits/types";
+import { DepositForm } from "@/components/finance/incomes/deposits/DepositForm";
 import { useAssembly } from "../AssemblyContext";
 import { IAssemblyScheduleRun } from "../types";
 import { apiGetAssemblyRun } from "../api";
 import apiClient from "@/config/apiClient";
 import { ISocialFundsTransaction } from "@/types/ISocialFunds";
 
-import { SocialLegalFundsForm } from "../../incomes/social/SocialLegalFundsForm";
-import { IOtherIncome } from "../../incomes/others/types";
+import { SocialLegalFundsForm } from "@/components/finance/incomes/social/SocialLegalFundsForm";
+import { IOtherIncome } from "@/components/finance/incomes/others/types";
 
-import { OtherIncomeForm } from "../../incomes/others/OtherIncomeForm";
+import { OtherIncomeForm } from "@/components/finance/incomes/others/OtherIncomeForm";
 import { socialFundsData } from "@/constants";
-import { IWithdrawal } from "../../expenses/withdrawls/types";
+import { IWithdrawal } from "@/components/finance/expenses/withdrawls/types";
 
-import { WithdrawForm } from "../../expenses/withdrawls/WithdrawForm";
-import { IAdministrativeExpense } from "../../expenses/administrative/types";
+import { WithdrawForm } from "@/components/finance/expenses/withdrawls/WithdrawForm";
+import { IAdministrativeExpense } from "@/components/finance/expenses/administrative/types";
 
-import { AdminExpenseForm } from "../../expenses/administrative/AdminExpenseForm";
-import { IPayout } from "../../expenses/payouts/types";
+import { AdminExpenseForm } from "@/components/finance/expenses/administrative/AdminExpenseForm";
+import { IPayout } from "@/components/finance/expenses/payouts/types";
 
-import { InterestPaymentForm } from "../../expenses/payouts/InterestPaymentForm";
-import { ISocialFundsExpenseTransaction } from "../../expenses/social/types";
+import { InterestPaymentForm } from "@/components/finance/expenses/payouts/InterestPaymentForm";
+import { ISocialFundsExpenseTransaction } from "@/components/finance/expenses/social/types";
 
-import { SocialLegalFundsExpenseForm } from "../../expenses/social/SocialLegalFundsExpenseForm";
-import { IOtherExpense } from "../../expenses/others/types";
+import { SocialLegalFundsExpenseForm } from "@/components/finance/expenses/social/SocialLegalFundsExpenseForm";
+import { IOtherExpense } from "@/components/finance/expenses/others/types";
 
-import { OtherExpenseForm } from "../../expenses/others/OtherExpenseForm";
+import { OtherExpenseForm } from "@/components/finance/expenses/others/OtherExpenseForm";
 import { ISocialFunds } from "@/types/ISocialFunds";
-import { IDividendsWithdraw } from "../../expenses/dividends/types";
-import { DividendsWithdrawForm } from "../../expenses/dividends/DividendsWithdrawForm";
+import { IDividendsWithdraw } from "@/components/finance/expenses/dividends/types";
+import { DividendsWithdrawForm } from "@/components/finance/expenses/dividends/DividendsWithdrawForm";
 
 type OperationCategory = 'ingreso' | 'egreso';
 type OperationType = 'deposit' | 'fund' | 'other-income' | 'withdrawal' | 'administrative' | 'payout' | 'social-expense' | 'other-expense' | 'dividend';

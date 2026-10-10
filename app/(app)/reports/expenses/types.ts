@@ -1,11 +1,11 @@
 import { IUser } from "@/types/IUser";
-import { IWithdrawal } from "../../expenses/withdrawls/types";
+import { IWithdrawal } from "@/components/finance/expenses/withdrawls/types";
 import { ILoan } from "@/types/ILoan";
-import { IPayout } from "../../expenses/payouts/types";
-import { ISocialFundsExpenseTransaction } from "../../expenses/social/types";
-import { IOtherExpense } from "../../expenses/others/types";
-import { IAdministrativeExpense } from "../../expenses/administrative/types";
-import { IDividendsWithdraw } from "../../expenses/dividends/types";
+import { IPayout } from "@/components/finance/expenses/payouts/types";
+import { ISocialFundsExpenseTransaction } from "@/components/finance/expenses/social/types";
+import { IOtherExpense } from "@/components/finance/expenses/others/types";
+import { IAdministrativeExpense } from "@/components/finance/expenses/administrative/types";
+import { IDividendsWithdraw } from "@/components/finance/expenses/dividends/types";
 export interface IDataExpenses {
     withdrawals: IWithdrawal[],
   loans: ILoan[],

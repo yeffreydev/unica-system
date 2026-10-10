@@ -17,10 +17,10 @@ import { AppContext } from "@/context/AppContext";
 import { IStock } from "@/types/IStock";
 import { IUser } from "@/types/IUser";
 import { useContext, useEffect, useState } from "react";
-import { IDeposit } from "../../incomes/deposits/types";
+import { IDeposit } from "@/components/finance/incomes/deposits/types";
 import { ILoanPayment } from "../../assembly/types";
 import { ISocialFundsTransaction } from "@/types/ISocialFunds";
-import { IOtherIncome } from "../../incomes/others/types";
+import { IOtherIncome } from "@/components/finance/incomes/others/types";
 import { FileText, FileSpreadsheet } from "lucide-react";
   interface IDataState {
     stocks: IStock[]

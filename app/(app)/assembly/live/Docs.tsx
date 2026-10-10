@@ -34,11 +34,11 @@ import {
   ParticipantStatusTypes,
 } from "../types";
 import { ISocialFundsTransaction } from "@/types/ISocialFunds";
-import { IOtherIncome } from "../../incomes/others/types";
-import { IAdministrativeExpense } from "../../expenses/administrative/types";
-import { ISocialFundsExpenseTransaction } from "../../expenses/social/types";
-import { IOtherExpense } from "../../expenses/others/types";
-import { IDividendsWithdraw } from "../../expenses/dividends/types";
+import { IOtherIncome } from "@/components/finance/incomes/others/types";
+import { IAdministrativeExpense } from "@/components/finance/expenses/administrative/types";
+import { ISocialFundsExpenseTransaction } from "@/components/finance/expenses/social/types";
+import { IOtherExpense } from "@/components/finance/expenses/others/types";
+import { IDividendsWithdraw } from "@/components/finance/expenses/dividends/types";
 import {
   ActaPaper,
   ActaTitle,

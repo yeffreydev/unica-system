@@ -20,7 +20,7 @@ import { useContext } from "react";
 import { AppContext } from "@/context/AppContext";
 import { IUser } from "@/types/IUser";
 import { OtherIncomesTags } from "@/constants";
-import { IOtherIncome } from "../../incomes/others/types";
+import { IOtherIncome } from "@/components/finance/incomes/others/types";
 
 const STATUS_CONFIG: Record<string, { color: string; icon: React.ReactNode }> = {
   attended: {

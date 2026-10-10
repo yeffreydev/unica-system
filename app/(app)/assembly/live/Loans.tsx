@@ -23,16 +23,16 @@ import { apiCreateCreditApplication, apiGetAssemblyRun, apiGetCreditApplications
 import { useAssembly } from "../AssemblyContext";
 import { getParticipantUserIds } from "./utils";
 import apiClient from "@/config/apiClient";
-import { IDeposit } from "../../incomes/deposits/types";
+import { IDeposit } from "@/components/finance/incomes/deposits/types";
 import {  ISocialFundsTransaction } from "@/types/ISocialFunds";
-import { IOtherIncome } from "../../incomes/others/types";
+import { IOtherIncome } from "@/components/finance/incomes/others/types";
 import { formatCurrency } from "@/lib/utils";
-import { IWithdrawal } from "../../expenses/withdrawls/types";
-import { IPayout } from "../../expenses/payouts/types";
-import { ISocialFundsExpenseTransaction } from "../../expenses/social/types";
-import { IOtherExpense } from "../../expenses/others/types";
-import { IDividendsWithdraw } from "../../expenses/dividends/types";
-import { IAdministrativeExpense } from "../../expenses/administrative/types";
+import { IWithdrawal } from "@/components/finance/expenses/withdrawls/types";
+import { IPayout } from "@/components/finance/expenses/payouts/types";
+import { ISocialFundsExpenseTransaction } from "@/components/finance/expenses/social/types";
+import { IOtherExpense } from "@/components/finance/expenses/others/types";
+import { IDividendsWithdraw } from "@/components/finance/expenses/dividends/types";
+import { IAdministrativeExpense } from "@/components/finance/expenses/administrative/types";
 import { getExpensesSum } from "../../reports/expenses/utils";
 type LoanReq = { id: string; dni: string; name: string; amount: number; months: number; status: "Pendiente" | "Aprobado" | "Rechazado"; loanType?: string };
 
