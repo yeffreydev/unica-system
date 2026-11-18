@@ -1,5 +1,7 @@
 "use client";
 
+import { currencySymbol } from "@/lib/currency";
+import { money } from "@/lib/currency";
 import { useEffect, useState } from "react";
 import { Users, CheckCircle, XCircle, DollarSign, UserPlus, Trash2, Search, Clock, CircleDot, Banknote, AlertTriangle, Loader2, IdCard, Phone, Mail, Sparkles } from "lucide-react";
 import { sileo } from "sileo";
@@ -313,7 +315,7 @@ export function AttendanceTracker() {
       setOpenModal(null);
       sileo.success({
         title: "Pago registrado",
-        description: `S/ ${amount.toFixed(2)} cobrado a ${attendee.user.name}.`,
+        description: `${money(amount)} cobrado a ${attendee.user.name}.`,
       });
     } catch (error) {
       console.error("Error creating payment:", error);
@@ -383,7 +385,7 @@ export function AttendanceTracker() {
               {totalCollected > 0 && (
                 <>
                   <div className="h-4 w-px bg-border mx-1" />
-                  <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">S/ {totalCollected.toFixed(2)}</span>
+                  <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">{money(totalCollected)}</span>
                 </>
               )}
             </div>
@@ -658,7 +660,7 @@ export function AttendanceTracker() {
                           className="flex items-center gap-1 px-2 py-1 rounded-md text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800 dark:hover:bg-emerald-950/60 transition-colors"
                         >
                           <Banknote className="w-3.5 h-3.5" />
-                          S/ {payments[attendee.id].amount.toFixed(2)}
+                          {money(payments[attendee.id].amount)}
                         </button>
                       )}
 
@@ -692,15 +694,15 @@ export function AttendanceTracker() {
                                 <div className="flex items-start gap-2 p-2.5 rounded-md bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-900 text-xs text-red-700 dark:text-red-400">
                                   <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
                                   <span>
-                                    Este socio ha acumulado {(attendee.consecutiveAbsencesCount ?? 0) + 1} faltas consecutivas. Se sugiere aplicar la multa por faltas consecutivas (S/ {fines.consecutiveAbsencesFine.toFixed(2)}).
+                                    Este socio ha acumulado {(attendee.consecutiveAbsencesCount ?? 0) + 1} faltas consecutivas. Se sugiere aplicar la multa por faltas consecutivas ({money(fines.consecutiveAbsencesFine)}).
                                   </span>
                                 </div>
                               )}
                               <div className="space-y-2">
-                                <label className="text-sm font-medium">Monto (S/)</label>
+                                <label className="text-sm font-medium">Monto ({currencySymbol()})</label>
                                 <Input type="number" value={amount} onChange={(e) => setAmount(Number(e.target.value))} disabled={payingId === attendee.id} />
                                 <p className="text-[11px] text-muted-foreground">
-                                  Sugerencia según configuración: S/ {suggestedFineFor(attendee).toFixed(2)}
+                                  Sugerencia según configuración: {money(suggestedFineFor(attendee))}
                                 </p>
                               </div>
                               <Button onClick={() => handlePayment(attendee)} className="w-full" disabled={payingId === attendee.id}>
@@ -775,7 +777,7 @@ export function AttendanceTracker() {
                   <DialogTitle>Confirmar cambio de estado</DialogTitle>
                   <DialogDescription>
                     <strong>{assemblyRun?.participants.find((p) => p.id === confirmChange?.id)?.user?.name}</strong> tiene un pago de{" "}
-                    <strong>S/ {payments[confirmChange?.id || ""]?.amount || 0}</strong>. Al cambiar el estado a{" "}
+                    <strong>{money(payments[confirmChange?.id || ""]?.amount || 0)}</strong>. Al cambiar el estado a{" "}
                     <strong>{translateParticipantStatus(confirmChange?.status || ParticipantStatusTypes.ATTENDED).toLowerCase()}</strong>, se eliminará el pago.
                   </DialogDescription>
                 </DialogHeader>

@@ -1,5 +1,6 @@
 "use client";
 
+import { money, moneyCompact } from "@/lib/currency";
 import {
   Area,
   AreaChart,
@@ -37,11 +38,7 @@ const MONTH_INDEX: Record<string, number> = {
 };
 
 function formatCurrency(amount: number) {
-  return new Intl.NumberFormat("es-PE", {
-    style: "currency",
-    currency: "PEN",
-    maximumFractionDigits: 0,
-  }).format(amount);
+  return money(amount, { decimals: 0 });
 }
 
 export function Overview({ data }: OverviewProps) {
@@ -82,7 +79,7 @@ export function Overview({ data }: OverviewProps) {
             fontSize={11}
             tickLine={false}
             axisLine={false}
-            tickFormatter={(v) => `S/${Math.round(v / 1000)}k`}
+            tickFormatter={(v) => moneyCompact(Number(v))}
             width={40}
           />
           <Tooltip

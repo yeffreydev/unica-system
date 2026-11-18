@@ -1,5 +1,7 @@
 "use client";
 
+import { currencySymbol } from "@/lib/currency";
+import { money } from "@/lib/currency";
 import { useState } from "react";
 import { toast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
@@ -77,7 +79,7 @@ export function StepLoans() {
         <div className="rounded-lg border border-border divide-y">
           <div className="grid grid-cols-12 gap-3 px-4 py-2 bg-muted/40 text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
             <div className="col-span-6">Socio</div>
-            <div className="col-span-3 text-right">Monto (S/)</div>
+            <div className="col-span-3 text-right">Monto ({currencySymbol()})</div>
             <div className="col-span-3 text-right">Cuotas restantes</div>
           </div>
           {state.users.map((u) => {
@@ -119,7 +121,7 @@ export function StepLoans() {
         <div className="flex justify-end text-sm">
           <span className="text-muted-foreground mr-2">Total préstamos:</span>
           <span className="font-semibold">
-            S/ {total.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            {money(total)}
           </span>
         </div>
         <p className="text-xs text-muted-foreground">

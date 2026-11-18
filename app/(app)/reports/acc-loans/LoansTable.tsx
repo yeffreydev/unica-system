@@ -1,5 +1,6 @@
 "use client";
 
+import { money } from "@/lib/currency";
 import { useContext, useState } from "react";
 import {
   ColumnDef,
@@ -47,7 +48,7 @@ export const columns: ColumnDef<ILoanUser>[] = [
     header: "Prestamo Vigente",
     cell: ({ row }) => {
       return (
-        <div>S/. {row.original._totalLoans - row.original._totalPaid}</div>
+        <div>{money(row.original._totalLoans - row.original._totalPaid)}</div>
       );
     },
   },
@@ -56,7 +57,7 @@ export const columns: ColumnDef<ILoanUser>[] = [
     accessorKey: "_totalLoans",
     header: "Prestamo Acumulado",
     cell: ({ row }) => {
-      return <div>S/. {row.original._totalLoans}</div>;
+      return <div>{money(row.original._totalLoans)}</div>;
     },
   },
 
@@ -64,7 +65,7 @@ export const columns: ColumnDef<ILoanUser>[] = [
     accessorKey: "_totalPaid",
     header: "Total Pagado",
     cell: ({ row }) => {
-      return <div>S/. {row.original._totalPaid}</div>;
+      return <div>{money(row.original._totalPaid)}</div>;
     },
   },
 ];

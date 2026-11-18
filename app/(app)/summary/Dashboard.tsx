@@ -1,5 +1,6 @@
 "use client";
 
+import { money, moneyCompact } from "@/lib/currency";
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import apiClient from "@/config/apiClient";
@@ -109,12 +110,7 @@ interface DashboardData {
 }
 
 function formatCurrency(amount: number, compact = false) {
-  return new Intl.NumberFormat("es-PE", {
-    style: "currency",
-    currency: "PEN",
-    notation: compact ? "compact" : "standard",
-    maximumFractionDigits: compact ? 1 : 2,
-  }).format(amount);
+  return compact ? moneyCompact(amount) : money(amount);
 }
 
 function formatPercentage(p: number) {
@@ -126,7 +122,7 @@ function getInitials(name: string, lastname: string) {
   return `${name?.charAt(0) ?? ""}${lastname?.charAt(0) ?? ""}`.toUpperCase();
 }
 
-// Hitos de capital social en soles. 10K como meta inicial, luego saltos de
+// Hitos de capital social, en la moneda de la asociación. 10K como meta inicial, luego saltos de
 // 100K hasta 1M, de 1M hasta 10M, y de 10M hasta el tope de 100M.
 const CAPITAL_GOALS: number[] = [
   10_000,

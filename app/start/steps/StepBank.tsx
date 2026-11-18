@@ -12,6 +12,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { CurrencySelect } from "@/components/CurrencySelect";
+import { useTenant } from "@/context/TenantContext";
+import { currencyInfo } from "@/lib/currency";
 import { useOnboarding } from "../OnboardingProvider";
 import { saveBank } from "../api";
 import { StepShell } from "../components/StepShell";
@@ -27,6 +30,9 @@ import {
 export function StepBank() {
   const { state, setState, mode, setMode } = useOnboarding();
   const [saving, setSaving] = useState(false);
+  const { currency, updateCurrency } = useTenant();
+  // Se guarda recién al continuar, junto con el resto de datos.
+  const [currencyCode, setCurrencyCode] = useState(currency.code);
   const esAntigua = mode === "antigua";
 
   const onNext = async () => {
@@ -46,6 +52,7 @@ export function StepBank() {
     }
     setSaving(true);
     try {
+      if (currencyCode !== currency.code) await updateCurrency(currencyCode);
       await saveBank(state.bank);
       toast({ title: "Listo", description: "Datos de la comunidad guardados." });
     } catch (e) {
@@ -227,7 +234,22 @@ export function StepBank() {
           </div>
 
           <div>
-            <Label>Precio de la acción (S/)</Label>
+            <Label htmlFor="onboarding-currency">Moneda</Label>
+            <CurrencySelect
+              id="onboarding-currency"
+              className="mt-1.5 max-w-sm"
+              value={currencyCode}
+              onChange={setCurrencyCode}
+              disabled={saving}
+            />
+            <p className="text-xs text-muted-foreground mt-1">
+              La moneda en la que la comunidad lleva sus cuentas. Puedes cambiarla luego en
+              Configuración.
+            </p>
+          </div>
+
+          <div>
+            <Label>Precio de la acción ({currencyInfo(currencyCode).symbol})</Label>
             <Input
               type="number"
               step="0.01"

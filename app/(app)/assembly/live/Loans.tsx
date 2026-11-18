@@ -1,5 +1,7 @@
 "use client";
 
+import { currencySymbol } from "@/lib/currency";
+import { money } from "@/lib/currency";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -547,12 +549,12 @@ export default function Loans() {
                 <div className="flex items-center gap-3 shrink-0">
                   <div className="text-right">
                     <div className="text-[10px] text-muted-foreground">Solicitado</div>
-                    <div className="text-sm font-semibold text-blue-600 dark:text-blue-400">S/ {it.amount.toFixed(2)}</div>
+                    <div className="text-sm font-semibold text-blue-600 dark:text-blue-400">{money(it.amount)}</div>
                   </div>
                   {it.loan?.amount && (
                     <div className="text-right">
                       <div className="text-[10px] text-muted-foreground">Aprobado</div>
-                      <div className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">S/ {it.loan.amount.toFixed(2)}</div>
+                      <div className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">{money(it.loan.amount)}</div>
                     </div>
                   )}
                 </div>
@@ -696,7 +698,7 @@ export default function Loans() {
               </Label>
               <div className="space-y-2">
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">S/</span>
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">{currencySymbol()}</span>
                   <Input
                     id="loan-amount"
                     type="number"
@@ -720,7 +722,7 @@ export default function Loans() {
                       className="h-7 text-xs"
                       onClick={() => setForm((p) => ({ ...p, amount: v }))}
                     >
-                      S/ {v.toLocaleString()}
+                      {money(v, { decimals: 0 })}
                     </Button>
                   ))}
                 </div>
@@ -973,9 +975,9 @@ export default function Loans() {
                       return (
                         <TableRow key={i}>
                           <TableCell>{i + 1}</TableCell>
-                          <TableCell>S/ {capital.toFixed(2)}</TableCell>
-                          <TableCell>S/ {interest.toFixed(configuredRoundingDigits)}</TableCell>
-                          <TableCell>S/ {(capital + interest).toFixed(2)}</TableCell>
+                          <TableCell>{money(capital)}</TableCell>
+                          <TableCell>{money(interest, { decimals: configuredRoundingDigits })}</TableCell>
+                          <TableCell>{money((capital + interest))}</TableCell>
                           <TableCell>{date.toLocaleDateString()}</TableCell>
                         </TableRow>
                       );
@@ -1076,7 +1078,7 @@ export default function Loans() {
             <p className="text-sm text-blue-800">
               <strong>Estás a punto de aprobar</strong> la solicitud de préstamo de{' '}
               <span className="font-semibold">{selectedLoan?.name}</span> por un monto de{' '}
-              <span className="font-semibold">S/ {selectedLoan?.amount.toFixed(2)}</span>.
+              <span className="font-semibold">{money(selectedLoan?.amount)}</span>.
             </p>
             <p className="text-sm text-blue-700 mt-2">
               Esta acción creará el préstamo y sus cuotas correspondientes. ¿Deseas continuar?
@@ -1118,7 +1120,7 @@ export default function Loans() {
             <p className="text-sm text-red-800">
               <strong>Estás a punto de rechazar</strong> la solicitud de préstamo de{' '}
               <span className="font-semibold">{selectedLoan?.name}</span> por un monto de{' '}
-              <span className="font-semibold">S/ {selectedLoan?.amount.toFixed(2)}</span>.
+              <span className="font-semibold">{money(selectedLoan?.amount)}</span>.
             </p>
             <p className="text-sm text-red-700 mt-2">
               Esta acción marcará la solicitud como rechazada. ¿Deseas continuar?
@@ -1192,12 +1194,12 @@ export default function Loans() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="p-4 bg-blue-50 rounded-lg">
                   <Label className="text-sm font-medium text-blue-700">Monto Solicitado</Label>
-                  <p className="text-2xl font-bold text-blue-800">S/ {selectedApplication.amount.toFixed(2)}</p>
+                  <p className="text-2xl font-bold text-blue-800">{money(selectedApplication.amount)}</p>
                 </div>
                 <div className="p-4 bg-green-50 rounded-lg">
                   <Label className="text-sm font-medium text-green-700">Monto Aprobado</Label>
                   <p className="text-2xl font-bold text-green-800">
-                    {selectedApplication.loan?.amount ? `S/ ${selectedApplication.loan.amount.toFixed(2)}` : '-'}
+                    {selectedApplication.loan?.amount ? `${money(selectedApplication.loan.amount)}` : '-'}
                   </p>
                 </div>
               </div>

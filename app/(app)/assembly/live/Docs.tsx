@@ -1,5 +1,6 @@
 "use client";
 
+import { money as formatMoney } from "@/lib/currency";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -328,7 +329,7 @@ export default function Docs() {
     const contentWidth = pageWidth - margin * 2;
     let y = margin;
 
-    const money = (n: number) => `S/ ${Number(n || 0).toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    const money = (n: number) => formatMoney(n, { pdf: true });
     const name = (u?: { name?: string | null; lastname?: string | null } | null) => getUserName(u) ?? "—";
 
     const checkPage = (need: number) => { if (y + need > pageHeight - margin) { doc.addPage(); y = margin; } };

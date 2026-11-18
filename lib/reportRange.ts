@@ -1,3 +1,5 @@
+import { money } from "./currency";
+
 export const monthsEs = [
   "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
   "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre",
@@ -42,8 +44,7 @@ export const monthValToISO = (val: string, end = false) => {
   return new Date(y, m - 1, 1, 0, 0, 0, 0).toISOString();
 };
 
-export const fmtCurrency = (n: number) =>
-  `S/. ${(n ?? 0).toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+export const fmtCurrency = (n: number) => money(n);
 
 export const rangeLabel = (start: string, end: string) =>
   start === end ? monthFull(start) : `${monthFull(start)} - ${monthFull(end)}`;

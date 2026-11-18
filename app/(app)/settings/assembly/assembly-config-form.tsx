@@ -36,6 +36,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Loader2 } from "lucide-react";
 import { IUser } from "@/types/IUser";
 import { AppContext } from "@/context/AppContext";
+import { useCurrency } from "@/context/TenantContext";
 import {
   Tabs,
   TabsContent,
@@ -135,6 +136,7 @@ const weekDays = [
 
 export function AssemblyConfigForm({ onConfigSaved }: { onConfigSaved?: () => void }) {
   const { users } = useContext(AppContext);
+  const currency = useCurrency();
   const form = useForm<AssemblyFormValues>({
     resolver: zodResolver(assemblyFormSchema),
     defaultValues: {
@@ -531,7 +533,7 @@ export function AssemblyConfigForm({ onConfigSaved }: { onConfigSaved?: () => vo
                   name="lateFineAmount"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Monto de multa por tardanza (S/)</FormLabel>
+                      <FormLabel>Monto de multa por tardanza ({currency.symbol})</FormLabel>
                       <FormControl>
                         <NumberInput
                           value={field.value}
@@ -551,7 +553,7 @@ export function AssemblyConfigForm({ onConfigSaved }: { onConfigSaved?: () => vo
                   name="absenceFineAmount"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Monto de multa por falta (S/)</FormLabel>
+                      <FormLabel>Monto de multa por falta ({currency.symbol})</FormLabel>
                       <FormControl>
                         <NumberInput
                           value={field.value}
@@ -592,7 +594,7 @@ export function AssemblyConfigForm({ onConfigSaved }: { onConfigSaved?: () => vo
                     name="consecutiveAbsencesFine"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Monto multa consecutiva (S/)</FormLabel>
+                        <FormLabel>Monto multa consecutiva ({currency.symbol})</FormLabel>
                         <FormControl>
                           <NumberInput
                             value={field.value}

@@ -1,5 +1,6 @@
 "use client";
 
+import { money } from "@/lib/currency";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 
@@ -28,7 +29,7 @@ const STATUS_VARIANT: Record<string, { label: string; className: string }> = {
 };
 
 function formatCurrency(amount: number) {
-  return new Intl.NumberFormat("es-PE", { style: "currency", currency: "PEN" }).format(amount);
+  return money(amount);
 }
 
 function formatDate(dateString: string) {

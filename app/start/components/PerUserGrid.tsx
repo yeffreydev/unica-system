@@ -1,5 +1,6 @@
 "use client";
 
+import { currencySymbol, formatAmount, money } from "@/lib/currency";
 import { Input } from "@/components/ui/input";
 import { IUser } from "@/types/IUser";
 
@@ -8,7 +9,7 @@ interface Props {
   amounts: Record<string, number>;
   onChange: (userId: string, value: number) => void;
   placeholder?: string;
-  unit?: string; // e.g. "S/" or "und."
+  unit?: string; // p. ej. "und."; por defecto, el símbolo de la moneda
   step?: string;
   emptyMessage?: string;
 }
@@ -18,7 +19,7 @@ export function PerUserGrid({
   amounts,
   onChange,
   placeholder = "0.00",
-  unit = "S/",
+  unit,
   step = "0.01",
   emptyMessage,
 }: Props) {
@@ -47,7 +48,7 @@ export function PerUserGrid({
               <p className="text-xs text-muted-foreground truncate">DNI {u.dni}</p>
             </div>
             <div className="flex items-center gap-2 shrink-0">
-              <span className="text-xs font-medium text-muted-foreground">{unit}</span>
+              <span className="text-xs font-medium text-muted-foreground">{unit ?? currencySymbol()}</span>
               <Input
                 type="number"
                 step={step}
@@ -64,7 +65,7 @@ export function PerUserGrid({
       <div className="flex items-center justify-end gap-2 text-sm">
         <span className="text-muted-foreground">Total:</span>
         <span className="font-semibold text-foreground">
-          {unit} {total.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+          {unit ? `${unit} ${formatAmount(total)}` : money(total)}
         </span>
       </div>
     </div>

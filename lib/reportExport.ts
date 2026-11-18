@@ -1,3 +1,4 @@
+import { money } from "@/lib/currency";
 import jsPDF from "jspdf";
 import autoTable, { RowInput } from "jspdf-autotable";
 import * as XLSX from "xlsx";
@@ -22,7 +23,8 @@ const formatCell = (value: unknown, format?: ReportColumn["format"]): string => 
   if (format === "currency") {
     const n = typeof value === "number" ? value : Number(value);
     if (Number.isNaN(n)) return String(value);
-    return `S/. ${n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    // Solo se usa para el PDF: Excel recibe el número crudo.
+    return money(n, { pdf: true });
   }
   if (format === "number") {
     const n = typeof value === "number" ? value : Number(value);

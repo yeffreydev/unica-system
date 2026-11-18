@@ -1,4 +1,5 @@
 'use client'
+import { money } from "@/lib/currency";
 import {
   Table,
   TableBody,
@@ -46,7 +47,7 @@ import { FileText, FileSpreadsheet } from "lucide-react";
     'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
   ];
 
-  const formatCurrency = (amount: number) => `S/. ${amount.toLocaleString('es-PE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const formatCurrency = (amount: number) => money(amount);
 
   const generateMonthOptions = () => {
     const options = [];

@@ -19,6 +19,7 @@ import { Input } from "@/components/ui/input";
 import { useContext, useEffect, useState } from "react";
 import { AppContext } from "@/context/AppContext";
 import apiClient from "@/config/apiClient";
+import { useCurrency } from "@/context/TenantContext";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
@@ -81,6 +82,7 @@ const defaultValues: PlatformFormValues = {
 
 export function PlatformForm() {
   const { bank, setBank } = useContext(AppContext);
+  const currency = useCurrency();
   const [loading, setLoading] = useState(false);
 
   const form = useForm<PlatformFormValues>({
@@ -307,7 +309,7 @@ export function PlatformForm() {
                       <Input type="number" step="1" min="0" max="4" {...field} />
                     </FormControl>
                     <FormDescription>
-                      0 = soles enteros, 2 = céntimos, etc.
+                      0 = montos enteros, 2 = céntimos, etc.
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -330,7 +332,7 @@ export function PlatformForm() {
               name="stockPrice"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Precio de la acción (S/)</FormLabel>
+                  <FormLabel>Precio de la acción ({currency.symbol})</FormLabel>
                   <FormControl>
                     <Input type="number" step="0.01" min="0" {...field} />
                   </FormControl>

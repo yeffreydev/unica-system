@@ -1,5 +1,6 @@
 "use client";
 
+import { money } from "@/lib/currency";
 import { useState } from "react";
 import { toast } from "@/hooks/use-toast";
 import { useOnboarding } from "../OnboardingProvider";
@@ -38,7 +39,7 @@ export function StepShares() {
   };
 
   const totalUnits = Object.values(state.shares).reduce((a, b) => a + (b || 0), 0);
-  const totalSoles = totalUnits * (state.bank.mainStockPrice || 0);
+  const totalCapital = totalUnits * (state.bank.mainStockPrice || 0);
 
   return (
     <StepShell
@@ -62,11 +63,7 @@ export function StepShares() {
       <div className="mt-4 rounded-md bg-muted/40 p-3 text-sm flex items-center justify-between">
         <span className="text-muted-foreground">Capital social total</span>
         <span className="font-semibold">
-          {totalUnits} acc · S/{" "}
-          {totalSoles.toLocaleString("es-PE", {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2,
-          })}
+          {totalUnits} acc · {money(totalCapital)}
         </span>
       </div>
     </StepShell>

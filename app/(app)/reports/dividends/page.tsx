@@ -1,4 +1,5 @@
 "use client";
+import { money } from "@/lib/currency";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -235,13 +236,13 @@ export default function DividendsPage() {
 
                             <tr  className="hover:bg-muted/50">
                             <td className="border p-2 text-right">
-                                S/ {transformedData.dividends.interests.toLocaleString("es-PE", { minimumFractionDigits: 2 })}
+                                {money(transformedData.dividends.interests)}
                               </td>
                               <td className="border p-2 text-right">
-                                S/ {transformedData.dividends.othersIncomes.toLocaleString("es-PE", { minimumFractionDigits: 2 })}
+                                {money(transformedData.dividends.othersIncomes)}
                               </td>
                            <td className="border p-2 text-right">
-                                S/ {transformedData.dividends.totalIncomes.toLocaleString("es-PE", { minimumFractionDigits: 2 })}
+                                {money(transformedData.dividends.totalIncomes)}
                               </td>
 
                             </tr>
@@ -262,13 +263,13 @@ export default function DividendsPage() {
 
                             <tr  className="hover:bg-muted/50">
                             <td className="border p-2 text-right">
-                                S/ {transformedData.dividends.totalPayouts.toLocaleString("es-PE", { minimumFractionDigits: 2 })}
+                                {money(transformedData.dividends.totalPayouts)}
                               </td>
                               <td className="border p-2 text-right">
-                                S/ {transformedData.dividends.otherExpenses.toLocaleString("es-PE", { minimumFractionDigits: 2 })}
+                                {money(transformedData.dividends.otherExpenses)}
                               </td>
                            <td className="border p-2 text-right">
-                                S/ {transformedData.dividends.totalExpenses.toLocaleString("es-PE", { minimumFractionDigits: 2 })}
+                                {money(transformedData.dividends.totalExpenses)}
                               </td>
 
                             </tr>
@@ -277,7 +278,7 @@ export default function DividendsPage() {
 
                        <div>
                         <span>Utilidad Neta.</span>
-                        <span className="border font-semibold"> S/ {transformedData.dividends.netProfit.toLocaleString("es-PE", { minimumFractionDigits: 2 })}</span>
+                        <span className="border font-semibold"> {money(transformedData.dividends.netProfit)}</span>
                        </div>
                       <div>
                         <span>Menos</span>
@@ -295,13 +296,13 @@ export default function DividendsPage() {
 
                             <tr  className="hover:bg-muted/50">
                             <td className="border p-2 text-right">
-                                S/ {transformedData.dividends.legalFunds.toLocaleString("es-PE", { minimumFractionDigits: 2 })}
+                                {money(transformedData.dividends.legalFunds)}
                               </td>
                               <td className="border p-2 text-right">
-                                S/ {transformedData.dividends.socialFunds.toLocaleString("es-PE", { minimumFractionDigits: 2 })}
+                                {money(transformedData.dividends.socialFunds)}
                               </td>
                            <td className="border p-2 text-right">
-                                S/ {(transformedData.dividends.legalFunds + transformedData.dividends.socialFunds).toLocaleString("es-PE", { minimumFractionDigits: 2 })}
+                                {money((transformedData.dividends.legalFunds + transformedData.dividends.socialFunds))}
                               </td>
 
                             </tr>
@@ -313,7 +314,7 @@ export default function DividendsPage() {
 
                        <div>
                         <span>Utilidad Distribuida.</span>
-                        <span className="border font-semibold"> S/ {transformedData.dividends.profits.toLocaleString("es-PE", { minimumFractionDigits: 2 })}</span>
+                        <span className="border font-semibold"> {money(transformedData.dividends.profits)}</span>
                        </div>
                     </div>
                   )}
@@ -383,7 +384,7 @@ export default function DividendsPage() {
                   ) : (
                     <div className="py-4 flex flex-col gap-4">
                      <div>
-                      <span>PASO 3:   Se divide la Utilidad Distribuible .</span> <span className="border p-1 font-semibold">S/. {transformedData.dividends.profits.toLocaleString("es-PE", { minimumFractionDigits: 2 })}</span> <span>entre el total de acciones mensuales</span><span className="border p-1 font-semibold">
+                      <span>PASO 3:   Se divide la Utilidad Distribuible .</span> <span className="border p-1 font-semibold">{money(transformedData.dividends.profits)}</span> <span>entre el total de acciones mensuales</span><span className="border p-1 font-semibold">
                         {Object.values(transformedData.shareWorks || {}).reduce((sum, row) => sum + (row.shareWorks || 0), 0)}
                       </span>
                        <span>=</span> <span>

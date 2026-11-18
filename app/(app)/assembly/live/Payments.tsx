@@ -1,5 +1,6 @@
 "use client";
 
+import { money } from "@/lib/currency";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -342,19 +343,19 @@ export default function Payments() {
             </div>
             <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-muted/50 text-xs">
               <div className="w-2 h-2 rounded-full bg-blue-500" />
-              <span className="font-semibold tabular-nums">S/ {totals.totalCapital.toFixed(2)}</span>
+              <span className="font-semibold tabular-nums">{money(totals.totalCapital)}</span>
               <span className="text-muted-foreground">Capital</span>
             </div>
             <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-muted/50 text-xs">
               <div className="w-2 h-2 rounded-full bg-purple-500" />
-              <span className="font-semibold tabular-nums">S/ {totals.totalInterest.toFixed(2)}</span>
+              <span className="font-semibold tabular-nums">{money(totals.totalInterest)}</span>
               <span className="text-muted-foreground">Interés</span>
             </div>
             {totals.totalPaid > 0 && (
               <>
                 <div className="h-4 w-px bg-border mx-1" />
                 <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
-                  S/ {totals.totalPaid.toFixed(2)} total
+                  {money(totals.totalPaid)} total
                 </span>
               </>
             )}
@@ -449,12 +450,12 @@ export default function Payments() {
                           )}
                           {totalBalance > 0 && (
                             <span className="text-[11px] font-semibold text-orange-600 dark:text-orange-400">
-                              S/ {totalBalance.toFixed(2)}
+                              {money(totalBalance)}
                             </span>
                           )}
                           {totalInterest > 0 && (
                             <span className="flex items-center gap-0.5 text-[11px] font-semibold text-purple-600 dark:text-purple-400">
-                              Int: S/ {totalInterest.toFixed(2)}
+                              Int: {money(totalInterest)}
                               {interestFullyPaid && <Check className="w-3 h-3 text-emerald-500" />}
                             </span>
                           )}
@@ -471,7 +472,7 @@ export default function Payments() {
                           className="flex items-center gap-1 px-2 py-1 rounded-md text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800 dark:hover:bg-emerald-950/60 transition-colors"
                         >
                           <Banknote className="w-3.5 h-3.5" />
-                          S/ {paymentAmount.toFixed(2)}
+                          {money(paymentAmount)}
                         </button>
                       )}
 
@@ -553,7 +554,7 @@ export default function Payments() {
                         </div>
                         {loan && (
                           <span className="text-[11px] text-muted-foreground shrink-0">
-                            Saldo <span className="font-medium text-orange-600">S/ {loan.balance?.toFixed(2)}</span> · {loan.interestRate}%
+                            Saldo <span className="font-medium text-orange-600">{money(loan.balance)}</span> · {loan.interestRate}%
                           </span>
                         )}
                       </div>
@@ -622,7 +623,7 @@ export default function Payments() {
                         </div>
                         <div className="text-right pb-1">
                           <div className="text-[10px] text-muted-foreground">Total</div>
-                          <div className="text-xs font-bold tabular-nums">S/ {rowTotal.toFixed(2)}</div>
+                          <div className="text-xs font-bold tabular-nums">{money(rowTotal)}</div>
                         </div>
                       </div>
                     </div>
@@ -644,7 +645,7 @@ export default function Payments() {
               <div className="shrink-0 border-t bg-muted/20 px-4 py-3 space-y-2.5">
                 <div className="flex items-center justify-between">
                   <span className="text-xs text-muted-foreground">Total a pagar</span>
-                  <span className="text-lg font-bold tabular-nums">S/ {total.toFixed(2)}</span>
+                  <span className="text-lg font-bold tabular-nums">{money(total)}</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="relative flex-1">
@@ -671,7 +672,7 @@ export default function Payments() {
                   </Button>
                   <div className={`flex items-baseline gap-1 shrink-0 ${vuelto < 0 ? 'text-red-600 dark:text-red-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
                     <span className="text-[10px] text-muted-foreground">Vuelto</span>
-                    <span className="text-sm font-bold tabular-nums">S/ {vuelto.toFixed(2)}</span>
+                    <span className="text-sm font-bold tabular-nums">{money(vuelto)}</span>
                   </div>
                 </div>
                 <div className="flex gap-2 pt-0.5">
@@ -737,13 +738,13 @@ export default function Payments() {
                     <div className="text-center">
                       <div className="text-xs text-muted-foreground mb-1">Capital Pagado</div>
                       <div className="text-xl font-bold text-blue-600 dark:text-blue-400">
-                        S/ {paidCapital.toFixed(2)}
+                        {money(paidCapital)}
                       </div>
                     </div>
                     <div className="text-center">
                       <div className="text-xs text-muted-foreground mb-1">Interés Pagado</div>
                       <div className="text-xl font-bold text-purple-600 dark:text-purple-400">
-                        S/ {paidInterest.toFixed(2)}
+                        {money(paidInterest)}
                       </div>
                     </div>
                   </div>
@@ -797,7 +798,7 @@ export default function Payments() {
                                 <div className="flex justify-between text-xs mb-1">
                                   <span className="text-muted-foreground">Pago de cuota</span>
                                   <span className="font-medium">
-                                    S/ {installmentPaid.toFixed(2)} / S/ {installmentTotal.toFixed(2)}
+                                    {money(installmentPaid)} / {money(installmentTotal)}
                                   </span>
                                 </div>
                                 <div className="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2">
@@ -812,13 +813,13 @@ export default function Payments() {
                                 <div className="p-2 bg-blue-50 dark:bg-blue-950/20 rounded">
                                   <div className="text-muted-foreground">Capital pagado</div>
                                   <div className="font-semibold text-blue-600 dark:text-blue-400">
-                                    S/ {installmentPaidCapital.toFixed(2)}
+                                    {money(installmentPaidCapital)}
                                   </div>
                                 </div>
                                 <div className="p-2 bg-purple-50 dark:bg-purple-950/20 rounded">
                                   <div className="text-muted-foreground">Interés pagado</div>
                                   <div className="font-semibold text-purple-600 dark:text-purple-400">
-                                    S/ {installmentPaidInterest.toFixed(2)}
+                                    {money(installmentPaidInterest)}
                                   </div>
                                 </div>
                               </div>
@@ -832,17 +833,17 @@ export default function Payments() {
                                         ? 'text-green-600 dark:text-green-400'
                                         : 'text-orange-600 dark:text-orange-400'
                                     }`}>
-                                      S/ {(loan.balance || 0).toFixed(2)}
+                                      {money((loan.balance || 0))}
                                     </span>
                                   </div>
                                   <div className="flex justify-between">
                                     <span className="text-muted-foreground">Monto prestado:</span>
-                                    <span className="font-medium">S/ {(loan.amount || 0).toFixed(2)}</span>
+                                    <span className="font-medium">{money((loan.amount || 0))}</span>
                                   </div>
                                   <div className="flex justify-between">
                                     <span className="text-muted-foreground">Capital pagado del saldo:</span>
                                     <span className="font-semibold text-green-600 dark:text-green-400">
-                                      S/ {((loan.amount || 0) - (loan.balance || 0)).toFixed(2)}
+                                      {money(((loan.amount || 0) - (loan.balance || 0)))}
                                     </span>
                                   </div>
                                 </div>

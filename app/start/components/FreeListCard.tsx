@@ -1,5 +1,7 @@
 "use client";
 
+import { currencySymbol } from "@/lib/currency";
+import { money } from "@/lib/currency";
 import { Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -51,7 +53,7 @@ export function FreeListCard({
                 className="flex-1"
               />
               <div className="flex items-center gap-1.5 shrink-0">
-                <span className="text-xs font-medium text-muted-foreground">S/</span>
+                <span className="text-xs font-medium text-muted-foreground">{currencySymbol()}</span>
                 <Input
                   type="number"
                   step="0.01"
@@ -82,7 +84,7 @@ export function FreeListCard({
         <div className="text-sm">
           <span className="text-muted-foreground">Total:</span>{" "}
           <span className="font-semibold text-foreground">
-            S/ {total.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            {money(total)}
           </span>
         </div>
       </div>

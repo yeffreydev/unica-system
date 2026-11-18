@@ -10,12 +10,15 @@ import {
 import axios from "axios";
 import apiClient, { getTenantCode } from "@/config/apiClient";
 import { isDesktop } from "@/config/runtime";
+import { CurrencyInfo, getCurrency, setCurrentCurrency } from "@/lib/currency";
 
 /** Lo que el servidor sabe de la asociación del dominio actual. */
 export interface TenantInfo {
   code: string;
   name: string | null;
   onboardingCompleted: boolean;
+  /** Moneda de la asociación (ISO 4217). Servidores viejos no la mandan. */
+  currency?: string;
 }
 
 export type TenantStatus =
@@ -37,6 +40,10 @@ interface TenantContextType {
   refresh: () => Promise<void>;
   /** Marca localmente el onboarding como terminado (después del POST). */
   markOnboarded: () => void;
+  /** Moneda en la que la asociación lleva sus montos. */
+  currency: CurrencyInfo;
+  /** Guarda la moneda en el servidor y la aplica a toda la web. */
+  updateCurrency: (code: string) => Promise<void>;
 }
 
 export const TenantContext = createContext<TenantContextType>({
@@ -45,9 +52,18 @@ export const TenantContext = createContext<TenantContextType>({
   code: "",
   refresh: async () => {},
   markOnboarded: () => {},
+  currency: getCurrency(),
+  updateCurrency: async () => {},
 });
 
 export const useTenant = () => useContext(TenantContext);
+
+/**
+ * Moneda de la asociación. Úsalo en componentes que deben volver a pintarse
+ * cuando el administrador la cambia; el resto puede llamar a `money()` de
+ * `@/lib/currency` directamente.
+ */
+export const useCurrency = () => useContext(TenantContext).currency;
 
 /**
  * Resuelve la asociación del dominio ANTES de pintar cualquier pantalla.
@@ -65,14 +81,27 @@ export function TenantProvider({ children }: { children: ReactNode }) {
     desktop ? { code: "local", name: null, onboardingCompleted: true } : null,
   );
   const [code, setCode] = useState("");
+  const [currency, setCurrency] = useState<CurrencyInfo>(getCurrency);
 
   const refresh = useCallback(async () => {
-    if (isDesktop()) return;
+    if (isDesktop()) {
+      // El sidecar siempre tiene su asociación; solo falta saber su moneda.
+      // Si todavía no responde, queda la última conocida (localStorage).
+      try {
+        const { data } = await apiClient.get<TenantInfo>("/tenants/current");
+        if (data?.currency) setCurrency(setCurrentCurrency(data.currency));
+      } catch {
+        /* sidecar sin arrancar o sin asociación enlazada todavía */
+      }
+      return;
+    }
     const current = getTenantCode();
     setCode(current);
     setStatus("loading");
     try {
       const { data } = await apiClient.get<TenantInfo>("/tenants/current");
+      // Antes de marcar "ready": las pantallas formatean montos al pintarse.
+      setCurrency(setCurrentCurrency(data.currency));
       setTenant(data);
       setStatus("ready");
     } catch (e) {
@@ -101,8 +130,19 @@ export function TenantProvider({ children }: { children: ReactNode }) {
     setTenant((t) => (t ? { ...t, onboardingCompleted: true } : t));
   }, []);
 
+  const updateCurrency = useCallback(async (next: string) => {
+    const { data } = await apiClient.put<{ currency: string }>(
+      "/tenants/current/currency",
+      { currency: next },
+    );
+    setCurrency(setCurrentCurrency(data.currency));
+    setTenant((t) => (t ? { ...t, currency: data.currency } : t));
+  }, []);
+
   return (
-    <TenantContext.Provider value={{ status, tenant, code, refresh, markOnboarded }}>
+    <TenantContext.Provider
+      value={{ status, tenant, code, refresh, markOnboarded, currency, updateCurrency }}
+    >
       {children}
     </TenantContext.Provider>
   );

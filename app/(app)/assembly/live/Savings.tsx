@@ -1,5 +1,7 @@
 "use client";
 
+import { currencySymbol } from "@/lib/currency";
+import { money } from "@/lib/currency";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -128,7 +130,7 @@ export default function Savings() {
     if (movementMode === "withdraw" && movementAmount > selectedPartner.savingsBalance) {
       sileo.error({
         title: "Monto excede balance",
-        description: `Balance disponible: S/ ${selectedPartner.savingsBalance.toFixed(2)}.`,
+        description: `Balance disponible: ${money(selectedPartner.savingsBalance)}.`,
       });
       return;
     }
@@ -140,14 +142,14 @@ export default function Savings() {
           amount: movementAmount,
           date: assemblyRun.startAt ?? new Date(),
         });
-        sileo.success({ title: "Depósito registrado", description: `S/ ${movementAmount.toFixed(2)} ingresó al ahorro.` });
+        sileo.success({ title: "Depósito registrado", description: `${money(movementAmount)} ingresó al ahorro.` });
       } else {
         await apiRecordWithdrawal(assemblyRun.id, {
           userId: selectedPartner.id,
           amount: movementAmount,
           date: assemblyRun.startAt ?? new Date(),
         });
-        sileo.success({ title: "Retiro registrado", description: `S/ ${movementAmount.toFixed(2)} retirado del ahorro.` });
+        sileo.success({ title: "Retiro registrado", description: `${money(movementAmount)} retirado del ahorro.` });
       }
 
       const fresh = await apiGetSavingsData(assemblyRun.id);
@@ -189,7 +191,7 @@ export default function Savings() {
       const fresh = await apiGetSavingsData(assemblyRun.id);
       setSavingsPartners(fresh);
 
-      sileo.success({ title: "Interés pagado", description: `S/ ${interestAmount.toFixed(2)} a ${selectedPartner.name}.` });
+      sileo.success({ title: "Interés pagado", description: `${money(interestAmount)} a ${selectedPartner.name}.` });
 
       setInterestModalOpen(false);
       setSelectedPartner(null);
@@ -254,21 +256,21 @@ export default function Savings() {
             {totalDeposits > 0 && (
               <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-emerald-50 dark:bg-emerald-950/30 text-xs border border-emerald-200 dark:border-emerald-900">
                 <TrendingUp className="w-3 h-3 text-emerald-600 dark:text-emerald-400" />
-                <span className="font-semibold tabular-nums text-emerald-700 dark:text-emerald-400">+S/ {totalDeposits.toFixed(2)}</span>
+                <span className="font-semibold tabular-nums text-emerald-700 dark:text-emerald-400">+{money(totalDeposits)}</span>
                 <span className="text-muted-foreground">depósitos</span>
               </div>
             )}
             {totalWithdrawals > 0 && (
               <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-amber-50 dark:bg-amber-950/30 text-xs border border-amber-200 dark:border-amber-900">
                 <TrendingDown className="w-3 h-3 text-amber-600 dark:text-amber-400" />
-                <span className="font-semibold tabular-nums text-amber-700 dark:text-amber-400">-S/ {totalWithdrawals.toFixed(2)}</span>
+                <span className="font-semibold tabular-nums text-amber-700 dark:text-amber-400">-{money(totalWithdrawals)}</span>
                 <span className="text-muted-foreground">retiros</span>
               </div>
             )}
             {totalInterestPaid > 0 && (
               <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-red-50 dark:bg-red-950/30 text-xs border border-red-200 dark:border-red-900">
                 <HandCoins className="w-3 h-3 text-red-600 dark:text-red-400" />
-                <span className="font-semibold tabular-nums text-red-700 dark:text-red-400">-S/ {totalInterestPaid.toFixed(2)}</span>
+                <span className="font-semibold tabular-nums text-red-700 dark:text-red-400">-{money(totalInterestPaid)}</span>
                 <span className="text-muted-foreground">intereses</span>
               </div>
             )}
@@ -333,24 +335,24 @@ export default function Savings() {
                         <div className="flex items-center gap-1.5 mt-1 flex-wrap">
                           <div className="flex items-center gap-1 px-2 py-0.5 rounded-md bg-blue-100 text-blue-800 dark:bg-blue-950/50 dark:text-blue-300 text-[11px] font-semibold">
                             <PiggyBank className="w-3 h-3" />
-                            S/ {balance.toFixed(2)}
+                            {money(balance)}
                           </div>
                           {depositRun > 0 && (
                             <span className="flex items-center gap-0.5 text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
                               <TrendingUp className="w-3 h-3" />
-                              +S/ {depositRun.toFixed(2)}
+                              +{money(depositRun)}
                             </span>
                           )}
                           {withdrawRun > 0 && (
                             <span className="flex items-center gap-0.5 text-[11px] font-bold text-amber-600 dark:text-amber-400">
                               <TrendingDown className="w-3 h-3" />
-                              -S/ {withdrawRun.toFixed(2)}
+                              -{money(withdrawRun)}
                             </span>
                           )}
                           {interestRun > 0 && (
                             <span className="flex items-center gap-0.5 text-[11px] font-bold text-red-600 dark:text-red-400">
                               <HandCoins className="w-3 h-3" />
-                              -S/ {interestRun.toFixed(2)}
+                              -{money(interestRun)}
                             </span>
                           )}
                         </div>
@@ -414,7 +416,7 @@ export default function Savings() {
               {selectedPartner && `${selectedPartner.name} ${selectedPartner.lastname}`}
               {selectedPartner && (
                 <span className="block mt-1 text-[11px]">
-                  Balance actual: S/ {(selectedPartner.savingsBalance ?? 0).toFixed(2)}
+                  Balance actual: {money((selectedPartner.savingsBalance ?? 0))}
                 </span>
               )}
             </DialogDescription>
@@ -451,7 +453,7 @@ export default function Savings() {
             </div>
 
             <div className="space-y-2">
-              <Label className="text-sm">Monto (S/)</Label>
+              <Label className="text-sm">Monto ({currencySymbol()})</Label>
               <NumberInput
                 value={movementAmount}
                 onChange={setMovementAmount}
@@ -470,15 +472,15 @@ export default function Savings() {
                 <span className={`text-lg font-bold ${movementMode === "deposit"
                   ? "text-emerald-600 dark:text-emerald-400"
                   : "text-amber-600 dark:text-amber-400"}`}>
-                  {movementMode === "deposit" ? "+" : "-"}S/ {movementAmount.toFixed(2)}
+                  {movementMode === "deposit" ? "+" : "-"}{money(movementAmount)}
                 </span>
               </div>
               {selectedPartner && (
                 <div className="text-[11px] text-muted-foreground mt-1">
-                  Nuevo balance: S/ {(
+                  Nuevo balance: {money(
                     (selectedPartner.savingsBalance ?? 0) +
                     (movementMode === "deposit" ? movementAmount : -movementAmount)
-                  ).toFixed(2)}
+                  )}
                 </div>
               )}
             </div>
@@ -513,14 +515,14 @@ export default function Savings() {
               {selectedPartner && `${selectedPartner.name} ${selectedPartner.lastname}`}
               {selectedPartner && (
                 <span className="block mt-1 text-[11px]">
-                  Tasa: {(savingsRate * 100).toFixed(2)}% · Balance: S/ {(selectedPartner.savingsBalance ?? 0).toFixed(2)}
+                  Tasa: {(savingsRate * 100).toFixed(2)}% · Balance: {money((selectedPartner.savingsBalance ?? 0))}
                 </span>
               )}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-5 py-2">
             <div className="space-y-2">
-              <Label className="text-sm">Monto (S/)</Label>
+              <Label className="text-sm">Monto ({currencySymbol()})</Label>
               <NumberInput
                 value={interestAmount}
                 onChange={setInterestAmount}
@@ -528,7 +530,7 @@ export default function Savings() {
                 disabled={isSubmitting}
               />
               <p className="text-[11px] text-muted-foreground">
-                Sugerencia: S/ {selectedPartner ? roundSavingsInterest(selectedPartner.savingsBalance * savingsRate).toFixed(savingsRoundingDigits) : "0.00"}
+                Sugerencia: {money(selectedPartner ? roundSavingsInterest(selectedPartner.savingsBalance * savingsRate) : 0, { decimals: savingsRoundingDigits })}
               </p>
             </div>
 
@@ -548,7 +550,7 @@ export default function Savings() {
               <div className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground">Interés a pagar</span>
                 <span className="text-lg font-bold text-red-600 dark:text-red-400">
-                  -S/ {interestAmount.toFixed(2)}
+                  -{money(interestAmount)}
                 </span>
               </div>
             </div>

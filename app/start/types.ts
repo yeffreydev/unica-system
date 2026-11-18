@@ -24,7 +24,7 @@ export interface OnboardingBank {
   name: string;
   loanInterestRate: number; // percent (0-100)
   savingsInterestRate: number; // percent
-  mainStockPrice: number; // S/ por acción
+  mainStockPrice: number; // precio por acción, en la moneda de la asociación
 }
 
 export interface OnboardingFrequency {

@@ -1,3 +1,4 @@
+import { money } from "@/lib/currency";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 interface RecentDeposit {
@@ -16,7 +17,7 @@ interface RecentDepositsProps {
 }
 
 function formatCurrency(amount: number) {
-  return new Intl.NumberFormat("es-PE", { style: "currency", currency: "PEN" }).format(amount);
+  return money(amount);
 }
 
 function formatDate(dateString: string) {

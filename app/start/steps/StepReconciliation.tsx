@@ -1,5 +1,6 @@
 "use client";
 
+import { money } from "@/lib/currency";
 import { useMemo } from "react";
 import { CheckCircle2, AlertTriangle, ArrowDownCircle, ArrowUpCircle, Rocket } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -9,8 +10,7 @@ import { useOnboarding } from "../OnboardingProvider";
 import { StepShell } from "../components/StepShell";
 import { cn } from "@/lib/utils";
 
-const fmt = (n: number) =>
-  `S/ ${n.toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+const fmt = (n: number) => money(n);
 
 export function StepReconciliation() {
   const { state, setState, resetAll, setCurrentStep, finish } = useOnboarding();

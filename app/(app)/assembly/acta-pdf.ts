@@ -1,3 +1,4 @@
+import { money as formatMoney } from "@/lib/currency";
 import jsPDF from "jspdf";
 import {
   ACTA_PDF,
@@ -49,7 +50,7 @@ export class ActaPdf {
   }
 
   money(n: number) {
-    return `S/ ${Number(n || 0).toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    return formatMoney(n, { pdf: true });
   }
 
   private checkPage(need: number) {

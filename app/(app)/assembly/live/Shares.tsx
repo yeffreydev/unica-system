@@ -1,5 +1,6 @@
 "use client";
 
+import { money } from "@/lib/currency";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -89,7 +90,7 @@ export default function Shares() {
         description:
           quantity === 0
             ? `Se quitaron las acciones de ${selectedUser.name} ${selectedUser.lastname}.`
-            : `${quantity} acciones para ${selectedUser.name} ${selectedUser.lastname} (S/ ${(quantity * price).toFixed(2)}).`,
+            : `${quantity} acciones para ${selectedUser.name} ${selectedUser.lastname} (${money((quantity * price))}).`,
       });
 
       closeModal();
@@ -141,7 +142,7 @@ export default function Shares() {
           <CardTitle className="text-base font-semibold">Compra de Acciones</CardTitle>
           <Badge variant="outline" className="text-xs font-medium gap-1">
             <BarChart3 className="w-3 h-3" />
-            S/ {price.toFixed(2)} / acción
+            {money(price)} / acción
           </Badge>
         </div>
 
@@ -160,7 +161,7 @@ export default function Shares() {
             {totalAmount > 0 && (
               <>
                 <div className="h-4 w-px bg-border mx-1" />
-                <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">S/ {totalAmount.toFixed(2)}</span>
+                <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">{money(totalAmount)}</span>
               </>
             )}
           </div>
@@ -235,7 +236,7 @@ export default function Shares() {
                               {shares} {shares === 1 ? "acción" : "acciones"}
                             </Badge>
                             <span className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
-                              S/ {totalForUser.toFixed(2)}
+                              {money(totalForUser)}
                             </span>
                           </div>
                         ) : (
@@ -312,7 +313,7 @@ export default function Shares() {
             <div className="rounded-lg bg-muted/50 p-3 space-y-1.5">
               <div className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground">Precio unitario</span>
-                <span>S/ {price.toFixed(2)}</span>
+                <span>{money(price)}</span>
               </div>
               <div className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground">Cantidad</span>
@@ -320,7 +321,7 @@ export default function Shares() {
               </div>
               <div className="border-t border-border pt-1.5 flex items-center justify-between">
                 <span className="text-sm font-medium">Total</span>
-                <span className="text-lg font-bold text-primary">S/ {(quantity * price).toFixed(2)}</span>
+                <span className="text-lg font-bold text-primary">{money((quantity * price))}</span>
               </div>
             </div>
           </div>

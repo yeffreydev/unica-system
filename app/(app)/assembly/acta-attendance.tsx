@@ -1,5 +1,6 @@
 "use client";
 
+import { money } from "@/lib/currency";
 import React from "react";
 import { formatCurrency } from "@/lib/utils";
 import { ActaColumn, participantStatusLabel, ACTA_PDF } from "./acta-theme";
@@ -203,8 +204,7 @@ export function attendanceScreenTotals(rows: AttendanceRow[]) {
 
 // ── PDF (jsPDF) ─────────────────────────────────────────────────────────────
 
-const pdfMoney = (n: number) =>
-  `S/ ${Number(n || 0).toLocaleString("es-PE", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+const pdfMoney = (n: number) => money(n, { pdf: true });
 
 export type AttendancePdfCol = {
   key: string;
