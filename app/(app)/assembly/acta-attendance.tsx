@@ -41,6 +41,19 @@ export function fineDueFor(participant: any, cfg: IFinesConfig = DEFAULT_FINES_C
   return 0;
 }
 
+/**
+ * Estado que se lee en el acta: a la falta o tardanza se le agrega si la multa
+ * quedó pagada ("Faltó · Pagó falta") o no ("Faltó · No pagó").
+ */
+export function attendanceStatusLabel(status: string | null | undefined, due: number, paid: number): string {
+  const base = participantStatusLabel(status);
+  if (!isPenalizedStatus(status) || due <= 0) return base;
+  const what = norm(status) === "absent" ? "falta" : "tardanza";
+  if (paid >= due) return `${base} · Pagó ${what}`;
+  if (paid > 0) return `${base} · Pagó parte`;
+  return `${base} · No pagó`;
+}
+
 const nameKey = (u: any) =>
   `${norm(u?.lastname)}|${norm(u?.name)}`.replace(/^\||\|$/g, "");
 
@@ -98,7 +111,7 @@ export function buildAttendanceRows(
       participant: p,
       user: p?.user,
       status: String(p?.status ?? ""),
-      statusLabel: participantStatusLabel(p?.status),
+      statusLabel: attendanceStatusLabel(p?.status, due, paid),
       penalized,
       due,
       paid,
@@ -222,13 +235,13 @@ export function attendancePdfColumns(): AttendancePdfCol[] {
     {
       key: "socio",
       title: "Socio",
-      w: 78,
+      w: 62,
       get: (r: AttendanceRow) => personLabel(r.user, r.participant?.name),
     },
     {
       key: "estado",
       title: "Estado",
-      w: 32,
+      w: 48,
       align: "right",
       get: (r: AttendanceRow) => r.statusLabel,
       color: red,

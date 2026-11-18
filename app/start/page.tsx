@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Save, Sprout, X } from "lucide-react";
+import { ChevronDown, Save, Sprout, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
@@ -111,7 +111,10 @@ function DraftBar() {
 }
 
 function Shell() {
-  const { mode } = useOnboarding();
+  const { mode, currentStep, steps } = useOnboarding();
+  // En celular la lista de pasos va plegada para dejarle la pantalla al formulario.
+  const [stepsOpen, setStepsOpen] = useState(false);
+  const stepIdx = steps.findIndex((s) => s.id === currentStep);
   const { tenant } = useTenant();
   // Hasta que no termine el onboarding no hay a dónde salir.
   const canExit = tenant?.onboardingCompleted !== false;
@@ -128,7 +131,7 @@ function Shell() {
             <h1 className="text-lg font-bold mt-3 leading-tight">
               {mode === "nueva" ? "Configura tu comunidad" : "Registra tu historial"}
             </h1>
-            <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+            <p className="text-xs text-muted-foreground mt-1 leading-relaxed max-lg:hidden">
               {mode === "nueva"
                 ? "Datos de la comunidad, reuniones y socios. Nada más."
                 : "Todo lo que ya pasó, hasta la fecha de corte."}
@@ -164,7 +167,30 @@ function Shell() {
           <DraftBar />
         </div>
 
-        <div className="flex-1 min-h-0 overflow-y-auto px-2 pb-6 max-lg:max-h-[38vh]">
+        <button
+          type="button"
+          onClick={() => setStepsOpen((o) => !o)}
+          aria-expanded={stepsOpen}
+          className="lg:hidden mx-4 mb-3 flex items-center justify-between gap-2 rounded-lg border border-border bg-background px-3 py-2 text-left text-xs"
+        >
+          <span className="min-w-0 truncate">
+            <span className="text-muted-foreground">
+              Paso {stepIdx + 1} de {steps.length} ·{" "}
+            </span>
+            <span className="font-semibold">{steps[stepIdx]?.shortTitle}</span>
+          </span>
+          <ChevronDown
+            className={cn("h-4 w-4 shrink-0 text-muted-foreground transition-transform", stepsOpen && "rotate-180")}
+          />
+        </button>
+
+        <div
+          className={cn(
+            "flex-1 min-h-0 overflow-y-auto px-2 pb-6 max-lg:max-h-[38vh]",
+            !stepsOpen && "max-lg:hidden"
+          )}
+          onClick={() => setStepsOpen(false)}
+        >
           <Stepper />
         </div>
       </aside>

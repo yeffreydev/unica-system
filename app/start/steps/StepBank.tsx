@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Coins, HandCoins, PiggyBank, Sparkles, Users } from "lucide-react";
+import { Check, Coins, HandCoins, History, PiggyBank, Sparkles, Sprout, Users } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -104,15 +105,22 @@ export function StepBank() {
           <p className="text-xs text-muted-foreground mt-1 mb-3">
             Con esto sabemos cuánta información pedirte.
           </p>
-          <Select value={mode} onValueChange={(v) => setMode(v as UnicaMode)}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="nueva">Sí, empieza desde cero</SelectItem>
-              <SelectItem value="antigua">No, ya viene funcionando</SelectItem>
-            </SelectContent>
-          </Select>
+          <div role="radiogroup" aria-label="Estado de la comunidad" className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <ModeCard
+              active={mode === "nueva"}
+              onSelect={() => setMode("nueva")}
+              icon={<Sprout className="h-4 w-4" />}
+              title="Sí, empieza desde cero"
+              text="3 pasos: comunidad, reuniones y socios."
+            />
+            <ModeCard
+              active={mode === "antigua"}
+              onSelect={() => setMode("antigua")}
+              icon={<History className="h-4 w-4" />}
+              title="No, ya viene funcionando"
+              text="Registras tu historial hasta una fecha de corte."
+            />
+          </div>
           <p className="text-xs text-muted-foreground mt-2.5 leading-relaxed">
             {esAntigua
               ? "Vamos a registrar lo que ya pasó: acciones, préstamos, ingresos, gastos y el cuadre de caja a una fecha de corte."
@@ -271,6 +279,49 @@ export function StepBank() {
         </div>
       </div>
     </StepShell>
+  );
+}
+
+function ModeCard({
+  active,
+  onSelect,
+  icon,
+  title,
+  text,
+}: {
+  active: boolean;
+  onSelect: () => void;
+  icon: React.ReactNode;
+  title: string;
+  text: string;
+}) {
+  return (
+    <button
+      type="button"
+      role="radio"
+      aria-checked={active}
+      onClick={onSelect}
+      className={cn(
+        "relative flex items-start gap-3 rounded-xl border p-3.5 text-left transition-colors",
+        active
+          ? "border-primary bg-primary/10 ring-1 ring-primary"
+          : "border-border hover:border-primary/40 hover:bg-accent/50"
+      )}
+    >
+      <span
+        className={cn(
+          "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg",
+          active ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground"
+        )}
+      >
+        {icon}
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-sm font-semibold leading-snug">{title}</span>
+        <span className="block text-xs text-muted-foreground mt-0.5 leading-relaxed">{text}</span>
+      </span>
+      {active && <Check className="h-4 w-4 text-primary shrink-0" strokeWidth={3} />}
+    </button>
   );
 }
 

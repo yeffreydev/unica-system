@@ -21,7 +21,7 @@ export const PARTICIPANT_STATUS_LABEL: Record<string, string> = {
   declined: "Rechazado",
   attended: "Asistió",
   late: "Tardanza",
-  absent: "Ausente",
+  absent: "Faltó",
 };
 
 export const RUN_STATUS_LABEL: Record<string, string> = {

@@ -1,6 +1,6 @@
 /**
  * Videos de referencia del onboarding.
- * Reemplaza los IDs por los tutoriales propios de Aquí Nace cuando estén listos.
+ * Videos propios del canal de YouTube de Aquí Nace (@aquinace).
  */
 export interface TutorialVideo {
   /** ID de YouTube (lo que va después de watch?v=). */
@@ -13,27 +13,27 @@ export interface TutorialVideo {
 
 /** Bienvenida: qué es una comunidad de ahorro y cómo funciona. */
 export const INTRO_VIDEO: TutorialVideo = {
-  id: "pUxFA2omtEk",
-  title: "¿Cómo funciona una comunidad de ahorro?",
+  id: "slN5cIRTQ4o",
+  title: "¿Qué es un Núcleo Comunitario?",
   description:
     "Míralo antes de empezar: acciones, préstamos entre socios y reparto de utilidades explicados con ejemplos reales.",
-  length: "3 min",
+  length: "5 min",
 };
 
 /** Referencia para comunidades que recién arrancan. */
 export const NEW_COMMUNITY_VIDEO: TutorialVideo = {
-  id: "VYNOnef90Us",
-  title: "Comunidades que empiezan de cero",
+  id: "oKsLl_8IFpg",
+  title: "Cómo formar un nuevo Núcleo Comunitario",
   description:
-    "Cómo se organiza un grupo nuevo: acuerdos, aportes y las primeras reuniones.",
-  length: "5 min",
+    "Cómo se organiza un grupo nuevo en 6 pasos: el grupo, los acuerdos, la junta directiva y la primera reunión, más 5 claves para el éxito.",
+  length: "3 min",
 };
 
 /** Referencia para comunidades que ya vienen funcionando. */
 export const COMMUNITY_TYPE_VIDEO: TutorialVideo = {
-  id: "bCAomxGmxu0",
-  title: "Comunidades que ya vienen funcionando",
+  id: "vqJZaHa5MfU",
+  title: "Tu asociación ya funciona: conviértela en Núcleo",
   description:
-    "Ejemplo de una comunidad en marcha: qué datos acumulados necesitas tener a la mano antes de registrarlos.",
-  length: "4 min",
+    "Cómo adaptar una UNICA, banca comunal o junta que ya está en marcha, cargar tus saldos reales con Registrar historial y todos los beneficios de Aquí Nace.",
+  length: "3 min",
 };

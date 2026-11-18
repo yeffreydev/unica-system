@@ -21,7 +21,11 @@ interface Props {
 export function VideoTutorial({ video, compact, eyebrow = "Video tutorial", className }: Props) {
   const [playing, setPlaying] = useState(false);
 
-  const thumb = `https://i.ytimg.com/vi/${video.id}/hqdefault.jpg`;
+  // maxres se ve nítido en la tarjeta grande; si el video no la tiene, cae a hq.
+  const [thumbFailed, setThumbFailed] = useState(false);
+  const thumb = `https://i.ytimg.com/vi/${video.id}/${
+    compact || thumbFailed ? "hqdefault" : "maxresdefault"
+  }.jpg`;
   const watchUrl = `https://www.youtube.com/watch?v=${video.id}`;
   const embedUrl = `https://www.youtube-nocookie.com/embed/${video.id}?autoplay=1&rel=0&modestbranding=1`;
 
@@ -46,14 +50,21 @@ export function VideoTutorial({ video, compact, eyebrow = "Video tutorial", clas
           <img
             src={thumb}
             alt=""
+            loading="lazy"
+            onError={() => setThumbFailed(true)}
             className="h-full w-full object-cover opacity-90 transition-transform duration-300 group-hover:scale-[1.03] group-hover:opacity-100"
           />
           <span className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent" />
           <span className="absolute inset-0 flex items-center justify-center">
-            <span className="flex h-14 w-14 items-center justify-center rounded-full bg-white/95 text-black shadow-lg transition-transform duration-200 group-hover:scale-110">
-              <Play className="h-6 w-6 translate-x-[1px] fill-current" />
+            <span className={cn("flex items-center justify-center rounded-full bg-white/95 text-black shadow-lg transition-transform duration-200 group-hover:scale-110", compact ? "h-10 w-10" : "h-14 w-14")}>
+              <Play className={cn("translate-x-[1px] fill-current", compact ? "h-4 w-4" : "h-6 w-6")} />
             </span>
           </span>
+          {video.length && (
+            <span className="absolute bottom-2 right-2 rounded bg-black/80 px-1.5 py-0.5 text-[10px] font-semibold text-white tabular-nums">
+              {video.length}
+            </span>
+          )}
         </button>
       )}
     </div>
