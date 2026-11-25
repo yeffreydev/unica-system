@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { ChevronDown, LayoutDashboard, Users, TrendingUp, BarChart3, PiggyBank, TrendingDown, HandCoins, FileBarChart, Settings, ClipboardCheck, Wallet, FileSpreadsheet, Calculator, History } from "lucide-react";
+import { ChevronDown, LayoutDashboard, Users, TrendingUp, BarChart3, PiggyBank, TrendingDown, HandCoins, FileBarChart, Settings, ClipboardCheck, Wallet, FileSpreadsheet, Calculator, History, CalendarCheck2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const mainItems = [
@@ -16,6 +16,7 @@ const reportsItems = [
   { title: "Asistencia", href: "/reports/attendance", icon: ClipboardCheck },
   { title: "Ahorros", href: "/reports/savings", icon: PiggyBank },
   { title: "Prestamos", href: "/reports/loans", icon: HandCoins },
+  { title: "Cuotas", href: "/reports/loans/installments", icon: CalendarCheck2 },
   { title: "Acciones", href: "/reports/stocks", icon: BarChart3 },
   { title: "Otros Movimientos", href: "/reports/other-movements", icon: FileSpreadsheet },
   { title: "Utilidades", href: "/reports/dividends", icon: Wallet },
@@ -36,9 +37,12 @@ export function AppSidebar() {
   const [reportsOpen, setReportsOpen] = useState(false);
   
 
+  const allHrefs = [...mainItems, ...reportsItems, ...otherItems].map((i) => i.href);
   const isActive = (path: string) => {
     if (path === "/") return pathname === "/";
-    return pathname.startsWith(path);
+    if (!pathname.startsWith(path)) return false;
+    // Si otro ítem más específico también coincide (p. ej. /reports/loans/installments), gana ese.
+    return !allHrefs.some((h) => h !== path && h.startsWith(path) && pathname.startsWith(h));
   };
 
   const customNavClass = "flex items-center px-3 py-2 text-[13px] font-medium rounded-lg transition-all duration-150 group mb-0.5";
