@@ -2,13 +2,14 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { ChevronDown, LayoutDashboard, Users, TrendingUp, BarChart3, PiggyBank, TrendingDown, HandCoins, FileBarChart, Settings, ClipboardCheck, Wallet, FileSpreadsheet, Calculator } from "lucide-react";
+import { ChevronDown, LayoutDashboard, Users, TrendingUp, BarChart3, PiggyBank, TrendingDown, HandCoins, FileBarChart, Settings, ClipboardCheck, Wallet, FileSpreadsheet, Calculator, History } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const mainItems = [
   { title: "Dashboard", href: "/", icon: LayoutDashboard },
   // { title: "Puki Chat", href: "/chat", icon: MessageCircle },
   { title: "Asamblea", href: "/assembly", icon: Users },
+  { title: "Historial", href: "/history", icon: History },
 ];
 
 const reportsItems = [

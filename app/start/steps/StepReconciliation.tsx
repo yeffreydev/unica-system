@@ -2,7 +2,7 @@
 
 import { money } from "@/lib/currency";
 import { useMemo } from "react";
-import { CheckCircle2, AlertTriangle, ArrowDownCircle, ArrowUpCircle, Rocket } from "lucide-react";
+import { CheckCircle2, AlertTriangle, ArrowDownCircle, ArrowUpCircle, Loader2, Lock, Rocket } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -13,7 +13,8 @@ import { cn } from "@/lib/utils";
 const fmt = (n: number) => money(n);
 
 export function StepReconciliation() {
-  const { state, setState, resetAll, setCurrentStep, finish } = useOnboarding();
+  const { state, setState, resetAll, setCurrentStep, finish, steps, readOnly, finishLabel, finishing } =
+    useOnboarding();
 
   const sumValues = (r: Record<string, number>) =>
     Object.values(r).reduce((a, b) => a + (Number(b) || 0), 0);
@@ -160,8 +161,14 @@ export function StepReconciliation() {
           </div>
         </div>
 
+        {readOnly ? (
+          <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/30 p-4 text-sm text-muted-foreground">
+            <Lock className="h-4 w-4 shrink-0" />
+            Historial finalizado: es solo lectura y ya no se puede modificar.
+          </div>
+        ) : (
         <div className="flex flex-wrap gap-2 justify-end">
-          <Button variant="outline" onClick={() => setCurrentStep("bank")}>
+          <Button variant="outline" onClick={() => setCurrentStep(steps[0].id)}>
             Ver desde el inicio
           </Button>
           <Button
@@ -174,11 +181,13 @@ export function StepReconciliation() {
           >
             Empezar de nuevo
           </Button>
-          <Button onClick={finish}>
-            Empezar con Aquí Nace
-            <Rocket className="ml-1.5 h-4 w-4" />
+          <Button onClick={finish} disabled={finishing}>
+            {finishing && <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />}
+            {finishLabel ?? "Empezar con Aquí Nace"}
+            {!finishing && <Rocket className="ml-1.5 h-4 w-4" />}
           </Button>
         </div>
+        )}
       </div>
     </StepShell>
   );

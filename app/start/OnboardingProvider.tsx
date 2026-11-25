@@ -26,7 +26,7 @@ const todayPeru = () => {
   return t.toISOString().split("T")[0];
 };
 
-const initialState: OnboardingState = {
+export const initialState: OnboardingState = {
   unicaMode: "nueva",
   communityKind: "unica",
   communityKindOther: "",
@@ -58,7 +58,7 @@ const initialState: OnboardingState = {
   completedSteps: [],
 };
 
-interface Ctx {
+export interface OnboardingContextValue {
   state: OnboardingState;
   setState: (updater: (s: OnboardingState) => OnboardingState) => void;
   /** Pasos visibles según el estado de la comunidad (nueva: hasta socios). */
@@ -76,9 +76,17 @@ interface Ctx {
   savedAt: number | null;
   /** Cierra el onboarding: limpia el borrador y entra al dashboard. */
   finish: () => Promise<void>;
+  /** Historial: los pasos no escriben al avanzar; todo se registra al finalizar. */
+  deferWrites?: boolean;
+  /** Historial finalizado: todo bloqueado, solo lectura. */
+  readOnly?: boolean;
+  /** Texto del botón final (por defecto "Empezar con Aquí Nace"). */
+  finishLabel?: string;
+  /** true mientras se registra todo al finalizar. */
+  finishing?: boolean;
 }
 
-const OnboardingCtx = createContext<Ctx | null>(null);
+export const OnboardingCtx = createContext<OnboardingContextValue | null>(null);
 
 export function OnboardingProvider({ children }: { children: React.ReactNode }) {
   const [state, setRaw] = useState<OnboardingState>(initialState);

@@ -31,20 +31,30 @@ export function StepShell({
   hidePrev,
   children,
 }: Props) {
-  const { goPrev, goNext, markComplete, steps, finish } = useOnboarding();
+  const { goPrev, goNext, markComplete, steps, finish, deferWrites, readOnly, finishLabel, finishing } =
+    useOnboarding();
   const idx = steps.findIndex((s) => s.id === stepId);
   const step = steps[idx];
   const isLast = idx === steps.length - 1;
   const pct = Math.round(((idx + 1) / steps.length) * 100);
 
   const handleNext = async () => {
-    if (onNext) await onNext();
+    if (readOnly) {
+      goNext();
+      return;
+    }
+    // En el historial los pasos solo juntan datos: se registran todos al finalizar.
+    if (onNext && !deferWrites) await onNext();
     markComplete(stepId);
     if (isLast) await finish();
     else goNext();
   };
 
-  const label = nextLabel ?? (isLast ? "Empezar con Aquí Nace" : "Guardar y continuar");
+  const label = readOnly
+    ? "Siguiente"
+    : nextLabel ?? (isLast ? finishLabel ?? "Empezar con Aquí Nace" : deferWrites ? "Continuar" : "Guardar y continuar");
+  const busy = saving || finishing;
+  const showNext = !hideNext && !(readOnly && isLast);
 
   return (
     <div className="flex flex-col h-full">
@@ -83,22 +93,27 @@ export function StepShell({
         )}
       </div>
 
-      <div className="flex-1 min-h-0 overflow-y-auto pb-6 pr-1">{children}</div>
+      <div className="flex-1 min-h-0 overflow-y-auto pb-6 pr-1">
+        {/* Solo lectura: deshabilita todos los campos y botones del paso. */}
+        <fieldset disabled={readOnly} className="m-0 min-w-0 border-0 p-0">
+          {children}
+        </fieldset>
+      </div>
 
       <div className="flex items-center justify-between gap-3 border-t border-border pt-5 mt-auto">
         {hidePrev || idx === 0 ? (
           <div />
         ) : (
-          <Button variant="ghost" onClick={goPrev} disabled={saving}>
+          <Button variant="ghost" onClick={goPrev} disabled={busy}>
             <ChevronLeft className="mr-1 h-4 w-4" /> Volver
           </Button>
         )}
-        {!hideNext && (
-          <Button onClick={handleNext} disabled={saving} size="lg" className="shadow-sm">
-            {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+        {showNext && (
+          <Button onClick={handleNext} disabled={busy} size="lg" className="shadow-sm">
+            {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {label}
-            {!saving &&
-              (isLast ? (
+            {!busy &&
+              (isLast && !readOnly ? (
                 <Rocket className="ml-1.5 h-4 w-4" />
               ) : (
                 <ChevronRight className="ml-1 h-4 w-4" />
